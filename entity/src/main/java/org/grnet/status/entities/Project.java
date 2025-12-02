@@ -7,6 +7,8 @@ import lombok.Setter;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -40,6 +42,14 @@ public class Project {
 
     @Column(name = "updated_at")
     private Timestamp updatedAt;
+
+    @OneToMany(
+            mappedBy = "project",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private Set<TenantProjectJunction> tenantProjects = new HashSet<>();
+
 
     @PrePersist
     protected void onCreate() {

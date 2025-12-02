@@ -1,5 +1,6 @@
 package org.grnet.status.dtos.project;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -72,5 +73,6 @@ public class ProjectResponseDto {
             description = "Timestamp when the project was last updated"
     )
     @JsonProperty("updated_at")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public Instant updatedAt;
 }

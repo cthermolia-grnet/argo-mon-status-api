@@ -60,8 +60,14 @@
         </dependency>
         <dependency>
             <groupId>org.grnet</groupId>
+            <artifactId>status-repositories</artifactId>
+            <version>${revision}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.grnet</groupId>
             <artifactId>status-validators</artifactId>
-            <version>1.0.0</version>
+            <version>${revision}</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

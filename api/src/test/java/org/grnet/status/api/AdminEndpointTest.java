@@ -11,6 +11,9 @@ import org.grnet.status.dtos.project.ProjectRequestDto;
 import org.grnet.status.dtos.project.ProjectResponseDto;
 import org.grnet.status.dtos.project.ProjectUpdateDto;
 import org.grnet.status.dtos.tenant.*;
+import org.grnet.status.dtos.tenantproject.TenantProjectDeleteDto;
+import org.grnet.status.dtos.tenantproject.TenantProjectDto;
+import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
 import org.grnet.status.services.clients.ArgoWebApiClient;
 import org.grnet.status.services.clients.ArgoWebApiClientFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -457,6 +461,238 @@ public class AdminEndpointTest extends KeycloakTest {
                 .as(InformativeResponse.class);
 
     }
+    @Test
+    public void testAssignMultipleProjects() {
+        currentMockId = "tenant-bbb-ccc";
+
+        // Create tenant
+        var tenantReq = new TenantRequestDto();
+        var tinfo = new TenantInfoDto();
+        tinfo.name = "TENANTASSIGNPROJECTS";
+        tinfo.email = "tx@example.com";
+        tinfo.description = "This is a description";
+        tenantReq.info = tinfo;
+
+        var tenant = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(tenantReq)
+                .post("/tenants")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(TenantResponseDto.class);
+
+        // Create two projects
+        var p1 = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(buildCreateRequest())
+                .post("/projects")
+                .then()
+                .statusCode(201)
+                .extract().as(ProjectResponseDto.class);
+
+        var p2 = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(buildCreateRequest())
+                .post("/projects")
+                .then()
+                .statusCode(201)
+                .extract().as(ProjectResponseDto.class);
+
+        var req = new TenantProjectRequestDto();
+        req.tenantId = tenant.id;
+        req.projectIds = List.of(p1.id, p2.id);
+
+        var response = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(req)
+                .put("/tenant-project")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(InformativeResponse.class);
+
+        assertEquals(200, response.code);
+    }
+
+    @Test
+    public void testGetProjectsByTenant() {
+        currentMockId = "tenant-xyz";
+
+        var tenantReq = new TenantRequestDto();
+        var info = new TenantInfoDto();
+        info.name = "TENANTGETPROJECT";
+        info.email = "fetch@example.com";
+        info.description = "This is a description";
+        tenantReq.info = info;
+
+        var tenant = given()
+                .auth()
+                .oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(tenantReq)
+                .post("/tenants")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(TenantResponseDto.class);
+
+        var projectReq = buildCreateRequest();
+        var project = given()
+                .auth()
+                .oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(projectReq)
+                .post("/projects")
+                .then()
+                .statusCode(201)
+                .extract()
+                .as(ProjectResponseDto.class);
+
+        var assignReq = new TenantProjectRequestDto();
+        assignReq.tenantId = tenant.id;
+        assignReq.projectIds = List.of(project.id);
+
+        given()
+                .auth()
+                .oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(assignReq)
+                .put("/tenant-project")
+                .then()
+                .statusCode(200);
+
+
+        var result = given()
+                .auth()
+                .oauth2(adminToken)
+                .get("/tenants/" + tenant.id + "/projects")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(PageResource.class);
+
+        assertNotNull(result.getContent());
+        assertEquals(1, result.getContent().size());
+    }
+
+
+    @Test
+    public void testDeleteTenantProjectAssignment() {
+        currentMockId = "tenant-del";
+
+        var tenantReq = new TenantRequestDto();
+        var tInfo = new TenantInfoDto();
+        tInfo.name = "TENANTDELETE";
+        tInfo.email = "td@example.com";
+        tInfo.description = "This is a description for testing";
+        tenantReq.info = tInfo;
+
+        var tenant = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(tenantReq)
+                .post("/tenants")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(TenantResponseDto.class);
+
+        var project = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(buildCreateRequest())
+                .post("/projects")
+                .then()
+                .statusCode(201)
+                .extract()
+                .as(ProjectResponseDto.class);
+
+        var assignReq = new TenantProjectRequestDto();
+        assignReq.tenantId = tenant.id;
+        assignReq.projectIds = List.of(project.id);
+
+        given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(assignReq)
+                .put("/tenant-project")
+                .then()
+                .statusCode(200);
+
+        var deleteReq = new TenantProjectDeleteDto();
+        deleteReq.projectId = project.id;
+        deleteReq.tenantId = tenant.id;
+
+        var response = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(deleteReq)
+                .delete("/tenant-project")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(InformativeResponse.class);
+
+        assertEquals(204, response.code);
+
+        var after = given()
+                .auth().oauth2(adminToken)
+                .get("/tenants/" + tenant.id + "/projects")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(PageResource.class);
+
+        assertEquals(0, after.getContent().size());
+    }
+
+
+    @Test
+    public void testDeleteAssignmentNotExisting() {
+        var deleteReq = new TenantProjectDeleteDto();
+        deleteReq.tenantId = "nonexistent-tenant";
+        deleteReq.projectId = "nonexistent-project";
+
+        var result = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(deleteReq)
+                .delete("/tenant-project")
+                .then()
+                .statusCode(404)
+                .extract()
+                .as(InformativeResponse.class);
+
+        assertEquals(404, result.code);
+    }
+
+    @Test
+    public void testAssignInvalidTenant() {
+        var req = new TenantProjectRequestDto();
+        req.tenantId = "tenant-not-exist";
+        req.projectIds = List.of("proj-not-exist");
+
+        var error = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(req)
+                .put("/tenant-project")
+                .then()
+                .statusCode(404)
+                .extract()
+                .as(InformativeResponse.class);
+
+        assertEquals(404, error.code);
+    }
+
+
+
+
 
     @Test
     public void testCreateProject() {

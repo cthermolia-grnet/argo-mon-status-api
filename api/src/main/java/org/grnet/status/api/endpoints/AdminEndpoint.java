@@ -3,7 +3,6 @@ package org.grnet.status.api.endpoints;
 import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -35,7 +34,9 @@ import org.grnet.status.dtos.statuspage.StatusPageResponseDto;
 import org.grnet.status.dtos.tenant.ContactDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
-import org.grnet.status.dtos.user.UserProfileDto;
+import org.grnet.status.dtos.tenantproject.TenantProjectDeleteDto;
+import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
+import org.grnet.status.dtos.tenantproject.TenantProjectDto;
 import org.grnet.status.repositories.ProjectRepository;
 import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.services.*;
@@ -71,10 +72,14 @@ public class AdminEndpoint {
     ProjectService projectService;
 
     @Inject
+    TenantProjectService tenantProjectService;
+
+    @Inject
     Utility utility;
 
     @Inject
     ContactService contactService;
+
     // --------------------------------------------------------------------------------------------------------------------------
     // ADMIN STATUS PAGES ENDPOINT
     // --------------------------------------------------------------------------------------------------------------------------
@@ -133,6 +138,9 @@ public class AdminEndpoint {
         return Response.ok(pages).build();
     }
 
+    // --------------------------------------------------------------------------------------------------------------------------
+    // ADMIN TENANT ENDPOINT
+    // --------------------------------------------------------------------------------------------------------------------------
 
     @Tag(name = "Admin")
     @Operation(summary = "Create Tenant",
@@ -280,7 +288,6 @@ public class AdminEndpoint {
     @PUT
     @Path("/tenants/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Authenticated
     public Response updateTenant(
             @Parameter(description = "The ID of the status page to update.",
                     required = true,
@@ -332,7 +339,6 @@ public class AdminEndpoint {
     @DELETE
     @Path("/tenants/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Authenticated
     public Response deleteTenant(@Parameter(
             description = "The ID of the tenant to be deleted.",
             required = true,
@@ -346,6 +352,236 @@ public class AdminEndpoint {
         informativeResponse.code = 200;
         informativeResponse.message = "Tenant has been successfully deleted.";
         return Response.ok().entity(informativeResponse).build();
+    }
+
+    @Tag(name = "Admin")
+    @Operation(summary = "List project added to tenants",
+            description = "Retrieves a list of projects that tenant belongs")
+    @APIResponse(
+            responseCode = "200",
+            description = "Tenants list retrieved",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = ProjectResponseDto.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Project does not exist.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/tenants/{id}/projects")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getProjectsByTenant(
+            @Parameter(
+                    description = "The ID of the project to retrieve.",
+                    required = true,
+                    example = "df5a57c7-9fb4-43e8-83ba-8ab2f1ebee03",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
+            @Parameter(name = "search", in = QUERY,
+                    description = "The \"search\" parameter is a query parameter that allows clients to specify a text string that will be used to search for matches in specific fields in Project entity. " +
+                            "The search will be conducted in the following fields : projects' name. ")
+            @QueryParam("search") String search,
+            @Parameter(name = "sort", in = QUERY,
+                    schema = @Schema(type = SchemaType.STRING, defaultValue = ""),
+                    examples = {
+                            @ExampleObject(name = "Project name", value = "name"),
+                            @ExampleObject(name = "Created At", value = "createdAt")},
+                    description = "The \"sort\" parameter allows clients to specify the field by which they want the results to be sorted.")
+            @DefaultValue("createdAt")
+            @QueryParam("sort")
+            String sort,
+            @Parameter(name = "order", in = QUERY,
+                    schema = @Schema(type = SchemaType.STRING, defaultValue = ""),
+                    examples = {@ExampleObject(name = "Ascending", value = "ASC"), @ExampleObject(name = "Descending", value = "DESC")},
+                    description = "The \"order\" parameter specifies the order in which the sorted results should be returned.") @DefaultValue("DESC")
+            @QueryParam("order")
+            String order,
+            @Parameter(name = "page", in = QUERY,
+                    description = "Indicates the page number. Page number must be >= 1.") @DefaultValue("1") @Min(value = 1, message = "Page number must be >= 1.")
+            @QueryParam("page")
+            int page,
+            @Parameter(name = "size", in = QUERY,
+                    description = "The page size.")
+            @DefaultValue("10") @Min(value = 1, message = "Page size must be between 1 and 100.") @Max(value = 100, message = "Page size must be between 1 and 100.")
+            @QueryParam("size")
+            int size,
+            @Context UriInfo uriInfo) {
+
+        var project = tenantProjectService.getProjectsByTenant(id, page - 1, size, uriInfo, search, sort, order);
+
+        return Response.ok().entity(project).build();
+    }
+
+    @Tag(name = "Admin")
+    @Operation(
+            summary = "Get list of tenants.",
+            description = "This endpoint returns a list of tenants " +
+                    "By default, the first page of 10 tenant objects will be returned. You can tune the default values by using the query parameters page and size.")
+    @APIResponse(
+            responseCode = "200",
+            description = "List of tenant objects existing.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = PageableTenants.class)))
+    @APIResponse(
+            responseCode = "400",
+            description = "Bad Request",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Entity Not Found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/tenants")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getTenantsByPageAndSize(
+            @Parameter(name = "page", in = QUERY,
+                    description = "Indicates the page number. Page number must be >= 1.")
+            @DefaultValue("1") @Min(value = 1, message = "Page number must be >= 1.")
+            @QueryParam("page")
+            int page,
+            @Parameter(name = "size", in = QUERY,
+                    description = "The page size.")
+            @DefaultValue("10") @Min(value = 1, message = "Page size must be between 1 and 100.") @Max(value = 100, message = "Page size must be between 1 and 100.")
+            @QueryParam("size")
+            int size,
+            @Parameter(name = "search", in = QUERY,
+                    description = "The \"search\" parameter is a query parameter that allows clients to specify a text string that will be used to search for matches in specific fields in Tenant entity. The search will be conducted in the following fields : tenants' name, tenant's email.") @QueryParam("search") String search,
+            @Parameter(name = "sort", in = QUERY,
+                    schema = @Schema(type = SchemaType.STRING, defaultValue = ""),
+                    examples = {@ExampleObject(name = "Tenant name", value = "name"), @ExampleObject(name = "Created At", value = "createdAt")},
+                    description = "The \"sort\" parameter allows clients to specify the field by which they want the results to be sorted.") @DefaultValue("createdAt") @QueryParam("sort") String sort,
+            @Parameter(name = "order",
+                    in = QUERY,
+                    schema = @Schema(type = SchemaType.STRING, defaultValue = ""),
+                    examples = {@ExampleObject(name = "Ascending", value = "ASC"), @ExampleObject(name = "Descending", value = "DESC")},
+                    description = "The \"order\" parameter specifies the order in which the sorted results should be returned.") @DefaultValue("DESC") @QueryParam("order") String order,
+            @Context UriInfo uriInfo) {
+        var orderValues = List.of("ASC", "DESC");
+        var sortValues = List.of("name", "createdAt");
+
+        if (!orderValues.contains(order)) {
+
+            throw new BadRequestException("The available values of order parameter are : " + orderValues);
+        }
+
+        if (!sortValues.contains(sort)) {
+
+            throw new BadRequestException("The available values of sort parameter are : " + sortValues);
+        }
+
+        var assessments = tenantService.getTenantsByPageAndSize(page - 1, size, uriInfo, search, sort, order);
+
+        return Response.ok().entity(assessments).build();
+    }
+
+    @Tag(name = "Admin")
+    @Operation(
+            summary = "Get list of contacts.",
+            description = "This endpoint returns a list of contacts " +
+                    "By default, the first page of 10 contact objects will be returned. You can tune the default values by using the query parameters page and size.")
+    @APIResponse(
+            responseCode = "200",
+            description = "List of tenant objects existing.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = PageableContacts.class)))
+    @APIResponse(
+            responseCode = "400",
+            description = "Bad Request",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Entity Not Found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/contacts")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Authenticated
+    public Response getContactsByPageAndSize(
+            @Parameter(name = "page", in = QUERY,
+                    description = "Indicates the page number. Page number must be >= 1.")
+            @DefaultValue("1") @Min(value = 1, message = "Page number must be >= 1.")
+            @QueryParam("page")
+            int page,
+            @Parameter(name = "size", in = QUERY,
+                    description = "The page size.")
+            @DefaultValue("10") @Min(value = 1, message = "Page size must be between 1 and 100.") @Max(value = 100, message = "Page size must be between 1 and 100.")
+            @QueryParam("size")
+            int size,
+            @Context UriInfo uriInfo) {
+
+        var contacts = contactService.getContactsByPageAndSize(page - 1, size, uriInfo);
+
+        return Response.ok().entity(contacts).build();
     }
 
 
@@ -439,7 +675,6 @@ public class AdminEndpoint {
     @GET
     @Path("/projects/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Authenticated
     public Response getProject(
             @Parameter(
                     description = "The ID of the project to retrieve.",
@@ -497,7 +732,6 @@ public class AdminEndpoint {
     @PUT
     @Path("/projects/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Authenticated
     public Response updateProject(
             @Parameter(
                     description = "The ID of the project to retrieve.",
@@ -551,7 +785,6 @@ public class AdminEndpoint {
     @DELETE
     @Path("/projects/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Authenticated
     public Response deleteProject(
             @Parameter(
                     description = "The ID of the project to delete.",
@@ -645,58 +878,16 @@ public class AdminEndpoint {
         return Response.ok(responseList).build();
     }
 
-    // --------------------------------------------------------------------------------------------------------------------------
-    // ADMIN HELPER METHODS
-    // --------------------------------------------------------------------------------------------------------------------------
-
-    public static class PageableStatusPages extends PageResource<StatusPageResponseDto> {
-
-        private List<StatusPageResponseDto> content;
-
-        @Override
-        public List<StatusPageResponseDto> getContent() {
-            return content;
-        }
-
-        @Override
-        public void setContent(List<StatusPageResponseDto> content) {
-            this.content = content;
-        }
-    }
-
-
-    public static class PageableProject extends PageResource<ProjectResponseDto> {
-
-        private List<ProjectResponseDto> content;
-
-        @Override
-        public List<ProjectResponseDto> getContent() {
-            return content;
-        }
-
-        @Override
-        public void setContent(List<ProjectResponseDto> content) {
-            this.content = content;
-        }
-    }
 
     @Tag(name = "Admin")
-    @Operation(
-            summary = "Get list of tenants.",
-            description = "This endpoint returns a list of tenants " +
-                    "By default, the first page of 10 tenant objects will be returned. You can tune the default values by using the query parameters page and size.")
+    @Operation(summary = "List the tenants of a project",
+            description = "Retrieves a list of tenants of a project")
     @APIResponse(
             responseCode = "200",
-            description = "List of tenant objects existing.",
+            description = "Tenants list retrieved",
             content = @Content(schema = @Schema(
                     type = SchemaType.OBJECT,
-                    implementation = PageableTenants.class)))
-    @APIResponse(
-            responseCode = "400",
-            description = "Bad Request",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
+                    implementation = PageableProject.class)))
     @APIResponse(
             responseCode = "401",
             description = "User has not been authenticated.",
@@ -711,7 +902,7 @@ public class AdminEndpoint {
                     implementation = InformativeResponse.class)))
     @APIResponse(
             responseCode = "404",
-            description = "Entity Not Found.",
+            description = "Project does not exist.",
             content = @Content(schema = @Schema(
                     type = SchemaType.OBJECT,
                     implementation = InformativeResponse.class)))
@@ -723,10 +914,38 @@ public class AdminEndpoint {
                     implementation = InformativeResponse.class)))
     @SecurityRequirement(name = "Authentication")
     @GET
-    @Path("/tenants")
+    @Path("/projects/{id}/tenants")
     @Produces(MediaType.APPLICATION_JSON)
-    @Authenticated
-    public Response getTenantsByPageAndSize(
+    public Response getTenantsByProject(
+            @Parameter(
+                    description = "The ID of the project to retrieve.",
+                    required = true,
+                    example = "proj-32262f66f6e1",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = ProjectRepository.class, message = "There is no Project with the following id: ") String id,
+            @Parameter(name = "search", in = QUERY,
+                    description = "The \"search\" parameter is a query parameter that allows clients to specify a text string that will be used to search for matches in specific fields in Tenant entity. " +
+                            "The search will be conducted in the following fields : tenants' name, tenant's email.")
+            @QueryParam("search") String search,
+            @Parameter(name = "sort", in = QUERY,
+                    schema = @Schema(type = SchemaType.STRING, defaultValue = ""),
+                    examples = {
+                            @ExampleObject(name = "Tenant name", value = "name"),
+                            @ExampleObject(name = "Created At", value = "createdAt")},
+                    description = "The \"sort\" parameter allows clients to specify the field by which they want the results to be sorted.")
+            @DefaultValue("createdAt")
+            @QueryParam("sort")
+            String sort,
+            @Parameter(name = "order", in = QUERY,
+                    schema = @Schema(type = SchemaType.STRING, defaultValue = ""),
+                    examples = {
+                            @ExampleObject(name = "Ascending", value = "ASC"),
+                            @ExampleObject(name = "Descending", value = "DESC")},
+                    description = "The \"order\" parameter specifies the order in which the sorted results should be returned.")
+            @DefaultValue("DESC")
+            @QueryParam("order")
+            String order,
             @Parameter(name = "page", in = QUERY,
                     description = "Indicates the page number. Page number must be >= 1.")
             @DefaultValue("1") @Min(value = 1, message = "Page number must be >= 1.")
@@ -737,36 +956,217 @@ public class AdminEndpoint {
             @DefaultValue("10") @Min(value = 1, message = "Page size must be between 1 and 100.") @Max(value = 100, message = "Page size must be between 1 and 100.")
             @QueryParam("size")
             int size,
-            @Parameter(name = "search", in = QUERY,
-                    description = "The \"search\" parameter is a query parameter that allows clients to specify a text string that will be used to search for matches in specific fields in Tenant entity. The search will be conducted in the following fields : tenants' name, tenant's email.") @QueryParam("search") String search,
-            @Parameter(name = "sort", in = QUERY,
-                    schema = @Schema(type = SchemaType.STRING, defaultValue = ""),
-                    examples = {@ExampleObject(name = "Tenant name", value = "name"), @ExampleObject(name = "Created At", value = "createdAt")},
-                    description = "The \"sort\" parameter allows clients to specify the field by which they want the results to be sorted.") @DefaultValue("createdAt") @QueryParam("sort") String sort,
-            @Parameter(name = "order",
-                    in = QUERY,
-                    schema = @Schema(type = SchemaType.STRING, defaultValue = ""),
-                    examples = {@ExampleObject(name = "Ascending", value = "ASC"), @ExampleObject(name = "Descending", value = "DESC")},
-                    description = "The \"order\" parameter specifies the order in which the sorted results should be returned.") @DefaultValue("DESC") @QueryParam("order") String order,
             @Context UriInfo uriInfo) {
+
+        var allowedSort = List.of("name", "email", "createdAt");
+        var allowedOrder = List.of("ASC", "DESC");
+
+        if (!allowedSort.contains(sort)) {
+            throw new BadRequestException("Allowed sort values: " + allowedSort);
+        }
+
+        if (!allowedOrder.contains(order)) {
+            throw new BadRequestException("Allowed order values: " + allowedOrder);
+        }
+
+        var project = tenantProjectService.getTenantsByProject(id, page - 1, size, uriInfo, search, sort, order);
+
+        return Response.ok().entity(project).build();
+    }
+
+
+    @Tag(name = "Admin")
+    @Operation(
+            summary = "Manage tenant–project assignments",
+            description = "Assign, unassign, or update multiple project assignments for a tenant.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Assignments created or already existing.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "400",
+            description = "Invalid request.",
+            content = @Content(schema = @Schema(
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User not authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Tenant or Project not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @PUT
+    @Path("/tenant-project")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response assignProjectToTenants(
+            @Valid @NotNull TenantProjectRequestDto request) {
+
+        var result = tenantProjectService.assign(request);
+        return Response.ok(result).build();
+    }
+
+
+    @Tag(name = "Admin")
+    @Operation(
+            summary = "List all tenant–project assignments",
+            description = "Returns a list of all assignments between tenants and projects."
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "List of assignments.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.ARRAY,
+                    implementation = PageableTenantProject.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User not authenticated.",
+            content = @Content(schema = @Schema(
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/tenant-project")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAllTenantProjectAssignments(
+            @Parameter(name = "search", in = QUERY,
+                    description = "Search across tenant name and project name.")
+            @QueryParam("search")
+            String search,
+            @Parameter(name = "sort", in = QUERY,
+                    schema = @Schema(type = SchemaType.STRING, defaultValue = "createdAt"),
+                    examples = {
+                            @ExampleObject(name = "Created At", value = "createdAt"),
+                            @ExampleObject(name = "ID", value = "id")},
+                    description = "Sort by a field of the assignment. Allowed values: createdAt, id.")
+            @DefaultValue("createdAt")
+            @QueryParam("sort")
+            String sort,
+            @Parameter(name = "order", in = QUERY,
+                    schema = @Schema(type = SchemaType.STRING, defaultValue = ""),
+                    examples = {
+                            @ExampleObject(name = "Ascending", value = "ASC"),
+                            @ExampleObject(name = "Descending", value = "DESC")},
+                    description = "Sorting order: ASC or DESC.")
+            @DefaultValue("DESC")
+            @QueryParam("order")
+            String order,
+            @Parameter(name = "page", in = QUERY,
+                    description = "Indicates the page number. Page number must be >= 1.") @DefaultValue("1") @Min(value = 1, message = "Page number must be >= 1.")
+            @QueryParam("page")
+            int page,
+            @Parameter(name = "size", in = QUERY,
+                    description = "The page size.")
+            @DefaultValue("10") @Min(value = 1, message = "Page size must be between 1 and 100.") @Max(value = 100, message = "Page size must be between 1 and 100.")
+            @QueryParam("size")
+            int size,
+            @Context UriInfo uriInfo) {
+
         var orderValues = List.of("ASC", "DESC");
-        var sortValues = List.of("name", "createdAt");
-
         if (!orderValues.contains(order)) {
-
             throw new BadRequestException("The available values of order parameter are : " + orderValues);
         }
 
+        var sortValues = List.of("createdAt", "id");
         if (!sortValues.contains(sort)) {
-
             throw new BadRequestException("The available values of sort parameter are : " + sortValues);
         }
 
-        var assessments = tenantService.getTenantsByPageAndSize(page - 1, size, uriInfo, search, sort, order);
+        var assessments = tenantService.getTenantsByPageAndSize(page - 1, size, uriInfo, search,sort,order);
 
         return Response.ok().entity(assessments).build();
     }
 
+    @Tag(name = "Admin")
+    @Operation(summary = "Remove a project from a tenant",
+            description = "Deletes a specific tenant–project assignment.")
+    @APIResponse(
+            responseCode = "204",
+            description = "Assignments deleted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.ARRAY,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "400",
+            description = "Invalid request.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User not authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Tenant or Project not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @DELETE
+    @Path("/tenant-project")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response deleteProjectFromTenants(
+            @Valid @NotNull TenantProjectDeleteDto request) {
+
+        tenantProjectService.deleteAssignment(request);
+
+        var informativeResponse = new InformativeResponse();
+        informativeResponse.code = 204;
+        informativeResponse.message = "Project deleted successfully from Tenant";
+
+        return Response.ok().entity(informativeResponse).build();
+
+    }
+
+
+    // --------------------------------------------------------------------------------------------------------------------------
+    // ADMIN HELPER METHODS
+    // --------------------------------------------------------------------------------------------------------------------------
     public static class PageableTenants extends PageResource<TenantResponseDto> {
 
         private List<TenantResponseDto> content;
@@ -782,68 +1182,19 @@ public class AdminEndpoint {
         }
     }
 
-    @Tag(name = "Admin")
-    @Operation(
-            summary = "Get list of contacts.",
-            description = "This endpoint returns a list of contacts " +
-                    "By default, the first page of 10 contact objects will be returned. You can tune the default values by using the query parameters page and size.")
-    @APIResponse(
-            responseCode = "200",
-            description = "List of tenant objects existing.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = PageableContacts.class)))
-    @APIResponse(
-            responseCode = "400",
-            description = "Bad Request",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @APIResponse(
-            responseCode = "401",
-            description = "User has not been authenticated.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @APIResponse(
-            responseCode = "403",
-            description = "Not permitted.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @APIResponse(
-            responseCode = "404",
-            description = "Entity Not Found.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @APIResponse(
-            responseCode = "500",
-            description = "Internal Server Error.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @SecurityRequirement(name = "Authentication")
-    @GET
-    @Path("/contacts")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Authenticated
-    public Response getContactsByPageAndSize(
-            @Parameter(name = "page", in = QUERY,
-                    description = "Indicates the page number. Page number must be >= 1.")
-            @DefaultValue("1") @Min(value = 1, message = "Page number must be >= 1.")
-            @QueryParam("page")
-            int page,
-            @Parameter(name = "size", in = QUERY,
-                    description = "The page size.")
-            @DefaultValue("10") @Min(value = 1, message = "Page size must be between 1 and 100.") @Max(value = 100, message = "Page size must be between 1 and 100.")
-            @QueryParam("size")
-            int size,
-            @Context UriInfo uriInfo) {
+    public static class PageableTenantProject extends PageResource<TenantProjectDto> {
 
-        var contacts = contactService.getContactsByPageAndSize(page - 1, size, uriInfo);
+        private List<TenantProjectDto> content;
 
-        return Response.ok().entity(contacts).build();
+        @Override
+        public List<TenantProjectDto> getContent() {
+            return content;
+        }
+
+        @Override
+        public void setContent(List<TenantProjectDto> content) {
+            this.content = content;
+        }
     }
 
     public static class PageableContacts extends PageResource<ContactDto> {
@@ -860,7 +1211,37 @@ public class AdminEndpoint {
             this.content = content;
         }
 
-
     }
+
+    public static class PageableStatusPages extends PageResource<StatusPageResponseDto> {
+
+        private List<StatusPageResponseDto> content;
+
+        @Override
+        public List<StatusPageResponseDto> getContent() {
+            return content;
+        }
+
+        @Override
+        public void setContent(List<StatusPageResponseDto> content) {
+            this.content = content;
+        }
+    }
+
+    public static class PageableProject extends PageResource<ProjectResponseDto> {
+
+        private List<ProjectResponseDto> content;
+
+        @Override
+        public List<ProjectResponseDto> getContent() {
+            return content;
+        }
+
+        @Override
+        public void setContent(List<ProjectResponseDto> content) {
+            this.content = content;
+        }
+    }
+
 
 }

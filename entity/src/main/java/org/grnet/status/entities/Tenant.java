@@ -52,5 +52,11 @@ public class Tenant {
     )
     private Set<Contact> contacts = new HashSet<>();
 
-    // getters/setters
+    @OneToMany(
+            mappedBy = "tenant",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private Set<TenantProjectJunction> tenantProjects = new HashSet<>();
+
 }

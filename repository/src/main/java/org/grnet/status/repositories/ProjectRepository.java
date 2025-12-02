@@ -1,7 +1,6 @@
 package org.grnet.status.repositories;
 
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
-import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.commons.lang3.StringUtils;
 import org.grnet.status.entities.*;
@@ -69,4 +68,44 @@ public class ProjectRepository implements Repository<Project, String> {
                 .firstResultOptional()
                 .isPresent();
     }
+
+    public PageQueryImpl<Project> findByTenantId(String tenantId, int page, int size, String search, String sort, String order) {
+
+        var joiner = new StringJoiner(" ");
+
+        joiner.add("select p from TenantProjectJunction tpj")
+                .add("join tpj.project p")
+                .add("join tpj.tenant t");
+
+        var params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+
+        var where = new StringJoiner(" AND ");
+        where.add("t.id = :tenantId");
+
+        if (StringUtils.isNotBlank(search)) {
+            where.add("(p.name ILIKE :search)");
+            params.put("search", "%" + search + "%");
+        }
+
+        joiner.add("WHERE " + where);
+
+        if (StringUtils.isNotBlank(sort)) {
+            joiner.add("ORDER BY p." + sort + " " + order);
+        } else {
+            joiner.add("ORDER BY p.name ASC");
+        }
+
+        var panache = find(joiner.toString(), params).page(page, size);
+
+        var pageable = new PageQueryImpl<Project>();
+        pageable.list = panache.list();
+        pageable.index = page;
+        pageable.size = size;
+        pageable.count = panache.count();
+        pageable.page = Page.of(page, size);
+
+        return pageable;
+    }
+
 }

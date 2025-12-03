@@ -1037,7 +1037,7 @@ public class AdminEndpoint {
             throw new BadRequestException("The available values of sort parameter are : " + sortValues);
         }
 
-        var assessments = tenantService.getTenantsByPageAndSize(page - 1, size, uriInfo, search,sort,order);
+        var assessments = tenantService.getTenantsByPageAndSize(page - 1, size, uriInfo, search, sort, order);
 
         return Response.ok().entity(assessments).build();
     }
@@ -1242,5 +1242,56 @@ public class AdminEndpoint {
         }
     }
 
+    @Tag(name = "Admin")
+    @Operation(
+            summary = "Get list of contact types.",
+            description = "This endpoint returns a list of contact types ")
+    @APIResponse(
+            responseCode = "200",
+            description = "List of contact types existing.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.ARRAY,
+                    implementation = List.class)))
+    @APIResponse(
+            responseCode = "400",
+            description = "Bad Request",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Entity Not Found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/contact-types")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Authenticated
+    public Response getContactTypes() {
+
+        var contactTypes = contactService.getContactTypes();
+
+        return Response.ok().entity(contactTypes).build();
+    }
 
 }

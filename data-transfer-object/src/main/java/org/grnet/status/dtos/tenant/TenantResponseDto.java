@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.grnet.status.dtos.tenant.metadata.TenantMetadata;
 import java.util.List;
 
 @Schema(name = "TenantResponseDto", description = "Represents the response of a tenant.")
@@ -18,12 +19,12 @@ public class TenantResponseDto {
 
     @Schema(
             type = SchemaType.OBJECT,
-            implementation = TenantWebApiRequest.TenantWebApiInfo.class,
+            implementation = TenantInfoDto.class,
             description = "Tenant Web ApiInfo "
     )
     @JsonProperty("info")
     @Valid
-    public TenantWebApiRequest.TenantWebApiInfo info;
+    public TenantInfoDto info;
 
 
     @Schema(
@@ -38,4 +39,13 @@ public class TenantResponseDto {
     @Schema(type = SchemaType.ARRAY, implementation = ContactDto.class, description = "List of contacts")
     @JsonProperty("contacts")
     public List<ContactDto> contacts;
+
+    @Schema(
+            type = SchemaType.OBJECT,
+            implementation = TenantMetadata.class,
+            description = "Tenant Metadata "
+    )
+    @JsonProperty("metadata")
+    @Valid
+    public TenantMetadata metadata;
 }

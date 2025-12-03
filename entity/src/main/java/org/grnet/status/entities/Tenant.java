@@ -4,7 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
-
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.Set;
@@ -43,6 +44,11 @@ public class Tenant {
 
     @Column(name = "updated_at")
     public Timestamp updatedAt;
+
+    @Column(name = "metadata", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Getter
+    private String metadata;
 
     @ManyToMany(cascade = CascadeType.PERSIST)  // cascade persist so saving Tenant saves new Contacts
     @JoinTable(

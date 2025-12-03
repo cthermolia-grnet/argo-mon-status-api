@@ -1,4 +1,4 @@
-package org.grnet.status.dtos.tenant;
+package org.grnet.status.dtos.tenant.webapi;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 

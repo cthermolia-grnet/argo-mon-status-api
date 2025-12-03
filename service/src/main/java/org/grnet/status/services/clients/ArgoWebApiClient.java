@@ -4,11 +4,11 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import org.grnet.status.dtos.argo.ArgoReportsResponse;
 import org.grnet.status.dtos.argo.ArgoStatusGroupsResponse;
-import org.grnet.status.dtos.tenant.*;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
-import org.grnet.status.dtos.tenant.TenantWebApiGetResponse;
-import org.grnet.status.dtos.tenant.TenantWebApiCreateResponse;
-import org.grnet.status.dtos.tenant.TenantWebApiResponse;
+import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
+import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
+import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
+import org.grnet.status.dtos.tenant.webapi.TenantWebApiResponse;
 
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -29,7 +29,7 @@ public interface ArgoWebApiClient {
     @Path("/api/v2/admin/tenants")
     TenantWebApiCreateResponse createTenant(
             @HeaderParam("x-api-key") String apiKey,
-            TenantRequestDto request
+            TenantWebApiRequest request
     ) throws WebApplicationException, ProcessingException;
 
     @GET
@@ -43,7 +43,7 @@ public interface ArgoWebApiClient {
     @Path("/api/v2/admin/tenants/{id}")
     TenantWebApiResponse updateTenant(String id,
                                       @HeaderParam("x-api-key") String apiKey,
-                                      TenantRequestDto request
+                                      TenantWebApiRequest request
     ) throws WebApplicationException, ProcessingException;
 
     @DELETE

@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.grnet.status.enums.ContactType;
+import org.grnet.status.constraints.ValidContactType;
 
 @Schema(name = "ContactDto", description = "Represents the configuration of a contact info.")
 
@@ -41,11 +41,12 @@ public class ContactDto {
 
     @Schema(
             type = SchemaType.STRING,
-            implementation = ContactType.class,
+            implementation = String.class,
             description = "The contact type of the contact.",
             example = "ADMIN"
     )
     @JsonProperty("type")
+    @ValidContactType
     public String type;
 
 }

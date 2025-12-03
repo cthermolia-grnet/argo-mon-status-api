@@ -4,7 +4,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.UriInfo;
 import org.grnet.status.dtos.pagination.PageResource;
-import org.grnet.status.dtos.tenant.ContactDto;
 import org.grnet.status.dtos.tenant.ContactFullDto;
 import org.grnet.status.enums.ContactType;
 import org.grnet.status.mappers.TenantMapper;
@@ -15,11 +14,11 @@ import java.util.Arrays;
 import java.util.List;
 
 @ApplicationScoped
-
 public class ContactService {
 
     @Inject
     ContactRepository contactRepository;
+
     /**
      * Retrieves a page of contact objects existing.
      *

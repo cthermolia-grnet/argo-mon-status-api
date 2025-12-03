@@ -23,8 +23,8 @@ public class ContactTypeConverter implements AttributeConverter<ContactType, Int
 
             case SECURITY:
                 return 3;
-
-
+            case OTHER:
+                return 4;
             default:
                 throw new InternalServerErrorException(status + " not supported.", 501);
         }
@@ -45,6 +45,9 @@ public class ContactTypeConverter implements AttributeConverter<ContactType, Int
 
             case 3:
                 return ContactType.SECURITY;
+            case 4:
+                return ContactType.OTHER;
+
             default:
                 throw new InternalServerErrorException(dbData + " not supported.", 501);
         }

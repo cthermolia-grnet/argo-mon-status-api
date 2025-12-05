@@ -3,7 +3,9 @@ package org.grnet.status.mappers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.grnet.status.dtos.tenant.*;
 import org.grnet.status.entities.Contact;
+import org.grnet.status.entities.ContactTenantJunction;
 import org.grnet.status.entities.Tenant;
+import org.grnet.status.entities.TenantPartial;
 import org.grnet.status.enums.ContactType;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
@@ -12,10 +14,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Mapper(imports = {Timestamp.class, Instant.class})
@@ -78,7 +77,6 @@ public interface TenantMapper {
     @Mapping(target = "type", source = "contactType", qualifiedByName = "mapTypeToString")
     ContactDto contactToDto(Contact contact);
 
-
     @Named("contactsToDtos")
     default List<ContactDto> contactsToDtos(Set<Contact> contacts) {
         if (contacts == null) {
@@ -89,6 +87,38 @@ public interface TenantMapper {
                 .collect(Collectors.toList());
     }
 
+    @Named("contactsFullToDtos")
+    default List<ContactFullDto> contactsFullToDtos(Set<ContactTenantJunction> contactTenantJunctions) {
+        if (contactTenantJunctions == null) {
+            return List.of();
+        }
+        return contactTenantJunctions.stream()
+                .map(this::contactFullToDto)
+                .collect(Collectors.toList());
+    }
+    @Named("contactFullToDto")
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "email", source = "email")
+    @Mapping(target = "type", source = "type", qualifiedByName = "mapTypeToString")
+    @Mapping(target = "tenants", source = "tenants", qualifiedByName = "tenantPartialsToResponses")
+    ContactFullDto contactFullToDto(ContactTenantJunction contactTenantJunction);
+
+
+
+
+    @Named("tenantPartialToResponse")
+    TenantPartialResponse tenantPartialToResponse(TenantPartial tenantPartial);
+
+    @Named("tenantPartialsToResponses")
+    default List<TenantPartialResponse> tenantPartialsToResponses(List<TenantPartial> tenants) {
+        if (tenants == null) {
+            return Collections.emptyList();
+        }
+        return tenants.stream()
+                .map(this::tenantPartialToResponse)
+                .collect(Collectors.toList());
+    }
     @Named("mapTypeToString")
     default String mapTypeToString(ContactType contactType) {
         return contactType != null ? contactType.name() : null;

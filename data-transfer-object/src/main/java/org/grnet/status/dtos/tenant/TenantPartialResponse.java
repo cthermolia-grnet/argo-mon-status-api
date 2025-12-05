@@ -5,8 +5,6 @@ import jakarta.validation.Valid;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
-import java.time.Instant;
-
 @Schema(name = "TenantPartialResponse", description = "Represents the partial response of a tenant.")
 public class TenantPartialResponse {
     @Schema(
@@ -26,14 +24,6 @@ public class TenantPartialResponse {
     @Valid
     public String name;
 
-
-    @Schema(
-            type = SchemaType.STRING,
-            implementation = String.class,
-            description = "User ID of the creator",
-            example = "alice_voperson_id"
-    )
-    @JsonProperty("updated_by")
-    public String updatedBy;
-
+    public TenantPartialResponse(String tenantId, String tenantName) {
+    }
 }

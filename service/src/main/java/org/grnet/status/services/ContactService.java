@@ -5,14 +5,14 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.core.UriInfo;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.tenant.ContactDto;
-import org.grnet.status.dtos.tenant.TenantResponseDto;
-import org.grnet.status.entities.Contact;
-import org.grnet.status.mappers.StatusPageMapper;
+import org.grnet.status.dtos.tenant.ContactFullDto;
+import org.grnet.status.enums.ContactType;
 import org.grnet.status.mappers.TenantMapper;
 import org.grnet.status.repositories.ContactRepository;
 
-import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Arrays;
+import java.util.List;
 
 @ApplicationScoped
 
@@ -20,9 +20,6 @@ public class ContactService {
 
     @Inject
     ContactRepository contactRepository;
-
-
-
     /**
      * Retrieves a page of contact objects existing.
      *
@@ -31,12 +28,16 @@ public class ContactService {
      * @param uriInfo The Uri Info.
      * @return A list of ContactDto objects representing the submitted contact objects in the requested page.
      */
-    public PageResource<ContactDto> getContactsByPageAndSize(int page, int size, UriInfo uriInfo) {
+    public PageResource<ContactFullDto> getContactsByPageAndSize(int page, int size, UriInfo uriInfo) {
 
-        var contacts = contactRepository.fetchContactsByPageAndSize(page, size);
-        return new PageResource<>(contacts,TenantMapper.INSTANCE.contactsToDtos(new HashSet<>(contacts.list())), uriInfo);
+        var contacts = contactRepository.fetchContactsWithTenantsByPageAndSize(page, size);
+        return new PageResource<>(contacts, TenantMapper.INSTANCE.contactsFullToDtos(new HashSet<>(contacts.list())), uriInfo);
     }
 
+    public List<String> getContactTypes() {
 
-
+        return Arrays.stream(ContactType.values())
+                .map(Enum::name)
+                .toList();
+    }
 }

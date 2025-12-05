@@ -32,6 +32,7 @@ import org.grnet.status.dtos.project.ProjectResponseDto;
 import org.grnet.status.dtos.project.ProjectUpdateDto;
 import org.grnet.status.dtos.statuspage.StatusPageResponseDto;
 import org.grnet.status.dtos.tenant.ContactDto;
+import org.grnet.status.dtos.tenant.ContactFullDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectDeleteDto;
@@ -519,71 +520,6 @@ public class AdminEndpoint {
 
         return Response.ok().entity(assessments).build();
     }
-
-    @Tag(name = "Admin")
-    @Operation(
-            summary = "Get list of contacts.",
-            description = "This endpoint returns a list of contacts " +
-                    "By default, the first page of 10 contact objects will be returned. You can tune the default values by using the query parameters page and size.")
-    @APIResponse(
-            responseCode = "200",
-            description = "List of tenant objects existing.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = PageableContacts.class)))
-    @APIResponse(
-            responseCode = "400",
-            description = "Bad Request",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @APIResponse(
-            responseCode = "401",
-            description = "User has not been authenticated.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @APIResponse(
-            responseCode = "403",
-            description = "Not permitted.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @APIResponse(
-            responseCode = "404",
-            description = "Entity Not Found.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @APIResponse(
-            responseCode = "500",
-            description = "Internal Server Error.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @SecurityRequirement(name = "Authentication")
-    @GET
-    @Path("/contacts")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Authenticated
-    public Response getContactsByPageAndSize(
-            @Parameter(name = "page", in = QUERY,
-                    description = "Indicates the page number. Page number must be >= 1.")
-            @DefaultValue("1") @Min(value = 1, message = "Page number must be >= 1.")
-            @QueryParam("page")
-            int page,
-            @Parameter(name = "size", in = QUERY,
-                    description = "The page size.")
-            @DefaultValue("10") @Min(value = 1, message = "Page size must be between 1 and 100.") @Max(value = 100, message = "Page size must be between 1 and 100.")
-            @QueryParam("size")
-            int size,
-            @Context UriInfo uriInfo) {
-
-        var contacts = contactService.getContactsByPageAndSize(page - 1, size, uriInfo);
-
-        return Response.ok().entity(contacts).build();
-    }
-
 
     // --------------------------------------------------------------------------------------------------------------------------
     // ADMIN PROJECT ENDPOINT
@@ -1197,17 +1133,80 @@ public class AdminEndpoint {
         }
     }
 
-    public static class PageableContacts extends PageResource<ContactDto> {
+    @Tag(name = "Admin")
+    @Operation(
+            summary = "Get list of contacts.",
+            description = "This endpoint returns a list of contacts " +
+                    "By default, the first page of 10 contact objects will be returned. You can tune the default values by using the query parameters page and size.")
+    @APIResponse(
+            responseCode = "200",
+            description = "List of tenant objects existing.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = PageableContacts.class)))
+    @APIResponse(
+            responseCode = "400",
+            description = "Bad Request",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Entity Not Found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/contacts")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Authenticated
+    public Response getContactsByPageAndSize(
+            @Parameter(name = "page", in = QUERY,
+                    description = "Indicates the page number. Page number must be >= 1.")
+            @DefaultValue("1") @Min(value = 1, message = "Page number must be >= 1.")
+            @QueryParam("page")
+            int page,
+            @Parameter(name = "size", in = QUERY,
+                    description = "The page size.")
+            @DefaultValue("10") @Min(value = 1, message = "Page size must be between 1 and 100.") @Max(value = 100, message = "Page size must be between 1 and 100.")
+            @QueryParam("size")
+            int size,
+            @Context UriInfo uriInfo) {
 
-        private List<ContactDto> content;
+        var contacts = contactService.getContactsByPageAndSize(page - 1, size, uriInfo);
+
+        return Response.ok().entity(contacts).build();
+    }
+    public static class PageableContacts extends PageResource<ContactFullDto> {
+
+        private List<ContactFullDto> content;
 
         @Override
-        public List<ContactDto> getContent() {
+        public List<ContactFullDto> getContent() {
             return content;
         }
 
         @Override
-        public void setContent(List<ContactDto> content) {
+        public void setContent(List<ContactFullDto> content) {
             this.content = content;
         }
 

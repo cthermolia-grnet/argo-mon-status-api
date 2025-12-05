@@ -1,16 +1,12 @@
 package org.grnet.status.repositories;
 
-
 import io.quarkus.panache.common.Parameters;
-import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.apache.commons.lang3.StringUtils;
 import org.grnet.status.entities.*;
 import org.grnet.status.enums.ContactType;
 
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.StringJoiner;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class ContactRepository implements Repository<Contact, String> {
@@ -45,5 +41,52 @@ public class ContactRepository implements Repository<Contact, String> {
         return pageable;
 
     }
+
+    public PageQuery<ContactTenantJunction> fetchContactsWithTenantsByPageAndSize(int page, int size) {
+        var panache = find("from Contact c").page(page, size);
+
+        var contacts = panache.list();
+
+        // Fetch tenants for all contacts in one query
+        List<String> contactIds = contacts.stream()
+                .map(Contact::getId)
+                .collect(Collectors.toList());
+
+        // Query tenant id and name for contacts (using native query or JPQL)
+        // JPQL: select t.id, t.name, c.id from Tenant t join t.contacts c where c.id in :contactIds
+        // but JPA doesn't allow selecting entities partially easily, so do it as Object[] projection:
+
+        List<Object[]> tenantRows = getEntityManager()
+                .createQuery("select t.id, t.name, c.id from Tenant t join t.contacts c where c.id in :contactIds", Object[].class)
+                .setParameter("contactIds", contactIds)
+                .getResultList();
+
+        // Map contactId -> list of TenantInfo
+        Map<String, List<TenantPartial>> tenantsMap = new HashMap<>();
+
+        for (Object[] row : tenantRows) {
+            String tenantId = (String) row[0];
+            String tenantName = (String) row[1];
+            String contactId = (String) row[2];
+
+            tenantsMap.computeIfAbsent(contactId, k -> new ArrayList<>())
+                    .add(new TenantPartial(tenantId, tenantName));
+        }
+
+        // Build DTO list
+        List<ContactTenantJunction> dtos = contacts.stream()
+                .map(c -> new ContactTenantJunction(c, tenantsMap.getOrDefault(c.getId(), List.of())))
+                .collect(Collectors.toList());
+
+        var pageable = new PageQueryImpl<ContactTenantJunction>();
+        pageable.list = dtos;
+        pageable.index = page;
+        pageable.size = size;
+        pageable.count = panache.count();
+        pageable.page = Page.of(page, size);
+
+        return pageable;
+    }
+
 
 }

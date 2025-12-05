@@ -24,6 +24,10 @@ public class KeycloakTest {
     protected String aliceToken;
     protected String bobToken;
 
+    protected String tenantAdmin;
+
+    protected String tenantViewer;
+
 
     KeycloakTestClient keycloakClient = new KeycloakTestClient();
 
@@ -33,6 +37,8 @@ public class KeycloakTest {
         adminToken = getAccessToken("admin");
         aliceToken = getAccessToken("alice");
         bobToken = getAccessToken("bob");
+        tenantAdmin = getAccessToken("tenantadmin");
+        tenantViewer = getAccessToken("tenantviewer");
         tenantService.deleteAll();
     }
 

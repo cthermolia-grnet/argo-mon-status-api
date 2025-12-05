@@ -2744,6 +2744,66 @@
       ]
     },
     {
+      "id": "10000000-aaaa-bbbb-cccc-adminlocal",
+      "username": "tenantadmin",
+      "email": "local-admin@test.dev",
+      "firstName": "Local",
+      "lastName": "Admin",
+      "enabled": true,
+
+      "attributes": {
+        "voperson_id": ["local_admin_voperson_id"],
+
+        "entitlements": [
+          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenants:LOCALTENANT:role=admin"
+        ]
+      },
+
+      "credentials": [
+        {
+          "type": "password",
+          "value": "tenantadmin"
+        }
+      ],
+
+      "realmRoles": ["user"],
+      "clientRoles": {
+        "backend-service": ["admin"]
+      },
+
+      "groups": []
+    },
+    {
+      "id": "20000000-aaaa-bbbb-cccc-viewerlocal",
+      "username": "tenantviewer",
+      "email": "local-viewer@test.dev",
+      "firstName": "Local",
+      "lastName": "Viewer",
+      "enabled": true,
+
+      "attributes": {
+        "voperson_id": ["local_viewer_voperson_id"],
+
+        "entitlements": [
+          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenants:LOCALTENANT:role=viewer"
+        ]
+      },
+
+      "credentials": [
+        {
+          "type": "password",
+          "value": "tenantviewer"
+        }
+      ],
+
+      "realmRoles": ["user"],
+      "clientRoles": {
+        "backend-service": ["user"]
+      },
+
+      "groups": []
+    },
+    {
       "id": "1eed6a8e-a853-4597-b4c6-c4c2533546a0",
       "username": "jdoe",
       "enabled": true,

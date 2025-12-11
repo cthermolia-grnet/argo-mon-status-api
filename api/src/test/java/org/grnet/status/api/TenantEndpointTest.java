@@ -181,7 +181,7 @@ public class TenantEndpointTest extends KeycloakTest {
         tenantInfo1.website = "https://test2.updated.tenant.org";
         request1.info = tenantInfo1;
         var response1 = given()
-                .auth().oauth2(tenantAdmin)
+                .auth().oauth2(adminToken)
                 .contentType(ContentType.JSON)
                 .body(request1)
                 .contentType(ContentType.JSON)

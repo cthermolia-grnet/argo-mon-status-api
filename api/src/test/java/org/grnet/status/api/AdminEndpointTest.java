@@ -5,6 +5,7 @@ import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import org.grnet.status.api.endpoints.AdminEndpoint;
+import org.grnet.status.authorizations.groups.AuthGroupAsyncService;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.project.ProjectRequestDto;
@@ -30,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @QuarkusTest
 @TestHTTPEndpoint(AdminEndpoint.class)
@@ -39,6 +40,18 @@ public class AdminEndpointTest extends KeycloakTest {
     @InjectMock
     ArgoWebApiClientFactory argoWebApiClientFactory;
     private String currentMockId;
+
+    @InjectMock
+    AuthGroupAsyncService authGroupAsyncService;
+
+    @BeforeEach
+    public void mockGroupAsyncService() {
+        doNothing().when(authGroupAsyncService)
+                .createGroup(anyString(), anyString(), anyList(), anyMap());
+
+        doNothing().when(authGroupAsyncService)
+                .deleteGroup(anyString());
+    }
 
     @BeforeEach
     public void mockArgoClient() throws Exception {
@@ -82,7 +95,7 @@ public class AdminEndpointTest extends KeycloakTest {
     @Test
     public void normalUserCannotFetchAllPages() {
         var error = given()
-                .auth().oauth2(aliceToken)
+                .auth().oauth2(tenantViewer)
                 .contentType(ContentType.JSON)
                 .when()
                 .get("/pages?page=1&size=5")
@@ -150,7 +163,6 @@ public class AdminEndpointTest extends KeycloakTest {
 
         var api = "https://test.api.grnet.gr";
         var secret = "VaWi0ZBjGrxXPuB0o+KARpH63EKDaiwttfLE54POPtaw4QRxYktsabA+CT76sX0D";
-        ;
 
         var response = given()
                 .auth().oauth2(adminToken)
@@ -299,7 +311,7 @@ public class AdminEndpointTest extends KeycloakTest {
         tenantInfo1.website = "https://test2.updated.tenant.org";
         request1.info = tenantInfo1;
         var response1 = given()
-                .auth().oauth2(aliceToken)
+                .auth().oauth2(tenantViewer)
                 .contentType(ContentType.JSON)
                 .body(request1)
                 .contentType(ContentType.JSON)
@@ -413,7 +425,7 @@ public class AdminEndpointTest extends KeycloakTest {
                 .as(TenantResponseDto.class);
 
         var error = given()
-                .auth().oauth2(aliceToken)
+                .auth().oauth2(tenantViewer)
                 .contentType(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .when()

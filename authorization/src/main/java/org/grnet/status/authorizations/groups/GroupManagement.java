@@ -1,0 +1,29 @@
+package org.grnet.status.authorizations.groups;
+
+import java.util.List;
+import java.util.Map;
+
+public interface GroupManagement {
+
+    /**
+     * Creates a subgroup under the given parent path.
+     *
+     * @param parentPath The full Keycloak path
+     * @param name       The new group name
+     * @param roles      A list of default roles to assign (optional)
+     * @param attributes Optional string attributes (Keycloak metadata)
+     */
+    void createGroup(String parentPath, String name, List<String> roles, Map<String, List<String>> attributes);
+
+    /** Deletes a group by full path. */
+    void deleteGroup(String fullGroupPath);
+
+    /** Assign one role to an existing group. */
+    void addRole(String groupId, String role);
+
+    /** Get group ID from full hierarchical path. */
+    String getGroupId(String fullPath);
+
+    /** Update configuration of a group (generic Keycloak extension). */
+    void updateConfiguration(String groupId, List<String> groupRoles);
+}

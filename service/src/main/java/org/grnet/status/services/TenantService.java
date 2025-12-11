@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.grnet.status.authorizations.groups.AuthGroupAsyncService;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.tenant.ContactDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
@@ -27,10 +28,7 @@ import org.grnet.status.services.utils.EncryptUtil;
 import org.grnet.status.services.utils.ImageUploadUtil;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @ApplicationScoped
 
@@ -51,15 +49,42 @@ public class TenantService {
     ImageUploadUtil imageUploadUtil;
     @ConfigProperty(name = "api.server.url")
     String apiServerUrl;
-
     @Inject
     EncryptUtil encryptUtil;
+
+    @Inject
+    ArgoWebApiClientFactory argoWebApiClientFactory;
+    @Inject
+    AuthGroupAsyncService authGroupAsyncService;
+
     @ConfigProperty(name = "admin.web.api.encrypted.secret")
     String encryptedSecret;
     @ConfigProperty(name = "web.api.url")
     String webapi;
-    @Inject
-    ArgoWebApiClientFactory argoWebApiClientFactory;
+
+    @ConfigProperty(name = "api.auth.entitlements.parent.group")
+    String namespace;
+
+
+    public TenantResponseDto create(TenantRequestDto request, String userId) throws IOException {
+
+        var response = createTenant(request, userId);
+
+        try {
+            Map<String, List<String>> attributes = new HashMap<>();
+            attributes.put("tenantId", List.of(response.id));
+            attributes.put("description", List.of(request.info.description));
+
+            var parentPath = "/" + namespace + "/tenants";
+
+            authGroupAsyncService.createGroup(parentPath, response.info.name, List.of("admin", "viewer"), attributes);
+
+        } catch (Exception ex) {
+            Log.error("Failed to create AGM group for tenant " + response.id + ": " + ex.getMessage());
+        }
+
+        return response;
+    }
 
 
     /**
@@ -70,7 +95,7 @@ public class TenantService {
      * @return, TenantResponseDto representing the tenant's info
      */
     @Transactional
-    public TenantResponseDto create(TenantRequestDto request, String userId) throws IOException {
+    public TenantResponseDto createTenant(TenantRequestDto request, String userId) throws IOException {
 
         var existTenantOpt = tenantRepository.fetchTenantByName(request.info.name);
         if (existTenantOpt.isPresent()) {
@@ -123,11 +148,32 @@ public class TenantService {
         return webtenant;
     }
 
+    public void deleteTenantById(String id) {
+
+        var tenant = tenantRepository.findById(id);
+        if (tenant == null) {
+            throw new WebApplicationException("Tenant not found: " + id, 404);
+        }
+
+        var tenantName = tenant.name;
+        deleteTenant(tenant.getId());
+
+        try {
+            var parentPath = "/" + namespace + "/tenants/";
+            var groupPath = parentPath + tenantName;
+
+            authGroupAsyncService.deleteGroup(groupPath);
+
+        } catch (Exception ex) {
+            Log.error("Failed to queue async AGM group deletion for tenant " + id + ": " + ex.getMessage());
+        }
+    }
+
     /**
      * Delete a tenant by Id.
      */
     @Transactional
-    public void deleteTenantById(String id) {
+    public void deleteTenant(String id) {
 
         var tenant = tenantRepository.findById(id);
 

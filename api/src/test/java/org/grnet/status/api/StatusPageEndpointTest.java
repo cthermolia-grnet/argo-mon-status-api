@@ -105,7 +105,7 @@ public class StatusPageEndpointTest extends KeycloakTest {
             createTestStatusPageDto(request);
 
             given()
-                    .auth().oauth2(aliceToken)
+                    .auth().oauth2(tenantViewer)
                     .contentType(ContentType.JSON)
                     .body(request)
                     .when()
@@ -149,7 +149,7 @@ public class StatusPageEndpointTest extends KeycloakTest {
         createTestStatusPageDto(request);
 
         var error = given()
-                .auth().oauth2(aliceToken)
+                .auth().oauth2(tenantViewer)
                 .contentType(ContentType.JSON)
                 .body(request)
                 .when()

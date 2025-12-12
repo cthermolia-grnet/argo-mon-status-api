@@ -14,7 +14,8 @@ import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.tenant.ContactDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
-import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
+import org.grnet.status.dtos.tenant.status.EventStatusDto;
+import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.entities.Contact;
 import org.grnet.status.entities.Tenant;
 import org.grnet.status.enums.ContactType;
@@ -22,13 +23,14 @@ import org.grnet.status.exceptions.CustomRuntimeException;
 import org.grnet.status.mappers.TenantMapper;
 import org.grnet.status.repositories.ContactRepository;
 import org.grnet.status.repositories.TenantRepository;
-import org.grnet.status.services.clients.ArgoWebApiClient;
 import org.grnet.status.services.clients.ArgoWebApiClientFactory;
+import org.grnet.status.services.util.WebApiService;
 import org.grnet.status.services.utils.EncryptUtil;
 import org.grnet.status.services.utils.ImageUploadUtil;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 
@@ -38,9 +40,11 @@ public class TenantService {
     TenantRepository tenantRepository;
     @Inject
     ContactRepository contactRepository;
-//
-//    @Inject ArgoWebApiClient client;
-//    @Inject String decryptedSecret;
+    @Inject
+    AuthGroupAsyncService authGroupAsyncService;
+
+    @ConfigProperty(name = "api.auth.entitlements.parent.group")
+    String namespace;
 
     @ConfigProperty(name = "base.upload.logo.dir")
     String baseUploadTenantsImagesDir;
@@ -50,21 +54,7 @@ public class TenantService {
     @ConfigProperty(name = "api.server.url")
     String apiServerUrl;
     @Inject
-    EncryptUtil encryptUtil;
-
-    @Inject
-    ArgoWebApiClientFactory argoWebApiClientFactory;
-    @Inject
-    AuthGroupAsyncService authGroupAsyncService;
-
-    @ConfigProperty(name = "admin.web.api.encrypted.secret")
-    String encryptedSecret;
-    @ConfigProperty(name = "web.api.url")
-    String webapi;
-
-    @ConfigProperty(name = "api.auth.entitlements.parent.group")
-    String namespace;
-
+    WebApiService webApiService;
 
     public TenantResponseDto create(TenantRequestDto request, String userId) throws IOException {
 
@@ -86,7 +76,6 @@ public class TenantService {
         return response;
     }
 
-
     /**
      * Create a tenant
      *
@@ -107,28 +96,24 @@ public class TenantService {
         var tenant = TenantMapper.INSTANCE.dtoToTenant(request.info);
         boolean tenantCreatedRemotely = false;
         String remoteTenantId = null;
-        remoteTenantId = createTenantInWebApi(request);
+
+        var webApiRequest = TenantMapper.INSTANCE.toWebApiRequest(request);
+        var webApiCreateResponse = webApiService.createTenantInWebApi(webApiRequest);
+        remoteTenantId = webApiCreateResponse.getData().getId();
         tenantCreatedRemotely = true;
         try {
-            TenantMapper.INSTANCE.mapMetadata(request,tenant);
+            TenantMapper.INSTANCE.mapMetadata(request, tenant);
             writeInDB(request, tenant, remoteTenantId, userId);
             return TenantMapper.INSTANCE.tenantToDto(tenant);
         } catch (Exception e) {
             // If tenant was created remotely, but something failed locally, rollback remote creation
             if (tenantCreatedRemotely && remoteTenantId != null) {
-                try {
-                    var client = produceClient();
-                    var decryptedSecret = produceDecryptedKey();
-                    client.deleteTenant(remoteTenantId, decryptedSecret); // Make sure you have this method in your client
-                } catch (Exception rollbackEx) {
-                    // Log rollback failure, but do not mask original exception
-                    System.err.println("Rollback failed for tenant id " + remoteTenantId + ": " + rollbackEx.getMessage());
-                }
+                webApiService.deleteTenant(remoteTenantId);
+
             }
             throw e;
         }
     }
-
 
     /**
      * Get a tenant by Id.
@@ -136,7 +121,9 @@ public class TenantService {
     public TenantResponseDto getTenantById(String id) {
         TenantResponseDto webtenant = null;
         try {
-            webtenant = retrieveTenantWebApi(id);
+            var tenant = tenantRepository.findById(id);
+            var webapiGetResponse = webApiService.retrieveTenantWebApi(tenant.id);
+            webtenant = TenantMapper.INSTANCE.webApiTenantToDto(tenant, webapiGetResponse);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -194,9 +181,7 @@ public class TenantService {
             // 3. Delete image and external API
             imageUploadUtil.deleteImageIfExists(baseUploadTenantsImagesDir, tenant.name);
 
-            var client = produceClient();
-            var decryptedSecret = produceDecryptedKey();
-            client.deleteTenant(id, decryptedSecret);
+            webApiService.deleteTenant(id);
 
             // 4. Delete orphan contacts
             deleteOrphanContacts(oldContacts);
@@ -209,6 +194,8 @@ public class TenantService {
             }
 
             throw new WebApplicationException(e.getMessage(), status);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -222,7 +209,8 @@ public class TenantService {
 
         tenants.forEach(t -> {
             try {
-                // 1. Delete from DB first (inside transaction)
+
+                var id = t.id;// 1. Delete from DB first (inside transaction)
                 Set<Contact> oldContacts = new HashSet<>(t.getContacts());
 
                 tenantRepository.delete(t);
@@ -231,12 +219,12 @@ public class TenantService {
                 });
 
                 imageUploadUtil.deleteImageIfExists(baseUploadTenantsImagesDir, t.name);
+                webApiService.deleteTenant(id);
 
-
-                var client = produceClient();
-                var decryptedSecret = produceDecryptedKey();
-                // 2. Only after DB delete succeeds, call external API
-                client.deleteTenant(t.id, decryptedSecret);
+//                var client = produceClient();
+//                var decryptedSecret = produceDecryptedKey();
+//                // 2. Only after DB delete succeeds, call external API
+//                client.deleteTenant(t.id, decryptedSecret);
 
             } catch (RuntimeException e) {
 
@@ -253,6 +241,8 @@ public class TenantService {
                 // throw new WebApplicationException(message, status);
 
                 // Or continue with the next tenant
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
             }
         });
     }
@@ -267,14 +257,18 @@ public class TenantService {
         // ------------------------------
         // 1. Get previous remote state (for rollback)
         // ------------------------------
-        var client = produceClient();
-        var decryptedSecret = produceDecryptedKey();
-        TenantRequestDto previousRemoteState = retrievePreviousTenantWebApi(client, decryptedSecret, id);
+
+        var previousWebApiTenant = webApiService.retrieveTenantWebApi(id);
+        var previousRemoteState = TenantMapper.INSTANCE.webApiTenantToTenantRequestDto(
+                previousWebApiTenant.getData().get(0).getInfo()
+        );
         // ------------------------------
         // 2. Update remote API first
         // ------------------------------
 
-        updateTenantWebApi(client, decryptedSecret, request, id);
+        var webApiRequest = TenantMapper.INSTANCE.toWebApiRequest(request);
+
+        webApiService.updateTenantWebApi(webApiRequest, id);
         // ------------------------------
         // 3. Local DB update
         // ------------------------------
@@ -293,8 +287,8 @@ public class TenantService {
         } catch (Exception dbException) {
 
             try {
-                var webApiRequestPreviousState=TenantMapper.INSTANCE.toWebApiRequest(previousRemoteState);
-                client.updateTenant(id, decryptedSecret,webApiRequestPreviousState);
+                var webApiRequestPreviousState = TenantMapper.INSTANCE.toWebApiRequest(previousRemoteState);
+                webApiService.updateTenantWebApi(webApiRequestPreviousState, id);
             } catch (Exception rollbackEx) {
                 throw new WebApplicationException(
                         "DB update failed AND remote rollback failed: " + rollbackEx.getMessage(),
@@ -306,7 +300,6 @@ public class TenantService {
 
         return TenantMapper.INSTANCE.tenantToDto(tenant);
     }
-
 
     /**
      * Retrieves a page of tenant objects existing.
@@ -323,12 +316,12 @@ public class TenantService {
         tenants.list().stream().forEach(t -> {
             TenantResponseDto webtenant = null;
             try {
-                webtenant = retrieveTenantWebApi(t.id);
+                var webTenantGetResponse = webApiService.retrieveTenantWebApi(t.id);
+                webtenant = TenantMapper.INSTANCE.webApiTenantToDto(t, webTenantGetResponse);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
 
-            webtenant.contacts = TenantMapper.INSTANCE.contactsToDtos(t.getContacts());
             tenantList.add(webtenant);
         });
         return new PageResource<>(tenants, tenantList, uriInfo);
@@ -385,51 +378,6 @@ public class TenantService {
         }
     }
 
-    private TenantResponseDto retrieveTenantWebApi(String id) throws JsonProcessingException {
-        var tenant = tenantRepository.findById(id);
-        TenantWebApiGetResponse webApiResponse = null;
-        try {
-
-            var client = produceClient();
-            var decryptedSecret = produceDecryptedKey();
-            webApiResponse = client.getTenant(decryptedSecret, id);
-
-        } catch (RuntimeException e) {
-            int status = 500; // default fallback
-            if (e instanceof WebApplicationException) {
-                status = ((WebApplicationException) e).getResponse().getStatus();
-            }
-            var message = e.getMessage();
-            throw new WebApplicationException("tenant with id " + id + "failed in api " + message, status);
-        }
-        return TenantMapper.INSTANCE.webApiTenantToDto(tenant, webApiResponse);
-    }
-
-    private String createTenantInWebApi(TenantRequestDto request) {
-        try {
-
-            var client = produceClient();
-            var decryptedSecret = produceDecryptedKey();
-            var webApiRequest=TenantMapper.INSTANCE.toWebApiRequest(request);
-            var apiResponse = client.createTenant(decryptedSecret, webApiRequest);
-            return apiResponse.getData().getId();
-        } catch (WebApplicationException e) {
-
-            WebApplicationException wae = (WebApplicationException) e;
-            int status = wae.getResponse().getStatus();
-            var message = wae.getMessage();
-            if (status == 409) {
-                var optTenant = tenantRepository.fetchTenantByName(request.info.name);
-                if (optTenant.isPresent()) {
-                    message = message + ". Existing tenant in Argo Mon Status API has id: " + optTenant.get().id;
-                } else {
-                    message = message + ". Tenant exists in Argo Web Api but not in Argo Mon Status API";
-                }
-            }
-            throw new WebApplicationException(message, status);
-        }
-    }
-
     private Tenant writeInDB(TenantRequestDto request, Tenant tenant, String remoteTenantId, String userId) {
 
         tenant.id = remoteTenantId;
@@ -450,28 +398,6 @@ public class TenantService {
 
     }
 
-    private TenantRequestDto retrievePreviousTenantWebApi(ArgoWebApiClient client, String decryptedSecret, String id) {
-        try {
-            var remoteExisting = client.getTenant(decryptedSecret, id);
-            return TenantMapper.INSTANCE.webApiTenantToTenantRequestDto(
-                    remoteExisting.getData().get(0).getInfo()
-            );
-        } catch (Exception e) {
-            throw new WebApplicationException("Cannot fetch remote state for rollback", 500);
-        }
-
-    }
-
-    private void updateTenantWebApi(ArgoWebApiClient client, String decryptedSecret, TenantRequestDto request, String id) {
-        try {
-            var webApiRequest=TenantMapper.INSTANCE.toWebApiRequest(request);
-            client.updateTenant(id, decryptedSecret, webApiRequest);
-        } catch (Exception e) {
-            throw new WebApplicationException("Remote API update failed: " + e.getMessage(), 502);
-        }
-
-    }
-
     private void updateTenantInDB(TenantRequestDto request, Tenant tenant) {
         // Update simple fields:
         TenantMapper.INSTANCE.updateToTenant(request, tenant);
@@ -486,18 +412,62 @@ public class TenantService {
 //            // Replace tenant.contacts with new set
         tenant.setContacts(updatedContacts);
 
-        TenantMapper.INSTANCE.mapMetadata(request,tenant);
+        TenantMapper.INSTANCE.mapMetadata(request, tenant);
         tenantRepository.persist(tenant);
         tenantRepository.flush(); // force errors
     }
 
-    private ArgoWebApiClient produceClient() {
-        // var decryptedSecret = encryptUtil.decrypt(encryptedSecret);
-        return argoWebApiClientFactory.buildClient(webapi);
-
+    private void updateTenantStatusInDb(TenantStatusDto request, Tenant tenant) {
+        // Update simple fields:
+        var json = TenantMapper.INSTANCE.mapStatusToString(request);
+        tenant.setStatus(json);
+        tenantRepository.persist(tenant);
+        tenantRepository.flush(); // force errors
     }
 
-    public String produceDecryptedKey() {
-        return encryptUtil.decrypt(encryptedSecret);
+    /**
+     * Update an existing tenant.
+     */
+    @Transactional
+    public TenantStatusDto updateTenantStatus(String id, @Valid TenantStatusDto request) throws IOException {
+
+        var tenant = tenantRepository.findById(id);
+
+        var existingStatus = TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
+        var existingJobs = existingStatus.jobs;
+        request.jobs=mergeJobs(existingJobs,request.jobs);
+
+        try {
+            updateTenantStatusInDb(request, tenant);
+            return TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
+        } catch (Exception dbException) {
+
+            throw new RuntimeException("DB update failed: " + dbException.getMessage());
+        }
     }
+    public List<EventStatusDto> mergeJobs(List<EventStatusDto> existingJobs,
+                                          List<EventStatusDto> newJobs) {
+
+        if (existingJobs == null && newJobs == null) {
+            return Collections.emptyList();
+        }
+        if (existingJobs == null) {
+            return new ArrayList<>(newJobs);
+        }
+        if (newJobs == null) {
+            return new ArrayList<>(existingJobs);
+        }
+        Map<String, EventStatusDto> map = existingJobs.stream()
+                .collect(Collectors.toMap(
+                        e -> e.name.toLowerCase(),   // normalize key
+                        e -> e
+                ));
+
+        // Replace or add
+        for (EventStatusDto newJob : newJobs) {
+            map.put(newJob.name, newJob);
+        }
+        return new ArrayList<>(map.values());
+    }
+
 }

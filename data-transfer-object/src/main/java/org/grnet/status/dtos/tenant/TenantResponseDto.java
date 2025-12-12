@@ -5,6 +5,8 @@ import jakarta.validation.Valid;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.grnet.status.dtos.tenant.metadata.TenantMetadata;
+import org.grnet.status.dtos.tenant.status.TenantStatusDto;
+
 import java.util.List;
 
 @Schema(name = "TenantResponseDto", description = "Represents the response of a tenant.")
@@ -48,4 +50,14 @@ public class TenantResponseDto {
     @JsonProperty("metadata")
     @Valid
     public TenantMetadata metadata;
+
+    @Schema(
+            type = SchemaType.OBJECT,
+            implementation = TenantStatusDto.class,
+            description = "Tenant Status "
+    )
+    @JsonProperty("status")
+    @Valid
+    public TenantStatusDto status;
+
 }

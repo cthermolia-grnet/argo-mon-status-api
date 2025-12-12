@@ -2,9 +2,12 @@ package org.grnet.status.mappers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.inject.Inject;
 import org.grnet.status.dtos.tenant.*;
 import org.grnet.status.dtos.tenant.metadata.TenantMetadata;
+import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
 import org.grnet.status.entities.Contact;
@@ -25,7 +28,7 @@ import java.util.stream.Collectors;
 @Mapper(imports = {Timestamp.class, Instant.class})
 public interface TenantMapper {
     @Inject
-    ObjectMapper objectMapper = new ObjectMapper();
+    ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule()).disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     TenantMapper INSTANCE = Mappers.getMapper(TenantMapper.class);
     static final DateTimeFormatter DATE_TIME_FMT =
@@ -82,6 +85,9 @@ public interface TenantMapper {
         if (dto.metadata != null && dto.metadata.instance!=null && dto.metadata.instance.topology!=null) {
             dto.metadata.instance.topology.feed = webApiGetResponse.getData().get(0).getTopology().getFeed();
         }
+        dto.status=mapStatusObject(tenant.getStatus());
+        dto.contacts=contactsToDtos(tenant.getContacts());
+
         return dto;
     }
 
@@ -153,6 +159,7 @@ public interface TenantMapper {
     @Mapping(target = "info.updatedAt", source = "updatedAt")
     @Mapping(target = "updatedBy", source = "updatedBy")
     @Mapping(target = "contacts", source = "contacts", qualifiedByName = "contactsToDtos")
+    @Mapping( target = "status",expression = "java(mapStatusObject(tenant.getStatus()))" )
     TenantResponseDto tenantToDto(Tenant tenant);
 
 
@@ -252,4 +259,28 @@ public interface TenantMapper {
             throw new RuntimeException("Failed to serialize metadata JSON", e);
         }
     }
+
+    default TenantStatusDto mapStatusObject(String statusJson) {
+        if (statusJson == null || statusJson.isEmpty()) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(statusJson, TenantStatusDto.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to deserialize status JSON", e);
+        }
+    }
+    // Map TenantMetadata → String JSON
+    default String mapStatusToString(TenantStatusDto status) {
+        if (status == null) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(status);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize status JSON", e);
+        }
+    }
+
+
 }

@@ -50,6 +50,14 @@ public class Tenant {
     @Getter
     private String metadata;
 
+
+
+    @Column(name = "status", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Getter
+    private String status;
+
+
     @ManyToMany(cascade = CascadeType.PERSIST)  // cascade persist so saving Tenant saves new Contacts
     @JoinTable(
             name = "tenant_contact",
@@ -64,5 +72,17 @@ public class Tenant {
             orphanRemoval = true
     )
     private Set<TenantProjectJunction> tenantProjects = new HashSet<>();
+    @PrePersist
+    public void prePersist() {
+        if (status == null || status.trim().isEmpty()) {
+            status = "{}";
+        }
+    }
 
+    @PreUpdate
+    public void preUpdate() {
+        if (status == null || status.trim().isEmpty()) {
+            status = "{}";
+        }
+    }
 }

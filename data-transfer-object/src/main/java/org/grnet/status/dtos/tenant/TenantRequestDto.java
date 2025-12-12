@@ -38,5 +38,4 @@ public class TenantRequestDto {
     @JsonProperty("metadata")
     @Valid
     public TenantMetadata metadata;
-
 }

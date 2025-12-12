@@ -35,9 +35,11 @@ import org.grnet.status.dtos.tenant.ContactDto;
 import org.grnet.status.dtos.tenant.ContactFullDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
+import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectDeleteDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectDto;
+import org.grnet.status.entities.Tenant;
 import org.grnet.status.repositories.ProjectRepository;
 import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.services.*;
@@ -1196,6 +1198,7 @@ public class AdminEndpoint {
 
         return Response.ok().entity(contacts).build();
     }
+
     public static class PageableContacts extends PageResource<ContactFullDto> {
 
         private List<ContactFullDto> content;
@@ -1293,5 +1296,4 @@ public class AdminEndpoint {
 
         return Response.ok().entity(contactTypes).build();
     }
-
 }

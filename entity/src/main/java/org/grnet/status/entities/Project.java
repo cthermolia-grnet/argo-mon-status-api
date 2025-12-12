@@ -45,11 +45,10 @@ public class Project {
 
     @OneToMany(
             mappedBy = "project",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
+            cascade = {},        // No cascade, or specify only what you want (e.g., PERSIST, MERGE)
+            orphanRemoval = false
     )
     private Set<TenantProjectJunction> tenantProjects = new HashSet<>();
-
 
     @PrePersist
     protected void onCreate() {

@@ -1,8 +1,11 @@
 package org.grnet.status.dtos.tenant.status;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.grnet.status.constraints.ValidEventName;
@@ -12,7 +15,8 @@ import org.grnet.status.constraints.ValidTopologyType;
 import java.time.Instant;
 
 @Schema(name = "EventStatusDto", description = "Represents the configuration of a tenant's status event info.")
-
+@Getter
+@Setter
 public class EventStatusDto {
 
     @Schema(
@@ -25,23 +29,35 @@ public class EventStatusDto {
     @ValidEventName
     public String name;
 
-
     @Schema(
             type = SchemaType.STRING,
-            implementation = String.class,
             description = "event status",
-            example="in_progress"
+            example = "in_progress",
+            enumeration = {
+                    "unknown",
+                    "initializing",
+                    "initialized",
+                    "failed_initialization",
+                    "in_progress",
+                    "completed",
+                    "failed"
+            }
     )
     @JsonProperty("status")
     @ValidEventStatus
     public String status;
 
-
     @Schema(
             type = SchemaType.STRING,
             implementation = String.class,
             description = "Timestamp of start event",
-            example = "2025-10-22T12:44:48.107Z"
+            example = "2025-10-22T12:44:48Z"
+    )
+
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            timezone = "UTC"
     )
     @JsonProperty("start")
     public Instant start;
@@ -50,7 +66,13 @@ public class EventStatusDto {
             type = SchemaType.STRING,
             implementation = String.class,
             description = "Timestamp of end event",
-            example = "2025-10-22T12:44:48.107Z"
+            example = "2025-10-22T12:44:48Z"
+    )
+
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            timezone = "UTC"
     )
     @JsonProperty("end")
     public Instant end;

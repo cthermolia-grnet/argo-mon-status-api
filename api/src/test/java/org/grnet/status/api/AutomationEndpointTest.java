@@ -8,7 +8,9 @@ import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
 import org.grnet.status.dtos.tenant.status.EventStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
+import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
+import org.grnet.status.enums.EventName;
 import org.grnet.status.enums.EventStatus;
 import org.grnet.status.services.clients.ArgoWebApiClient;
 import org.grnet.status.services.clients.ArgoWebApiClientFactory;
@@ -85,27 +87,27 @@ public class AutomationEndpointTest extends KeycloakTest {
         statusReq.jobs = new ArrayList<>();
 
         var job = new EventStatusDto();
-        job.name = "init_ams";
+        job.name = EventName.INIT_AMS.name();
         job.status = EventStatus.COMPLETED.name().toLowerCase(); // "completed"
         job.message = "Creating indexes in mongo";
-        job.start = Instant.parse("2025-10-22T12:44:48.107Z");
-        job.end = Instant.parse("2025-10-22T12:44:48.107Z");
+        job.start = Instant.parse("2025-10-22T12:44:48Z");
+        job.end = Instant.parse("2025-10-22T12:44:48Z");
         statusReq.jobs.add(job);
 
-        TenantStatusDto updated = given()
+        TenantStatusFullResponse updated = given()
                 .auth().oauth2(automationToken)
                 .contentType(ContentType.JSON)
                 .body(statusReq)
                 .when()
-                .put("/v1/automation/tenant/{id}/status", created.id)
+                .patch("/v1/automation/tenants/{id}/status", created.id)
                 .then()
                 .statusCode(200)
                 .extract()
-                .as(TenantStatusDto.class);
+                .as(TenantStatusFullResponse.class);
 
-        assertEquals(1, updated.jobs.size());
-        assertEquals("init_ams", updated.jobs.get(0).name);
-        assertEquals(EventStatus.COMPLETED.name().toLowerCase(), updated.jobs.get(0).status);
+        assertEquals(2, updated.status.jobs.size());
+        assertEquals(EventName.INIT_AMS.name().toLowerCase(), updated.status.jobs.get(1).name);
+        assertEquals(EventStatus.COMPLETED.name().toLowerCase(), updated.status.jobs.get(1).status);
     }
 
 

@@ -1,21 +1,15 @@
-package org.grnet.status.services.util;
+package org.grnet.status.services.clients;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.grnet.status.dtos.tenant.TenantRequestDto;
-import org.grnet.status.dtos.tenant.TenantResponseDto;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiResponse;
-import org.grnet.status.entities.Tenant;
-import org.grnet.status.mappers.TenantMapper;
 import org.grnet.status.repositories.TenantRepository;
-import org.grnet.status.services.clients.ArgoWebApiClient;
-import org.grnet.status.services.clients.ArgoWebApiClientFactory;
 import org.grnet.status.services.utils.EncryptUtil;
 
 @ApplicationScoped
@@ -81,20 +75,15 @@ public class WebApiService {
         }
     }
     private ArgoWebApiClient produceClient() {
-        // var decryptedSecret = encryptUtil.decrypt(encryptedSecret);
         return argoWebApiClientFactory.buildClient(webapi);
-
     }
-
     public TenantWebApiResponse updateTenantWebApi(TenantWebApiRequest webApiRequest, String id) {
         try {
 
             var client = produceClient();
-
             return client.updateTenant(id, accessToken, webApiRequest);
         } catch (Exception e) {
             throw new WebApplicationException("Remote API update failed: " + e.getMessage(), 502);
         }
-
     }
 }

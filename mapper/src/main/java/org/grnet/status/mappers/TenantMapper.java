@@ -82,11 +82,11 @@ public interface TenantMapper {
         dto.info = dtoInfo;
         dto.updatedBy = tenant.updatedBy;
         dto.metadata = mapMetadataObject(tenant.getMetadata());
-        if (dto.metadata != null && dto.metadata.instance!=null && dto.metadata.instance.topology!=null) {
+        if (dto.metadata != null && dto.metadata.instance != null && dto.metadata.instance.topology != null) {
             dto.metadata.instance.topology.feed = webApiGetResponse.getData().get(0).getTopology().getFeed();
         }
-        dto.status=mapStatusObject(tenant.getStatus());
-        dto.contacts=contactsToDtos(tenant.getContacts());
+        dto.status = mapStatusObject(tenant.getStatus());
+        dto.contacts = contactsToDtos(tenant.getContacts());
 
         return dto;
     }
@@ -117,6 +117,7 @@ public interface TenantMapper {
                 .map(this::contactFullToDto)
                 .collect(Collectors.toList());
     }
+
     @Named("contactFullToDto")
     @Mapping(target = "id", source = "id")
     @Mapping(target = "name", source = "name")
@@ -124,8 +125,6 @@ public interface TenantMapper {
     @Mapping(target = "type", source = "type", qualifiedByName = "mapTypeToString")
     @Mapping(target = "tenants", source = "tenants", qualifiedByName = "tenantPartialsToResponses")
     ContactFullDto contactFullToDto(ContactTenantJunction contactTenantJunction);
-
-
 
 
     @Named("tenantPartialToResponse")
@@ -140,6 +139,7 @@ public interface TenantMapper {
                 .map(this::tenantPartialToResponse)
                 .collect(Collectors.toList());
     }
+
     @Named("mapTypeToString")
     default String mapTypeToString(ContactType contactType) {
         return contactType != null ? contactType.name() : null;
@@ -159,7 +159,7 @@ public interface TenantMapper {
     @Mapping(target = "info.updatedAt", source = "updatedAt")
     @Mapping(target = "updatedBy", source = "updatedBy")
     @Mapping(target = "contacts", source = "contacts", qualifiedByName = "contactsToDtos")
-    @Mapping( target = "status",expression = "java(mapStatusObject(tenant.getStatus()))" )
+    @Mapping(target = "status", expression = "java(mapStatusObject(tenant.getStatus()))")
     TenantResponseDto tenantToDto(Tenant tenant);
 
 
@@ -192,7 +192,6 @@ public interface TenantMapper {
     @Mapping(target = "image", source = "info.image")
     @Mapping(target = "description", source = "info.description")
     @Mapping(target = "email", source = "info.email")
-
     void updateToTenant(TenantRequestDto dto, @MappingTarget Tenant tenant);
 
     @IterableMapping(qualifiedByName = "map3")
@@ -270,8 +269,9 @@ public interface TenantMapper {
             throw new RuntimeException("Failed to deserialize status JSON", e);
         }
     }
+
     // Map TenantMetadata → String JSON
-    default String mapStatusToString(TenantStatusDto status) {
+    default String mapStatusToString(TenantStatusDto status)  {
         if (status == null) {
             return null;
         }
@@ -281,6 +281,58 @@ public interface TenantMapper {
             throw new RuntimeException("Failed to serialize status JSON", e);
         }
     }
+
+    // Map TenantMetadata → String JSON
+    default String mapAlertsToString(TenantStatusDto status) {
+        if (status == null) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(status);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize status JSON", e);
+        }
+    }
+
+    default TenantStatusDto mapStatusFromString(String json) {
+        if (json == null || json.isBlank()) {
+            return new TenantStatusDto();
+        }
+        try {
+            return objectMapper.readValue(json, TenantStatusDto.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to deserialize status JSON", e);
+        }
+    }
+//    default TenantStatusDto mapAlertsFromString(String json) {
+//        if (json == null || json.isBlank()) {
+//            return new TenantStatusDto();
+//        }
+//        try {
+//            return objectMapper.readValue(json, TenantStatusDto.class);
+//        } catch (Exception e) {
+//            throw new RuntimeException("Failed to deserialize status JSON", e);
+//        }
+//    }
+
+    default String mergeJobsIntoStatus(String existingStatusJson,TenantStatusDto processStatus) {
+        TenantStatusDto status = mapStatusFromString(existingStatusJson);
+
+        if (processStatus != null && processStatus.jobs != null) {
+            status.jobs = processStatus.jobs;
+        }
+
+        return mapStatusToString(status);
+    }
+//    default String mergeAlertsIntoStatus(String existingAlertsJson,TenantStatusDto processStatus) {
+//        TenantStatusDto status = mapAlertsFromString(existingAlertsJson);
+//
+//        if (processStatus != null && processStatus.jobs != null) {
+//            status.jobs = processStatus.jobs;
+//        }
+//
+//        return mapStatusToString(status);
+//    }
 
 
 }

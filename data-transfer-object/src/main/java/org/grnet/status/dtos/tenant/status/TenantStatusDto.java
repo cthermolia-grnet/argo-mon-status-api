@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.grnet.status.dtos.tenant.metadata.InstanceDto;
 
 import java.util.List;
 
@@ -15,7 +14,23 @@ public class TenantStatusDto {
         @Schema(
                 type = SchemaType.ARRAY,
                 implementation = EventStatusDto.class,
-                description = "List of the event statuses"
+                description = "List of the event statuses",
+                example=" [\n" +
+                        "    {\n" +
+                        "      \"name\": \"init_ams\",\n" +
+                        "      \"status\": \"in_progress\",\n" +
+                        "      \"start\": \"2025-10-22T12:44:48Z\",\n" +
+                        "      \"end\": \"2025-10-22T12:44:48Z\",\n" +
+                        "      \"message\": \"Created topic in ams\"\n" +
+                        "    },\n" +
+                        "    {\n" +
+                        "      \"name\": \"init_mongo\",\n" +
+                        "      \"status\": \"in_progress\",\n" +
+                        "      \"start\": \"2025-10-22T12:44:48Z\",\n" +
+                        "      \"end\": \"2025-10-22T12:44:48Z\",\n" +
+                        "      \"message\": \"Creating indexes in mongo\"\n" +
+                        "    }\n" +
+                        "  ]\n"
         )
         @JsonProperty("jobs")
         @Valid

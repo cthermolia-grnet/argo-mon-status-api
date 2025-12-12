@@ -1,41 +1,51 @@
 package org.grnet.status.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.ServiceUnavailableException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.grnet.status.authorizations.groups.AuthGroupManagement;
 import org.grnet.status.authorizations.groups.GroupManagement;
-import org.grnet.status.authorizations.service.AuthGroupSetupService;
-import org.grnet.status.authorizations.service.AccessControlService;
 import org.grnet.status.authorizations.resolvers.GroupIdResolver;
+import org.grnet.status.authorizations.service.AccessControlService;
+import org.grnet.status.authorizations.service.AuthGroupSetupService;
+import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.tenant.ContactDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
+import org.grnet.status.dtos.tenant.alerts.AlertDefinitionRequest;
 import org.grnet.status.dtos.tenant.status.EventStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
+import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
 import org.grnet.status.entities.Contact;
 import org.grnet.status.entities.Tenant;
 import org.grnet.status.enums.ContactType;
+import org.grnet.status.enums.EventName;
+import org.grnet.status.enums.EventStatus;
 import org.grnet.status.enums.TenantGroupStatus;
+import org.grnet.status.exceptions.BadRequestException;
 import org.grnet.status.exceptions.CustomRuntimeException;
 import org.grnet.status.mappers.TenantMapper;
 import org.grnet.status.repositories.ContactRepository;
 import org.grnet.status.repositories.TenantRepository;
-import org.grnet.status.services.util.WebApiService;
+import org.grnet.status.services.clients.AmsService;
+import org.grnet.status.services.clients.WebApiService;
 import org.grnet.status.services.utils.ImageUploadUtil;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -69,6 +79,10 @@ public class TenantService {
 
     @ConfigProperty(name = "api.server.url")
     String apiServerUrl;
+
+    @Inject
+    AmsService amsService;
+    private final ExecutorService executorService = Executors.newFixedThreadPool(2); // Adjust as needed
 
     public TenantResponseDto create(TenantRequestDto request, String userId) throws IOException {
 
@@ -115,15 +129,19 @@ public class TenantService {
         var webApiCreateResponse = webApiService.createTenantInWebApi(webApiRequest);
         remoteTenantId = webApiCreateResponse.getData().getId();
         tenantCreatedRemotely = true;
+        var status = TenantMapper.INSTANCE.mapStatusToString(setDefaultStatus());
+        tenant.setStatus(status);
+
         try {
             TenantMapper.INSTANCE.mapMetadata(request, tenant);
             writeInDB(request, tenant, remoteTenantId, userId);
+            sendNotifications(tenant);
+         //   var  tenantWithStatus=tenantRepository.findById(tenant.id);
             return TenantMapper.INSTANCE.tenantToDto(tenant);
         } catch (Exception e) {
             // If tenant was created remotely, but something failed locally, rollback remote creation
             if (tenantCreatedRemotely && remoteTenantId != null) {
                 webApiService.deleteTenant(remoteTenantId);
-
             }
             throw e;
         }
@@ -236,11 +254,6 @@ public class TenantService {
                 imageUploadUtil.deleteImageIfExists(baseUploadTenantsImagesDir, t.name);
                 webApiService.deleteTenant(id);
 
-//                var client = produceClient();
-//                var decryptedSecret = produceDecryptedKey();
-//                // 2. Only after DB delete succeeds, call external API
-//                client.deleteTenant(t.id, decryptedSecret);
-
             } catch (RuntimeException e) {
 
                 // If DB delete fails -> API delete is NOT executed, as desired
@@ -252,10 +265,6 @@ public class TenantService {
 
                 var message = e.getMessage();
                 Log.error("ERROR deleting tenant " + t.id + " -> " + status + ": " + message);
-                // Optional: if you want to stop the operation:
-                // throw new WebApplicationException(message, status);
-
-                // Or continue with the next tenant
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
@@ -371,7 +380,6 @@ public class TenantService {
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
-
             tenantList.add(webtenant);
         });
         return new PageResource<>(tenants, tenantList, uriInfo);
@@ -428,11 +436,11 @@ public class TenantService {
         }
     }
 
+    //construct and stores a tenant in the database
     private Tenant writeInDB(TenantRequestDto request, Tenant tenant, String remoteTenantId, String userId) {
 
         tenant.id = remoteTenantId;
         tenant.updatedBy = userId;
-        // var contacts = TenantMapper.INSTANCE.dtosToContacts(request.contacts);
         Set<Contact> contacts = resolveAndMergeContacts(request);
 
         tenant.setContacts(new HashSet(contacts));
@@ -448,6 +456,7 @@ public class TenantService {
 
     }
 
+    //updates the tenant in the database
     private void updateTenantInDB(TenantRequestDto request, Tenant tenant) {
         // Update simple fields:
         TenantMapper.INSTANCE.updateToTenant(request, tenant);
@@ -467,36 +476,68 @@ public class TenantService {
         tenantRepository.flush(); // force errors
     }
 
-    private void updateTenantStatusInDb(TenantStatusDto request, Tenant tenant) {
+    private void updateTenantStatusInDb(Tenant tenant, String updatedStatusJson) {
         // Update simple fields:
-        var json = TenantMapper.INSTANCE.mapStatusToString(request);
-        tenant.setStatus(json);
+
+        tenant.setStatus(updatedStatusJson);
         tenantRepository.persist(tenant);
         tenantRepository.flush(); // force errors
     }
 
     /**
-     * Update an existing tenant.
+     * Update a job status.
      */
     @Transactional
-    public TenantStatusDto updateTenantStatus(String id, @Valid TenantStatusDto request) throws IOException {
+    public TenantStatusFullResponse updateTenantJobs(String id, @Valid TenantStatusDto request) {
 
         var tenant = tenantRepository.findById(id);
 
         var existingStatus = TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
-        var existingJobs = existingStatus.jobs;
-        request.jobs=mergeJobs(existingJobs,request.jobs);
+        request.jobs = mergeJobs(existingStatus.jobs, request.jobs);
 
         try {
-            updateTenantStatusInDb(request, tenant);
+            var updatedStatusJson = TenantMapper.INSTANCE.mergeJobsIntoStatus(tenant.getStatus(), request);
+
+            updateTenantStatusInDb(tenant, updatedStatusJson);
+            TenantStatusDto statusDto = TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
+
+            TenantStatusFullResponse response = new TenantStatusFullResponse();
+            response.name = tenant.name;
+            response.status = statusDto;
+
+            return response;
+
+         //   return TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
+        } catch (Exception dbException) {
+
+            throw new RuntimeException("DB update failed: " + dbException.getMessage());
+        }
+    }
+
+    /**
+     * Update an alert status.
+     */
+    @Transactional
+    public TenantStatusDto updateTenantAlerts(String id, @Valid TenantStatusDto request) throws IOException {
+
+        var tenant = tenantRepository.findById(id);
+
+        var existingStatus = TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
+        request.jobs = mergeJobs(existingStatus.jobs, request.jobs);
+        try {
+            var updatedAlertJson = TenantMapper.INSTANCE.mergeJobsIntoStatus(tenant.getStatus(), request);
+
+            updateTenantStatusInDb(tenant, updatedAlertJson);
             return TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
         } catch (Exception dbException) {
 
             throw new RuntimeException("DB update failed: " + dbException.getMessage());
         }
     }
-    public List<EventStatusDto> mergeJobs(List<EventStatusDto> existingJobs,
-                                          List<EventStatusDto> newJobs) {
+
+    //updates the job list existing in the status with the new job value.
+    private List<EventStatusDto> mergeJobs(List<EventStatusDto> existingJobs,
+                                           List<EventStatusDto> newJobs) {
 
         if (existingJobs == null && newJobs == null) {
             return Collections.emptyList();
@@ -515,6 +556,13 @@ public class TenantService {
 
         // Replace or add
         for (EventStatusDto newJob : newJobs) {
+            var oldJob=map.get(newJob.name);
+            if(newJob.getStart()==null) {
+            newJob.setStart(oldJob.getStart());
+            }
+            if(newJob.getEnd()==null){
+                newJob.setEnd(oldJob.getEnd());
+            }
             map.put(newJob.name, newJob);
         }
         return new ArrayList<>(map.values());
@@ -564,4 +612,159 @@ public class TenantService {
             return TenantGroupStatus.UNKNOWN;
         }
     }
+
+    /**
+     * Notify ams that tenant is created and should initialize the corresponding event process
+     *
+     * @param id,    the tenant's id
+     * @param alert, the alert to be sent to AMS
+     * @return TenantStatusDto
+     */
+    public TenantStatusDto notifyAms(String id, AlertDefinitionRequest alert) {
+        var now = Instant.now();
+        var tenant = tenantRepository.findById(id);
+
+        if (alert.properties.containsKey("tenant_name") && !alert.properties.get("tenant_name").equals(tenant.name)) {
+            throw new BadRequestException("Value of property 'name' differs from tenant's name: " + tenant.name);
+        }
+
+        alert.getProperties().put("tenant_id",id);
+        alert.setCreatedAt(String.valueOf(now));
+        send(id, alert);
+
+
+        var statusOpt = tenantRepository.fetchTenantStatus(id);
+        if (!statusOpt.isEmpty()) {
+            return TenantMapper.INSTANCE.mapStatusObject(statusOpt.get());
+        }
+        return null;
+    }
+
+    //send notifications to AMS to initialize ams and mongo
+    private void sendNotifications(Tenant tenant) {
+
+        AlertDefinitionRequest amsAlert = new AlertDefinitionRequest();
+        amsAlert.name = EventName.INIT_AMS.name();
+        var amsProperties = new HashMap<String, String>();
+        amsProperties.put("tenant_id", tenant.id);
+        amsProperties.put("tenant_name", tenant.name);
+        amsAlert.setProperties(amsProperties);
+        amsAlert.setCreatedAt(String.valueOf(Instant.now()));
+
+
+        AlertDefinitionRequest mongoAlert = new AlertDefinitionRequest();
+        mongoAlert.name = EventName.INIT_MONGO.name();
+        var mongoProperties = new HashMap<String, String>();
+        mongoProperties.put("tenant_id", tenant.id);
+        mongoProperties.put("tenant_name", tenant.name);
+        mongoAlert.setProperties(mongoProperties);
+        mongoAlert.setCreatedAt(String.valueOf(Instant.now()));
+
+        send(tenant.id, amsAlert);
+        send(tenant.id, mongoAlert);
+    }
+
+    private void send(String id, AlertDefinitionRequest alert) {
+        try {
+            var now = Instant.now();
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            String json = objectMapper.writeValueAsString(alert);
+            String encodedData = Base64.getEncoder().encodeToString(json.getBytes());
+
+            PublishRequest.Message message = new PublishRequest.Message();
+            message.setData(encodedData);
+
+            PublishRequest publishData = new PublishRequest();
+            publishData.setMessages(List.of(message));
+
+            // fire-and-forget async publish
+            CompletableFuture.runAsync(
+                    () -> amsService.publishMessage(publishData),
+                    executorService
+            ).whenComplete((ignored, throwable) -> {
+                try {
+                    if (throwable == null) {
+                        // ✅ success
+                        updateTenantAlerts(id, setAlert(alert.name, EventStatus.INITIALISED, "Notification is published to AMS",now));
+                    } else {
+                        Log.error("AMS publish failed", throwable);
+                        updateTenantAlerts(id, setAlert(alert.name, EventStatus.FAILED_INITIALISATION, "Notification failed to be published to AMS", now));
+                    }
+
+                } catch (Exception e) {
+                    // this MUST NOT throw
+                    Log.error("Failed to update tenant status", e);
+                }
+            });
+
+            // immediately return "sent to AMS"
+            updateTenantAlerts(id, setAlert(alert.name, EventStatus.INITIALISING, "Notification is sent to AMS for publishing", now));
+
+        } catch (Exception e) {
+            Log.error("Failed to send alert to AMS", e);
+            throw new RuntimeException("Failed to send alert to AMS", e);
+        }
+    }
+
+    //building an alert with info
+    private TenantStatusDto setAlert(String eventName, EventStatus status, String message, Instant start) {
+        var tenantStatus = new TenantStatusDto();
+        tenantStatus.jobs = new ArrayList<>();
+        var alert = new EventStatusDto();
+        alert.start = start;
+        alert.setName(eventName);
+        alert.setStatus(status.name());
+        alert.setMessage(message);
+        tenantStatus.jobs.add(alert);
+//        if (status.equals(EventStatus.FAILED_INITIALISATION) || status.equals(EventStatus.INITIALISED)) {
+//            alert.end = Instant.now();
+//        }
+        return tenantStatus;
+    }
+
+    //sets the status of jobs and alerts to UNKNOWN
+    private TenantStatusDto setDefaultStatus() {
+        TenantStatusDto tenantStatusDto = new TenantStatusDto();
+
+        EventStatusDto initAms = new EventStatusDto();
+        initAms.setStatus(EventStatus.UNKNOWN.name());
+        initAms.setName(EventName.INIT_AMS.name());
+
+        EventStatusDto initMongo = new EventStatusDto();
+        initMongo.setStatus(EventStatus.UNKNOWN.name());
+        initMongo.setName(EventName.INIT_MONGO.name());
+
+        var eventList = new ArrayList<EventStatusDto>();
+        eventList.add(initAms);
+        eventList.add(initMongo);
+        tenantStatusDto.jobs = eventList;
+
+
+        return tenantStatusDto;
+    }
+
+    /**
+     * Get a tenant's status.
+     */
+    public TenantStatusFullResponse getTenantStatus(String id) {
+        var resultOpt = tenantRepository.fetchTenantNameAndStatus(id);
+
+        if (resultOpt.isPresent()) {
+            Object[] result = resultOpt.get();
+            String name = (String) result[0];
+            String statusString = (String) result[1];
+
+            TenantStatusDto statusDto = TenantMapper.INSTANCE.mapStatusObject(statusString);
+
+            TenantStatusFullResponse response = new TenantStatusFullResponse();
+            response.name = name;
+            response.status = statusDto;
+
+            return response;
+        }
+
+        return null; // or Optional<TenantStatusFullResponse> if you prefer
+    }
+
 }

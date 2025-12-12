@@ -24,7 +24,7 @@ public class TenantRepository implements Repository<Tenant, String> {
      * @return A list of Tenant objects representing the users in the
      * requested page.
      */
-    public PageQuery<Tenant> fetchTenantsByPageAndSize(int page, int size, String search,String sort, String order) {
+    public PageQuery<Tenant> fetchTenantsByPageAndSize(int page, int size, String search, String sort, String order) {
         var joiner = new StringJoiner(StringUtils.SPACE);
         joiner.add("from Tenant t");
 
@@ -140,6 +140,15 @@ public class TenantRepository implements Repository<Tenant, String> {
         pageable.page = Page.of(page, size);
 
         return pageable;
+
     }
 
+    public Optional<Object[]> fetchTenantNameAndStatus(String id) {
+        return find("select t.name, t.status from Tenant t where t.id = ?1", id).project(Object.class)
+                .firstResultOptional();
+    }
+    public Optional<String> fetchTenantStatus(String id) {
+        return find("select t.status from Tenant t where t.id = ?1", id).project(String.class)
+                .firstResultOptional();
+    }
 }

@@ -25,6 +25,10 @@ public class Project {
     @Column(name = "name", unique = true)
     private String name;
 
+    @NotNull
+    @Column(name = "description", unique = true)
+    private String description;
+
     @Column(name = "start_date")
     private Timestamp startDate;
 

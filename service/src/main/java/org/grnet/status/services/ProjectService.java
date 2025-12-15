@@ -9,14 +9,12 @@ import org.grnet.status.dtos.project.ProjectRequestDto;
 import org.grnet.status.dtos.project.ProjectResponseDto;
 import org.grnet.status.dtos.project.ProjectUpdateDto;
 
-import org.grnet.status.exceptions.ConflictException;
 import org.grnet.status.mappers.ProjectMapper;
 import org.grnet.status.repositories.ProjectRepository;
 import org.jboss.logging.Logger;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.Objects;
 
 @ApplicationScoped
 public class ProjectService {
@@ -50,18 +48,10 @@ public class ProjectService {
 
         var project = projectRepository.findById(id);
 
-        if (!Objects.equals(project.getName(), request.name)) {
-            if (projectRepository.existsByNameForOtherId(request.name, id)) {
-                throw new ConflictException("Project name already exists: " + request.name);
-            }
-        }
-
         var updateProject = ProjectMapper.INSTANCE.updateToProject(request, project);
         updateProject.setUpdatedAt(Timestamp.from(Instant.now()));
 
-        var dto = ProjectMapper.INSTANCE.projectToDto(updateProject);
-
-        return dto;
+        return ProjectMapper.INSTANCE.projectToDto(updateProject);
     }
 
     @Transactional

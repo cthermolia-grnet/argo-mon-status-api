@@ -29,6 +29,14 @@ public class ProjectResponseDto {
 
     @Schema(
             type = SchemaType.STRING,
+            description = "Tenant's description",
+            example = "This is the GRNET Project"
+    )
+    @JsonProperty("description")
+    public String description;
+
+    @Schema(
+            type = SchemaType.STRING,
             implementation = Instant.class,
             description = "Project start date"
     )

@@ -1,10 +1,8 @@
 package org.grnet.status.api;
 
 import io.quarkus.test.InjectMock;
-import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
-import org.grnet.status.api.endpoints.TenantEndpoint;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.project.ProjectRequestDto;
@@ -347,6 +345,7 @@ public class TenantEndpointTest extends KeycloakTest {
 
         var dto = new ProjectRequestDto();
         dto.name = "Test Project" + UUID.randomUUID();
+        dto.description = "Project Description";
         dto.startDate = Timestamp.from(Instant.now());
         dto.endDate = Timestamp.from(Instant.now());
         dto.sustainabilityEndDate = Timestamp.from(Instant.now());

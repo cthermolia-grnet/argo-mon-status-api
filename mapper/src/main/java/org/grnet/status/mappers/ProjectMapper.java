@@ -29,6 +29,7 @@ public interface ProjectMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "description", source = "description")
     Project updateToProject(ProjectUpdateDto dto, @MappingTarget Project entity);
 
     default Instant map(Timestamp timestamp) {

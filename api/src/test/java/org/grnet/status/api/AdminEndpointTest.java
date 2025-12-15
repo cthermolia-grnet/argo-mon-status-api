@@ -29,7 +29,6 @@ import java.util.UUID;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -253,7 +252,7 @@ public class AdminEndpointTest extends KeycloakTest {
 
         var request1 = new TenantRequestDto();
         var tenantInfo1 = new TenantInfoDto();
-        tenantInfo1.name = "TENANT TEST UPDATED";
+        tenantInfo1.name = tenantInfo.name;
         tenantInfo1.email = "test2-updated@gmail.com";
         tenantInfo1.description = "this is test2 updated tenant description";
         tenantInfo1.image = "https://example/image.png";
@@ -767,7 +766,7 @@ public class AdminEndpointTest extends KeycloakTest {
                 .as(ProjectResponseDto.class);
 
         var update = new ProjectUpdateDto();
-        update.name = "UPDATED NAME " + UUID.randomUUID();
+        update.description = "Project description UPDATE";
         update.dataRetentionPolicy = "Retention policy text";
 
 
@@ -782,7 +781,6 @@ public class AdminEndpointTest extends KeycloakTest {
                 .extract()
                 .as(ProjectResponseDto.class);
 
-        assertTrue(updated.name.contains("UPDATED NAME"));
         assertEquals("Retention policy text", updated.dataRetentionPolicy);
     }
 
@@ -816,6 +814,7 @@ public class AdminEndpointTest extends KeycloakTest {
 
         var dto = new ProjectRequestDto();
         dto.name = "Test Project" + UUID.randomUUID();
+        dto.description = "Project description";
         dto.startDate = Timestamp.from(Instant.now());
         dto.endDate = Timestamp.from(Instant.now());
         dto.sustainabilityEndDate = Timestamp.from(Instant.now());

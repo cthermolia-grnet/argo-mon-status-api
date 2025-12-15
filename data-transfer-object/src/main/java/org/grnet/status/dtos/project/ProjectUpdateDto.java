@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.grnet.status.constraints.UniqueValue;
-import org.grnet.status.repositories.ProjectRepository;
 
 import java.sql.Timestamp;
 
@@ -13,13 +11,12 @@ public class ProjectUpdateDto {
 
     @Schema(
             type = SchemaType.STRING,
-            implementation = String.class,
-            description = "Name of the project",
-            example = "EOSC-Future"
+            description = "Tenant's description",
+            example = "This is the GRNET Project"
     )
-    @JsonProperty("name")
-    @NotBlank(message = "name cannot be blank")
-    public String name;
+    @JsonProperty("description")
+    @NotBlank(message = "description cannot be blank")
+    public String description;
 
     @Schema(
             type = SchemaType.STRING,

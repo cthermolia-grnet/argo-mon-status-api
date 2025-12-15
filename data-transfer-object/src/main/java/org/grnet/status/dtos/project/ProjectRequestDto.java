@@ -24,6 +24,15 @@ public class ProjectRequestDto {
 
     @Schema(
             type = SchemaType.STRING,
+            description = "Tenant's description",
+            example = "This is the GRNET Project"
+    )
+    @JsonProperty("description")
+    @NotBlank(message = "description cannot be blank")
+    public String description;
+
+    @Schema(
+            type = SchemaType.STRING,
             implementation = Timestamp.class,
             description = "Project start date (timestamp)",
             example = "2025-01-01T00:00:00Z"

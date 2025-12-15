@@ -6,6 +6,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -264,6 +265,11 @@ public class TenantService {
         // ------------------------------
 
         var previousWebApiTenant = webApiService.retrieveTenantWebApi(id);
+
+        if (!Objects.equals(previousWebApiTenant.getData().get(0).getInfo().getName(), request.info.name)) {
+            throw new ForbiddenException("Tenant name cannot be changed");
+        }
+
         var previousRemoteState = TenantMapper.INSTANCE.webApiTenantToTenantRequestDto(
                 previousWebApiTenant.getData().get(0).getInfo()
         );

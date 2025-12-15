@@ -10,6 +10,8 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.grnet.status.authorizations.groups.AuthGroupAsyncService;
+import org.grnet.status.authorizations.entitlements.AccessControlService;
+import org.grnet.status.authorizations.resolvers.GroupIdResolver;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.tenant.ContactDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
@@ -43,18 +45,23 @@ public class TenantService {
     @Inject
     AuthGroupAsyncService authGroupAsyncService;
 
+    @Inject
+    AccessControlService accessControlService;
+
+    @Inject
+    WebApiService webApiService;
+
     @ConfigProperty(name = "api.auth.entitlements.parent.group")
     String namespace;
+
+    @Inject
+    ImageUploadUtil imageUploadUtil;
 
     @ConfigProperty(name = "base.upload.logo.dir")
     String baseUploadTenantsImagesDir;
 
-    @Inject
-    ImageUploadUtil imageUploadUtil;
     @ConfigProperty(name = "api.server.url")
     String apiServerUrl;
-    @Inject
-    WebApiService webApiService;
 
     public TenantResponseDto create(TenantRequestDto request, String userId) throws IOException {
 
@@ -327,6 +334,34 @@ public class TenantService {
         return new PageResource<>(tenants, tenantList, uriInfo);
     }
 
+
+    public PageResource<TenantResponseDto> listAuthorizedTenants(GroupIdResolver tenantNameResolver, int page, int size, UriInfo uriInfo, String search, String sort, String order) {
+
+        var allowedTenantIds = accessControlService.resolveAccessibleGroups(tenantNameResolver);
+
+
+        if (allowedTenantIds == null) {
+            return getTenantsByPageAndSize(page, size, uriInfo, search, sort, order);
+        }
+
+        var tenants = tenantRepository.fetchTenantsByIdsAndPageAndSize(allowedTenantIds, page, size, search, sort, order);
+
+        var tenantList = new ArrayList<TenantResponseDto>();
+
+        tenants.list().forEach(t -> {
+            TenantResponseDto webtenant = null;
+            try {
+                var webTenantGetResponse = webApiService.retrieveTenantWebApi(t.id);
+                webtenant = TenantMapper.INSTANCE.webApiTenantToDto(t, webTenantGetResponse);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+
+            tenantList.add(webtenant);
+        });
+        return new PageResource<>(tenants, tenantList, uriInfo);
+    }
+
     private void handleImage(TenantRequestDto request) throws IOException {
 
         var image = request.info.image;
@@ -469,5 +504,4 @@ public class TenantService {
         }
         return new ArrayList<>(map.values());
     }
-
 }

@@ -60,6 +60,37 @@ public class TenantRepository implements Repository<Tenant, String> {
 
     }
 
+    public PageQuery<Tenant> fetchTenantsByIdsAndPageAndSize(List<String> allowedIds, int page, int size, String search, String sort, String order) {
+
+        var joiner = new StringJoiner(StringUtils.SPACE);
+        joiner.add("from Tenant t WHERE t.id in :allowedIds");
+
+        var params = new HashMap<String, Object>();
+        params.put("allowedIds", allowedIds);
+
+        if (StringUtils.isNotEmpty(search)) {
+            joiner.add("AND (t.name ilike :search OR t.email ilike :search)");
+            params.put("search", "%" + search + "%");
+        }
+
+        if (StringUtils.isNotEmpty(sort)) {
+            joiner.add("order by t." + sort + " " + order);
+        } else {
+            joiner.add("order by t.name ASC, t.createdAt DESC");
+        }
+
+        var panache = find(joiner.toString(), params).page(page, size);
+
+        var pageable = new PageQueryImpl<Tenant>();
+        pageable.list = panache.list();
+        pageable.index = page;
+        pageable.size = size;
+        pageable.count = panache.count();
+        pageable.page = Page.of(page, size);
+
+        return pageable;
+    }
+
 
     /**
      * Retrieves all tenants  from the database.

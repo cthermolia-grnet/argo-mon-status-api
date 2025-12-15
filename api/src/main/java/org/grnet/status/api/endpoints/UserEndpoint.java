@@ -15,6 +15,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.grnet.status.authorizations.interceptors.CheckEntitlements;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.user.UserProfileDto;
 import org.grnet.status.services.UserService;
@@ -28,6 +29,7 @@ import org.grnet.status.util.Utility;
         scheme = "bearer",
         bearerFormat = "JWT",
         in = SecuritySchemeIn.HEADER)
+@CheckEntitlements(group = "tenants")
 public class UserEndpoint {
 
     @Inject

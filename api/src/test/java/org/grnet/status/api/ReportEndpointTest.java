@@ -49,7 +49,7 @@ public class ReportEndpointTest extends KeycloakTest{
 
         var encryptedKey = given()
                 .auth()
-                .oauth2(aliceToken)
+                .oauth2(tenantViewer)
                 .contentType(ContentType.JSON)
                 .body(encryptRequest)
                 .when()
@@ -65,7 +65,7 @@ public class ReportEndpointTest extends KeycloakTest{
 
         given()
                 .auth()
-                .oauth2(aliceToken)
+                .oauth2(tenantViewer)
                 .contentType(ContentType.JSON)
                 .body(reportRequest)
                 .when()

@@ -243,7 +243,42 @@ public class TenantEndpointTest extends KeycloakTest {
                 .extract()
                 .as(InformativeResponse.class);
 
-        assertEquals("Access denied — group='tenants', role='admin', id='" + response.id+ "'", response1.message);
+        assertEquals("Access denied.", response1.message);
+    }
+
+    @Test
+    public void viewTenants() {
+
+        currentMockId = "LOCALTENANT";
+
+        // create tenant 1
+        var tenant = new TenantRequestDto();
+        var info = new TenantInfoDto();
+        info.name = "LOCALTENANT";
+        info.email = "t1@example.com";
+        info.description = "Tenant 1";
+        tenant.info = info;
+
+        var createdTenant = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(tenant)
+                .post("/v1/admin/tenants")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(TenantResponseDto.class);
+
+        var list = given()
+                .auth().oauth2(tenantViewer)
+                .contentType(ContentType.JSON)
+                .get("/v1/tenants")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(PageResource.class);
+
+        assertEquals(1, list.getContent().size());
     }
 
     @Test

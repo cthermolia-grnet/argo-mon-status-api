@@ -16,9 +16,6 @@ public @interface CheckEntitlements {
     @Nonbinding
     boolean requireSuperAdmin() default false;
 
-//    @Nonbinding
-//    boolean requireAdmin() default false;
-
     @Nonbinding
     String group() default "";
 

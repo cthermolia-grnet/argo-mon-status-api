@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.grnet.status.authorizations.resolvers.GroupIdResolver;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @ApplicationScoped
@@ -31,6 +32,20 @@ public class AccessControlService {
             return true;
         }
 
+        //GROUP-LEVEL ACCESS (list endpoints, no ID provided)
+        if (annotatedGroup != null && !annotatedGroup.isBlank() && pathId == null) {
+            // Allow if user has ANY entitlement matching this group + role
+            return entitlements.stream().anyMatch(e -> {
+                var h = e.getHierarchy();
+                if (h.size() < 2) return false;
+
+                var subgroup = h.get(1);
+                return subgroup.equals(annotatedGroup) &&
+                        roleMatches(e.getRole(), requiredRole);
+            });
+        }
+
+        //ID-LEVEL ACCESS (endpoints with {id})
         for (Entitlement e : entitlements) {
 
             var hierarchy = e.getHierarchy();
@@ -41,20 +56,52 @@ public class AccessControlService {
             var subgroup = hierarchy.get(1);
             var subgroupValue = hierarchy.get(2);
 
-            String resolvedId = resolver.resolve(subgroupValue);
+            if (!subgroup.equals(annotatedGroup)) continue;
 
+            var resolvedId = resolver.resolve(subgroupValue);
 
-            var groupMatch = subgroup.equals(annotatedGroup);
             var idMatch = resolvedId != null && resolvedId.equals(pathId);
             var roleMatch = roleMatches(e.getRole(), requiredRole);
 
-            if (groupMatch && idMatch && roleMatch) {
+            if (idMatch && roleMatch) {
                 return true;
             }
         }
 
         return false;
     }
+
+    public List<String> resolveAccessibleGroups(GroupIdResolver resolver) {
+
+        var entitlements = oidc.fetchEntitlements();
+
+        // super admin sees ALL
+        if (isSuperAdmin(entitlements)) {
+            return null;
+        }
+
+        List<String> ids = new ArrayList<>();
+
+        for (Entitlement e : entitlements) {
+
+            var hierarchy = e.getHierarchy();
+            if (hierarchy.size() < 3) continue;
+
+            var subgroup = hierarchy.get(1);
+            var subgroupValue = hierarchy.get(2);
+
+            if (!"tenants".equals(subgroup)) continue;
+
+            var resolved = resolver.resolve(subgroupValue);
+
+            if (resolved != null) {
+                ids.add(resolved);
+            }
+        }
+
+        return ids;
+    }
+
 
     private boolean roleMatches(String userRole, String requiredRole) {
         if (requiredRole == null || requiredRole.isBlank()) {

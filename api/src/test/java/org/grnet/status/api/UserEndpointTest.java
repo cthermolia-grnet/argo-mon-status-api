@@ -24,7 +24,7 @@ public class UserEndpointTest extends KeycloakTest {
     public void getUserProfile() {
 
         var response = given()
-                .auth().oauth2(aliceToken)
+                .auth().oauth2(tenantViewer)
                 .contentType(ContentType.JSON)
                 .get("/profile")
                 .then()
@@ -33,6 +33,6 @@ public class UserEndpointTest extends KeycloakTest {
                 .extract()
                 .as(UserProfileDto.class);
 
-        assertEquals("alice", response.username);
+        assertEquals("tenantviewer", response.username);
     }
 }

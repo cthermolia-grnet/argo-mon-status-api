@@ -80,11 +80,7 @@ public class CheckEntitlementsInterceptor {
         boolean allowed = accessControlService.hasAccess(group, role, pathId, resolver);
 
         if (!allowed) {
-            throw new ForbiddenException(
-                    "Access denied — group='" + group +
-                            "', role='" + role +
-                            "', id='" + pathId + "'"
-            );
+            throw new ForbiddenException("Access denied.");
         }
 
         return ctx.proceed();

@@ -18,6 +18,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.grnet.status.authorizations.interceptors.CheckEntitlements;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.encrypt.EncryptRequestDto;
 import org.grnet.status.dtos.encrypt.EncryptResponseDto;
@@ -34,6 +35,7 @@ import org.grnet.status.services.ReportService;
         scheme = "bearer",
         bearerFormat = "JWT",
         in = SecuritySchemeIn.HEADER)
+@CheckEntitlements(group = "tenants")
 public class ReportEndpoint {
 
     @Inject

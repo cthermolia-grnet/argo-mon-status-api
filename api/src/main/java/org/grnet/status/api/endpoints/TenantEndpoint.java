@@ -27,6 +27,7 @@ import org.grnet.status.api.resolvers.TenantNameResolver;
 import org.grnet.status.authorizations.interceptors.CheckEntitlements;
 import org.grnet.status.constraints.NotFoundEntity;
 import org.grnet.status.dtos.InformativeResponse;
+import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.project.ProjectResponseDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
@@ -35,6 +36,7 @@ import org.grnet.status.services.TenantProjectService;
 import org.grnet.status.services.TenantService;
 
 import java.io.IOException;
+import java.util.List;
 
 import static org.eclipse.microprofile.openapi.annotations.enums.ParameterIn.QUERY;
 
@@ -56,6 +58,87 @@ public class TenantEndpoint {
 
     @Inject
     TenantProjectService tenantProjectService;
+
+    @Inject
+    TenantNameResolver tenantNameResolver;
+
+    @Operation(
+            summary = "List Tenants Available to the User",
+            description = "Retrieves a paginated list of tenants the authenticated user is allowed to access."
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "Tenants list retrieved successfully.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = PageableTenants.class))
+    )
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(role = "viewer")
+    public Response listTenants(
+            @Parameter(name = "search", in = QUERY,
+                    description = "Search tenants by name.")
+            @QueryParam("search") String search,
+            @Parameter(name = "sort", in = QUERY,
+                    schema = @Schema(type = SchemaType.STRING, defaultValue = ""),
+                    examples = {
+                            @ExampleObject(name = "Tenant Name", value = "name"),
+                            @ExampleObject(name = "Created At", value = "createdAt")},
+                    description = "The field used to sort the results.")
+            @DefaultValue("createdAt")
+            @QueryParam("sort")
+            String sort,
+            @Parameter(name = "order", in = QUERY,
+                    schema = @Schema(type = SchemaType.STRING),
+                    examples = {
+                            @ExampleObject(name = "Ascending", value = "ASC"),
+                            @ExampleObject(name = "Descending", value = "DESC")},
+                    description = "The order of the sorted results.")
+            @DefaultValue("DESC")
+            @QueryParam("order")
+            String order,
+            @Parameter(name = "page", in = QUERY,
+                    description = "Page number. Must be >= 1.")
+            @DefaultValue("1")
+            @Min(value = 1, message = "Page number must be >= 1.")
+            @QueryParam("page")
+            int page,
+            @Parameter(name = "size", in = QUERY,
+                    description = "Page size.")
+            @DefaultValue("10")
+            @Min(value = 1, message = "Page size must be between 1 and 100.")
+            @Max(value = 100, message = "Page size must be between 1 and 100.")
+            @QueryParam("size")
+            int size, @Context UriInfo uriInfo) {
+
+        var result = tenantService.listAuthorizedTenants(tenantNameResolver, page - 1, size, uriInfo, search, sort, order);
+
+        return Response.ok().entity(result).build();
+    }
+
 
     @Operation(
             summary = "Get Tenant By Id .",
@@ -244,5 +327,22 @@ public class TenantEndpoint {
         var project = tenantProjectService.getProjectsByTenant(id, page - 1, size, uriInfo, search, sort, order);
 
         return Response.ok().entity(project).build();
+    }
+
+
+    public static class PageableTenants extends PageResource<TenantResponseDto> {
+
+        private List<TenantResponseDto> content;
+
+        @Override
+        public List<TenantResponseDto> getContent() {
+            return content;
+        }
+
+        @Override
+        public void setContent(List<TenantResponseDto> content) {
+            this.content = content;
+        }
+
     }
 }

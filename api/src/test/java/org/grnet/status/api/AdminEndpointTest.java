@@ -8,8 +8,9 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.GroupUserResponse;
-import org.grnet.endpoint.scanner.runtime.entities.RoleEndpointRepository;
+import org.grnet.endpoint.scanner.runtime.repositories.RoleEndpointRepository;
 import org.grnet.endpoint.scanner.runtime.entitlements.Entitlement;
+import org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository;
 import org.grnet.status.api.endpoints.AdminEndpoint;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.Status;
@@ -217,6 +218,176 @@ public class AdminEndpointTest extends KeycloakTest {
         assertEquals(currentMockId, request.id);  // check that the id matches what you set
     }
 
+    @Test
+    public void getTenant() {
+
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
+
+        var request = new TenantRequestDto();
+        var tenantInfo = new TenantInfoDto();
+        tenantInfo.name = "TENANT TEST";
+        tenantInfo.email = "test@gmail.com";
+        tenantInfo.description = "this is test tenant description";
+        tenantInfo.image = "https://example/image.png";
+        tenantInfo.website = "https://test.tenant.org";
+        request.info = tenantInfo;
+
+        //var webApi = new ArgoWebApiRequest();
+
+        var response = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(request)
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/tenants")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(TenantResponseDto.class);
+
+        var getTenant = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/tenants/{id}", response.id)
+                .then()
+                .assertThat()
+                .statusCode(200)
+                .extract()
+                .as(TenantResponseDto.class);
+
+        assertEquals(tenantInfo.name, getTenant.info.name);
+    }
+
+    @Test
+    public void updateTenant() {
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
+
+        var request = new TenantRequestDto();
+        var tenantInfo = new TenantInfoDto();
+        tenantInfo.name = "TENANT TEST";
+        tenantInfo.email = "test@gmail.com";
+        tenantInfo.description = "this is test tenant description";
+        tenantInfo.image = "https://example/image.png";
+        tenantInfo.website = "https://test.tenant.org";
+        request.info = tenantInfo;
+
+        //var webApi = new ArgoWebApiRequest();
+
+        var response = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(request)
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/tenants")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(TenantResponseDto.class);
+
+        var request1 = new TenantRequestDto();
+        var tenantInfo1 = new TenantInfoDto();
+        tenantInfo1.name = tenantInfo.name;
+        tenantInfo1.email = "test2-updated@gmail.com";
+        tenantInfo1.description = "this is test2 updated tenant description";
+        tenantInfo1.image = "https://example/image.png";
+        tenantInfo1.website = "https://test2.updated.tenant.org";
+        request1.info = tenantInfo1;
+        var response1 = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(request1)
+                .contentType(ContentType.JSON)
+                .when()
+                .put("/tenants/{id}", response.id)
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(TenantResponseDto.class);
+
+        assertEquals(tenantInfo1.name, response1.info.name);
+    }
+
+    @Test
+    public void updateTenantForbiddenUser() {
+
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
+
+        var request = new TenantRequestDto();
+        var tenantInfo = new TenantInfoDto();
+        tenantInfo.name = "TENANT TEST";
+        tenantInfo.email = "test@gmail.com";
+        tenantInfo.description = "this is test tenant description";
+        tenantInfo.image = "https://example/image.png";
+        tenantInfo.website = "https://test.tenant.org";
+        request.info = tenantInfo;
+
+        //var webApi = new ArgoWebApiRequest();
+
+        var response = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(request)
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/tenants")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(TenantResponseDto.class);
+
+        var request1 = new TenantRequestDto();
+        var tenantInfo1 = new TenantInfoDto();
+        tenantInfo1.name = "TENANT TEST UPDATED" ;
+        tenantInfo1.email = "test2-updated@gmail.com";
+        tenantInfo1.description = "this is test2 updated tenant description";
+        tenantInfo1.image = "https://example/image.png";
+        tenantInfo1.website = "https://test2.updated.tenant.org";
+        request1.info = tenantInfo1;
+        var response1 = given()
+                .auth().oauth2(tenantViewer)
+                .contentType(ContentType.JSON)
+                .body(request1)
+                .contentType(ContentType.JSON)
+                .when()
+                .put("/tenants/{id}", response.id)
+                .then()
+                .statusCode(403)
+                .extract()
+                .as(InformativeResponse.class);
+
+        assertEquals("Access denied — super admin privileges required.", response1.message);
+    }
+
+    @Test
+    public void updateNotExistingTenant() {
+
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
+
+        var request1 = new TenantRequestDto();
+        var tenantInfo1 = new TenantInfoDto();
+        tenantInfo1.name = "TENANT TEST UPDATED";
+        tenantInfo1.email = "test2-updated@gmail.com";
+        tenantInfo1.description = "this is test2 updated tenant description";
+        tenantInfo1.image = "https://example/image.png";
+        tenantInfo1.website = "https://test2.updated.tenant.org";
+        request1.info = tenantInfo1;
+        var response1 = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(request1)
+                .contentType(ContentType.JSON)
+                .when()
+                .put("/tenants/{id}", currentMockId)
+                .then()
+                .statusCode(404)
+                .extract()
+                .as(InformativeResponse.class);
+
+        assertEquals("There is no Tenant with the following id:  " + currentMockId, response1.message);
+    }
 
     @Test
     public void deleteTenant() {

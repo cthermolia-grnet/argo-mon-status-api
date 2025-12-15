@@ -9,13 +9,13 @@ import jakarta.inject.Inject;
 import jakarta.persistence.PersistenceException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ServiceUnavailableException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.AuthGroupManagement;
-import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.GroupManagement;
 import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.GroupUserResponse;
 import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.UserGroupInfoDto;
 import org.grnet.endpoint.scanner.runtime.context.RoleEndpointContext;

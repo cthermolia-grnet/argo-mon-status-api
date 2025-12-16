@@ -34,5 +34,10 @@ public class UserEndpointTest extends KeycloakTest {
                 .as(UserProfileDto.class);
 
         assertEquals("tenantviewer", response.username);
+
+        var group = response.groups.get(0);
+
+        assertEquals("LOCALTENANT", group.name);
+        assertEquals("viewer", group.role);
     }
 }

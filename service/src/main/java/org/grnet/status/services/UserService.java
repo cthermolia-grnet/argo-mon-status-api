@@ -3,6 +3,7 @@ package org.grnet.status.services;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import org.grnet.status.authorizations.service.UserEntitlementsService;
 import org.grnet.status.dtos.user.UserProfileDto;
 import org.grnet.status.util.Utility;
 
@@ -13,6 +14,9 @@ public class UserService {
 
     @Inject
     Utility utility;
+
+    @Inject
+    UserEntitlementsService userEntitlementsService;
 
 
     @Transactional
@@ -25,6 +29,7 @@ public class UserService {
         userProfile.email = utility.getUserEmail();
         userProfile.name = utility.getUserName();
         userProfile.surname = utility.getUserSurname();
+        userProfile.groups = userEntitlementsService.getUserEntitlements();
 
         return userProfile;
     }

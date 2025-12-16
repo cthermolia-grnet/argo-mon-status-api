@@ -5,7 +5,7 @@ import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import org.grnet.status.api.endpoints.AdminEndpoint;
-import org.grnet.status.authorizations.groups.AuthGroupAsyncService;
+import org.grnet.status.authorizations.service.AuthGroupAsyncService;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.project.ProjectRequestDto;

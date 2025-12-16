@@ -3,8 +3,9 @@ package org.grnet.status.dtos.user;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.grnet.status.authorizations.dtos.UserGroupInfoDto;
 
-import java.time.Instant;
+import java.util.List;
 
 @Schema(description = "Request to fetch reports from a target API")
 public class UserProfileDto {
@@ -47,4 +48,10 @@ public class UserProfileDto {
         )
         @JsonProperty("surname")
         public String surname;
+
+        @Schema(
+                description = "User entitlements (group memberships and roles)"
+        )
+        @JsonProperty("groups")
+        public List<UserGroupInfoDto> groups;
 }

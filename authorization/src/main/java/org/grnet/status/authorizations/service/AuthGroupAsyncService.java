@@ -1,8 +1,9 @@
-package org.grnet.status.authorizations.groups;
+package org.grnet.status.authorizations.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.context.ManagedExecutor;
+import org.grnet.status.authorizations.groups.GroupManagement;
 import org.jboss.logging.Logger;
 
 import java.util.List;

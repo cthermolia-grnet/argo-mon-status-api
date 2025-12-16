@@ -1,8 +1,10 @@
-package org.grnet.status.authorizations.entitlements;
+package org.grnet.status.authorizations.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.grnet.status.authorizations.entitlements.Entitlement;
+import org.grnet.status.authorizations.entitlements.OIDCEntitlementService;
 import org.grnet.status.authorizations.resolvers.GroupIdResolver;
 
 import java.util.ArrayList;

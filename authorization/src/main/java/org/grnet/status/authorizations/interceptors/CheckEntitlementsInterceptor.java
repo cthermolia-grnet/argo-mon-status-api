@@ -7,12 +7,10 @@ import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
 import jakarta.ws.rs.ForbiddenException;
-import org.grnet.status.authorizations.entitlements.AccessControlService;
+import org.grnet.status.authorizations.service.AccessControlService;
 import org.grnet.status.authorizations.filters.RequestFilter;
 import org.grnet.status.authorizations.resolvers.GroupIdResolver;
 import org.grnet.status.authorizations.resolvers.NoOpResolver;
-
-import java.util.List;
 
 @CheckEntitlements
 @Interceptor

@@ -15,9 +15,9 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.grnet.status.authorizations.interceptors.CheckEntitlements;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.user.UserProfileDto;
+import org.grnet.status.services.GroupManagementService;
 import org.grnet.status.services.UserService;
 import org.grnet.status.util.Utility;
 
@@ -29,11 +29,13 @@ import org.grnet.status.util.Utility;
         scheme = "bearer",
         bearerFormat = "JWT",
         in = SecuritySchemeIn.HEADER)
-@CheckEntitlements(group = "tenants")
 public class UserEndpoint {
 
     @Inject
     UserService userService;
+
+    @Inject
+    GroupManagementService groupManagementService;
 
     @Inject
     Utility utility;
@@ -86,6 +88,62 @@ public class UserEndpoint {
     public Response profile() {
 
         var response = userService.getUserProfile(utility.getUserUniqueIdentifier());
+
+        return Response.ok(response).build();
+    }
+
+    @Tag(name = "User")
+    @Operation(
+            summary = "Register as member",
+            description = "Registers the authenticated user as a platform member. This is a self-registration operation."
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "User successfully registered as a member.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "204",
+            description = "User has already registered as a member.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Project does not exist.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @POST
+    @Path("/registration")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response registerMember() {
+
+        groupManagementService.addMember("members", utility.getUsername());
+
+        var response = new InformativeResponse();
+        response.code = 200;
+        response.message = "Registration completed.";
 
         return Response.ok(response).build();
     }

@@ -1,18 +1,17 @@
 package org.grnet.status.authorizations.groups;
 
+import io.quarkus.arc.profile.IfBuildProfile;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.authorizations.clients.KeycloakGroupClient;
-import org.grnet.status.authorizations.clients.KeycloakTokenClient;
-import org.grnet.status.authorizations.dtos.Group;
-import org.grnet.status.authorizations.dtos.GroupRequest;
+import org.grnet.status.authorizations.dtos.*;
 import org.jboss.logging.Logger;
 
 import java.util.*;
 
 @ApplicationScoped
+@IfBuildProfile("prod")
 public class AuthGroupManagement implements GroupManagement {
 
     private static final Logger LOG = Logger.getLogger(AuthGroupManagement.class);
@@ -21,15 +20,6 @@ public class AuthGroupManagement implements GroupManagement {
     @RestClient
     KeycloakGroupClient groupClient;
 
-    @Inject
-    @RestClient
-    KeycloakTokenClient tokenClient;
-
-    @ConfigProperty(name = "auth.group.management.client-id")
-    String clientId;
-
-    @ConfigProperty(name = "auth.group.management.client-secret")
-    String clientSecret;
 
     // ---------------------------------------------------------
     // CREATE GROUP
@@ -133,15 +123,6 @@ public class AuthGroupManagement implements GroupManagement {
     }
 
     // ---------------------------------------------------------
-    // TOKEN MANAGEMENT
-    // ---------------------------------------------------------
-    public String getAccessToken() {
-        return tokenClient
-                .getToken("client_credentials", clientId, clientSecret)
-                .access_token;
-    }
-
-    // ---------------------------------------------------------
     // GROUP LOOKUP UTILITIES
     // ---------------------------------------------------------
     @Override
@@ -163,6 +144,41 @@ public class AuthGroupManagement implements GroupManagement {
             collectGroupRecursive(group, map);
         }
         return map;
+    }
+
+
+    @Override
+    public List<GroupUser> fetchGroupMembers(String fullPath) {
+
+        var groupId = getGroupIdByPath(fullPath);
+        var response = groupClient.getGroupMembers(groupId);
+
+        if (response == null || response.results == null) {
+            return List.of();
+        }
+
+        return response.results.stream()
+                .map(entry -> entry.user)
+                .toList();
+    }
+
+
+    @Override
+    public void addGroupMember(String fullPath, String username) {
+
+        var groupId = getGroupIdByPath(fullPath);
+
+        var members = groupClient.getGroupMembers(groupId);
+        var results = (members == null || members.results == null) ? List.<GroupMemberEntry>of() : members.results;
+
+        var alreadyMember = results.stream()
+                .anyMatch(m -> m != null && m.user != null && username.equalsIgnoreCase(m.user.username));
+
+        if (alreadyMember) {
+            return;
+        }
+
+        groupClient.addUserToGroup(groupId, new AddGroupMemberRequest(username, List.of("member")));
     }
 
     // Recursively adds a group's path, id, and default configuration to the lookup map

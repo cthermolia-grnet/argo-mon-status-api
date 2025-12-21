@@ -3,16 +3,16 @@ package org.grnet.status.authorizations.filters;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.client.ClientRequestFilter;
-import org.grnet.status.authorizations.groups.AuthGroupManagement;
+import org.grnet.status.authorizations.tokens.AccessTokenProvider;
 
 public class BearerTokenRequestFilter implements ClientRequestFilter {
 
     @Inject
-    AuthGroupManagement groupManagement;
+    AccessTokenProvider accessTokenProvider;
 
     @Override
     public void filter(ClientRequestContext requestContext) {
-        var token = groupManagement.getAccessToken();
+        var token = accessTokenProvider.getAccessToken();
         requestContext.getHeaders().putSingle("Authorization", "Bearer " + token);
     }
 }

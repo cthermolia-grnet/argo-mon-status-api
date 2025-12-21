@@ -1,5 +1,7 @@
 package org.grnet.status.authorizations.groups;
 
+import org.grnet.status.authorizations.dtos.GroupUser;
+
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +20,10 @@ public interface GroupManagement {
     /** Deletes a group by full path. */
     void deleteGroup(String fullGroupPath);
 
+    /** Fetch members of a group. */
+    List<GroupUser> fetchGroupMembers(String groupPath);
+
+
     /** Assign one role to an existing group. */
     void addRole(String groupId, String role);
 
@@ -26,4 +32,6 @@ public interface GroupManagement {
 
     /** Update configuration of a group (generic Keycloak extension). */
     void updateConfiguration(String groupId, List<String> groupRoles);
+
+    void addGroupMember(String groupPath, String username);
 }

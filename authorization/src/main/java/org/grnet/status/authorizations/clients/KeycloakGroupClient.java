@@ -4,12 +4,9 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
-import org.grnet.status.authorizations.dtos.GroupMembership;
-import org.grnet.status.authorizations.dtos.GroupRequest;
-import org.grnet.status.authorizations.dtos.GroupResponse;
+import org.grnet.status.authorizations.dtos.*;
 import org.grnet.status.authorizations.exceptions.KeycloakExceptionMapper;
 import org.grnet.status.authorizations.filters.BearerTokenRequestFilter;
-import org.grnet.status.authorizations.dtos.Group;
 
 @RegisterRestClient(configKey = "keycloak-group-client")
 @Path("/agm/account")
@@ -52,6 +49,23 @@ public interface KeycloakGroupClient {
     @POST
     @Path("/group-admin/group/{id}/roles")
     void addRole(@PathParam("id") String id, @QueryParam("name") String role);
+
+
+    // -------------------------------------------------------------
+    // Add user to group
+    // -------------------------------------------------------------
+    @POST
+    @Path("/group-admin/group/{groupId}/members")
+    @Consumes(MediaType.APPLICATION_JSON)
+    String addUserToGroup(@PathParam("groupId") String groupId, AddGroupMemberRequest body);
+
+    // -------------------------------------------------------------
+    // Get group members
+    // -------------------------------------------------------------
+    @GET
+    @Path("/group-admin/group/{groupId}/members")
+    @Produces(MediaType.APPLICATION_JSON)
+    GroupMembersResponse getGroupMembers(@PathParam("groupId") String groupId);
 
     // -------------------------------------------------------------
     // Update configuration (default config / roles)

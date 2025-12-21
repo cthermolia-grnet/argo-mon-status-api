@@ -23,6 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.grnet.status.authorizations.dtos.GroupUser;
 import org.grnet.status.authorizations.interceptors.CheckEntitlements;
 import org.grnet.status.constraints.NotFoundEntity;
 import org.grnet.status.dtos.InformativeResponse;
@@ -31,15 +32,12 @@ import org.grnet.status.dtos.project.ProjectRequestDto;
 import org.grnet.status.dtos.project.ProjectResponseDto;
 import org.grnet.status.dtos.project.ProjectUpdateDto;
 import org.grnet.status.dtos.statuspage.StatusPageResponseDto;
-import org.grnet.status.dtos.tenant.ContactDto;
 import org.grnet.status.dtos.tenant.ContactFullDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
-import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectDeleteDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectDto;
-import org.grnet.status.entities.Tenant;
 import org.grnet.status.repositories.ProjectRepository;
 import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.services.*;
@@ -82,6 +80,9 @@ public class AdminEndpoint {
 
     @Inject
     ContactService contactService;
+
+    @Inject
+    GroupManagementService groupManagementService;
 
     // --------------------------------------------------------------------------------------------------------------------------
     // ADMIN STATUS PAGES ENDPOINT
@@ -1197,6 +1198,50 @@ public class AdminEndpoint {
         var contacts = contactService.getContactsByPageAndSize(page - 1, size, uriInfo);
 
         return Response.ok().entity(contacts).build();
+    }
+
+    @Tag(name = "Admin")
+    @Operation(summary = "Get list of members",
+            description = "Returns the members of the Status Page")
+    @APIResponse(
+            responseCode = "200",
+            description = "Get members ",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = GroupUser.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Group does not exist.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/members")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response fetchMembers() {
+
+        var project = groupManagementService.getMembers("members");
+
+        return Response.ok().entity(project).build();
     }
 
     public static class PageableContacts extends PageResource<ContactFullDto> {

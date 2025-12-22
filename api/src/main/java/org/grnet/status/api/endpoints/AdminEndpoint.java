@@ -1039,7 +1039,7 @@ public class AdminEndpoint {
             throw new BadRequestException("The available values of sort parameter are : " + sortValues);
         }
 
-        var assessments = tenantService.getTenantsByPageAndSize(page - 1, size, uriInfo, search, sort, order);
+        var assessments = tenantProjectService.getTenantsProjects(page - 1, size, uriInfo, search, sort, order);
 
         return Response.ok().entity(assessments).build();
     }

@@ -22,8 +22,8 @@ import org.grnet.status.services.utils.EncryptUtil;
 public class WebApiService {
     @Inject
     EncryptUtil encryptUtil;
-    @ConfigProperty(name = "admin.web.api.encrypted.secret")
-    String encryptedSecret;
+    @ConfigProperty(name = "web.api.access.token")
+    String accessToken;
     @ConfigProperty(name = "web.api.url")
     String webapi;
     @Inject
@@ -37,8 +37,7 @@ public class WebApiService {
         try {
 
             var client = produceClient();
-            var decryptedSecret = produceDecryptedKey();
-            return client.getTenant(decryptedSecret, id);
+            return client.getTenant(accessToken, id);
 
         } catch (RuntimeException e) {
             int status = 500; // default fallback
@@ -54,8 +53,7 @@ public class WebApiService {
 
         try {
             var client = produceClient();
-            var decryptedSecret = produceDecryptedKey();
-            client.deleteTenant(tenantId, decryptedSecret); // Make sure you have this method in your client
+            client.deleteTenant(tenantId, accessToken);
         } catch (Exception rollbackEx) {
             // Log rollback failure, but do not mask original exception
             System.err.println("Rollback failed for tenant id " + tenantId + ": " + rollbackEx.getMessage());
@@ -64,12 +62,8 @@ public class WebApiService {
 
     public TenantWebApiCreateResponse createTenantInWebApi(TenantWebApiRequest webApiRequest) {
         try {
-
-//            var webApiRequest = TenantMapper.INSTANCE.toWebApiRequest(request);
             var client = produceClient();
-            var decryptedSecret = produceDecryptedKey();
-
-          return client.createTenant(decryptedSecret, webApiRequest);
+            return client.createTenant(accessToken, webApiRequest);
         } catch (WebApplicationException e) {
 
             WebApplicationException wae = (WebApplicationException) e;
@@ -92,19 +86,12 @@ public class WebApiService {
 
     }
 
-
-
-    public String produceDecryptedKey() {
-        return encryptUtil.decrypt(encryptedSecret);
-    }
-
     public TenantWebApiResponse updateTenantWebApi(TenantWebApiRequest webApiRequest, String id) {
         try {
 
             var client = produceClient();
-            var decryptedSecret = produceDecryptedKey();
 
-            return client.updateTenant(id, decryptedSecret, webApiRequest);
+            return client.updateTenant(id, accessToken, webApiRequest);
         } catch (Exception e) {
             throw new WebApplicationException("Remote API update failed: " + e.getMessage(), 502);
         }

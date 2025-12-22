@@ -5,7 +5,7 @@ import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import org.grnet.status.api.endpoints.AdminEndpoint;
-import org.grnet.status.authorizations.service.AuthGroupAsyncService;
+import org.grnet.status.authorizations.service.AuthGroupSetupService;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.project.ProjectRequestDto;
@@ -41,14 +41,14 @@ public class AdminEndpointTest extends KeycloakTest {
     private String currentMockId;
 
     @InjectMock
-    AuthGroupAsyncService authGroupAsyncService;
+    AuthGroupSetupService authGroupSetupService;
 
     @BeforeEach
     public void mockGroupAsyncService() {
-        doNothing().when(authGroupAsyncService)
+        doNothing().when(authGroupSetupService)
                 .createGroup(anyString(), anyString(), anyList(), anyMap());
 
-        doNothing().when(authGroupAsyncService)
+        doNothing().when(authGroupSetupService)
                 .deleteGroup(anyString());
     }
 

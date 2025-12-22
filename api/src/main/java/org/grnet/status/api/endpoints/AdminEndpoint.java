@@ -38,6 +38,8 @@ import org.grnet.status.dtos.tenant.TenantResponseDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectDeleteDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectDto;
+import org.grnet.status.entities.Tenant;
+import org.grnet.status.enums.TenantGroupStatus;
 import org.grnet.status.repositories.ProjectRepository;
 import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.services.*;
@@ -45,6 +47,7 @@ import org.grnet.status.util.Utility;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import static org.eclipse.microprofile.openapi.annotations.enums.ParameterIn.QUERY;
 
@@ -356,6 +359,64 @@ public class AdminEndpoint {
         informativeResponse.code = 200;
         informativeResponse.message = "Tenant has been successfully deleted.";
         return Response.ok().entity(informativeResponse).build();
+    }
+
+    @Tag(name = "Admin")
+    @Operation(
+            summary = "Create AGM group for tenant.",
+            description = "Returns a specific tenant assessment.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Group already exist.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = TenantGroupStatus.class)))
+    @APIResponse(
+            responseCode = "201",
+            description = "Group created.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = TenantGroupStatus.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Entity Not Found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @POST
+    @Path("/tenants/{id}/group")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Authenticated
+    public Response createGroupTenant(
+            @Parameter(description = "The ID of the tenant to retrieve.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id) {
+
+        var status = tenantService.createTenantGroup(id);
+
+        return Response.ok().entity(Map.of("group-status", status)).build();
     }
 
     @Tag(name = "Admin")

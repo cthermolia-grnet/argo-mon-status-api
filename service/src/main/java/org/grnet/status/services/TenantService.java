@@ -7,10 +7,14 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.ServiceUnavailableException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.grnet.status.authorizations.service.AuthGroupAsyncService;
+import org.grnet.status.authorizations.groups.AuthGroupManagement;
+import org.grnet.status.authorizations.groups.GroupManagement;
+import org.grnet.status.authorizations.service.AuthGroupSetupService;
 import org.grnet.status.authorizations.service.AccessControlService;
 import org.grnet.status.authorizations.resolvers.GroupIdResolver;
 import org.grnet.status.dtos.pagination.PageResource;
@@ -22,6 +26,7 @@ import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.entities.Contact;
 import org.grnet.status.entities.Tenant;
 import org.grnet.status.enums.ContactType;
+import org.grnet.status.enums.TenantGroupStatus;
 import org.grnet.status.exceptions.CustomRuntimeException;
 import org.grnet.status.mappers.TenantMapper;
 import org.grnet.status.repositories.ContactRepository;
@@ -42,13 +47,16 @@ public class TenantService {
     @Inject
     ContactRepository contactRepository;
     @Inject
-    AuthGroupAsyncService authGroupAsyncService;
+    AuthGroupSetupService authGroupSetupService;
 
     @Inject
     AccessControlService accessControlService;
 
     @Inject
     WebApiService webApiService;
+
+    @Inject
+    GroupManagement groupManagement;
 
     @ConfigProperty(name = "api.auth.entitlements.parent.group")
     String namespace;
@@ -73,7 +81,7 @@ public class TenantService {
 
             var parentPath = "/" + namespace + "/tenants";
 
-            authGroupAsyncService.createGroup(parentPath, response.info.name, List.of("admin", "viewer"), attributes);
+            authGroupSetupService.createGroup(parentPath, response.info.name, List.of("admin", "viewer"), attributes);
 
         } catch (Exception ex) {
             Log.error("Failed to create AGM group for tenant " + response.id + ": " + ex.getMessage());
@@ -137,6 +145,7 @@ public class TenantService {
         var tenant = tenantRepository.findById(id);
         if (tenant != null) {
             webtenant.contacts = TenantMapper.INSTANCE.contactsToDtos(tenant.getContacts());
+            webtenant.groupStatus = getGroupStatus(tenant);
         }
         return webtenant;
     }
@@ -155,7 +164,7 @@ public class TenantService {
             var parentPath = "/" + namespace + "/tenants/";
             var groupPath = parentPath + tenantName;
 
-            authGroupAsyncService.deleteGroup(groupPath);
+            authGroupSetupService.deleteGroup(groupPath);
 
         } catch (Exception ex) {
             Log.error("Failed to queue async AGM group deletion for tenant " + id + ": " + ex.getMessage());
@@ -329,6 +338,7 @@ public class TenantService {
             try {
                 var webTenantGetResponse = webApiService.retrieveTenantWebApi(t.id);
                 webtenant = TenantMapper.INSTANCE.webApiTenantToDto(t, webTenantGetResponse);
+                webtenant.groupStatus = getGroupStatus(t);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
@@ -357,6 +367,7 @@ public class TenantService {
             try {
                 var webTenantGetResponse = webApiService.retrieveTenantWebApi(t.id);
                 webtenant = TenantMapper.INSTANCE.webApiTenantToDto(t, webTenantGetResponse);
+                webtenant.groupStatus = getGroupStatus(t);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
@@ -507,5 +518,50 @@ public class TenantService {
             map.put(newJob.name, newJob);
         }
         return new ArrayList<>(map.values());
+    }
+
+
+    public TenantGroupStatus createTenantGroup(String tenantId) {
+
+        var tenant = tenantRepository.findById(tenantId);
+        var groupPath = "/" + namespace + "/tenants/" + tenant.name;
+
+        try {
+            String groupId = groupManagement.getGroupId(groupPath);
+
+            if (groupId != null) {
+                return TenantGroupStatus.EXISTS;
+            }
+
+            Map<String, List<String>> attributes = Map.of(
+                    "tenantId", List.of(tenant.id),
+                    "description", List.of(tenant.description)
+            );
+
+            groupManagement.createGroup(
+                    "/" + namespace + "/tenants",
+                    tenant.name,
+                    List.of("admin", "viewer"),
+                    attributes
+            );
+
+            return TenantGroupStatus.EXISTS;
+
+        } catch (Exception e) {
+            throw new ServiceUnavailableException("Client unavailable");
+        }
+    }
+
+
+
+    private TenantGroupStatus getGroupStatus(Tenant tenant) {
+        var groupPath = "/" + namespace + "/tenants/" + tenant.name;
+        try {
+            return groupManagement.getGroupId(groupPath) != null
+                    ? TenantGroupStatus.EXISTS
+                    : TenantGroupStatus.NOT_FOUND;
+        } catch (Exception e) {
+            return TenantGroupStatus.UNKNOWN;
+        }
     }
 }

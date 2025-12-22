@@ -45,6 +45,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#42](https://github.com/ARGOeu/argo-mon-status-api/pull/42/) ARGO-5223: Implement tenants list endpoint with role-based filtering for admin and viewer roles
 - [#44](https://github.com/ARGOeu/argo-mon-status-api/pull/44) ARGO-5229 Expose user group memberships and roles in user profile
 - [#46](https://github.com/ARGOeu/argo-mon-status-api/pull/46) Design & Implement Group Membership Endpoints Using AGM
+- [#48](https://github.com/ARGOeu/argo-mon-status-api/pull/48) ARGO-5245 Add Admin Endpoint to Create Tenant Group and Expose Group Status
 - [#49](https://github.com/ARGOeu/argo-mon-status-api/pull/49) ARGO-5248 Protect automation endpoints
 
 ### Fix
@@ -58,6 +59,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#32](https://github.com/ARGOeu/argo-mon-status-api/pull/32) ARGO-5203 ARGO-5204 Handle Database Failures/ Apply one search param to tenant and also sort, order to be defined by user
 - [#37](https://github.com/ARGOeu/argo-mon-status-api/pull/37) ARGO-5210 [Status] - api Get contacts add tenant id and name
 - [#41](https://github.com/ARGOeu/argo-mon-status-api/pull/41) ARGO-5236 Prevent Project deletion when project belongs to tenant
+- [#47](https://github.com/ARGOeu/argo-mon-status-api/pull/47) ARGO-5244 Fix WebApi application.properties configuration
 
 
 ### Removed

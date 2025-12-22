@@ -10,9 +10,9 @@ import java.util.List;
 import java.util.Map;
 
 @ApplicationScoped
-public class AuthGroupAsyncService {
+public class AuthGroupSetupService {
 
-    private static final Logger LOG = Logger.getLogger(AuthGroupAsyncService.class);
+    private static final Logger LOG = Logger.getLogger(AuthGroupSetupService.class);
 
     @Inject
     GroupManagement groupManagement;

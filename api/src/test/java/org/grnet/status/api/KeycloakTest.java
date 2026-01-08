@@ -23,10 +23,9 @@ public class KeycloakTest {
     protected String adminToken;
     protected String aliceToken;
     protected String bobToken;
-
     protected String tenantAdmin;
-
     protected String tenantViewer;
+    protected String automationToken;
 
 
     KeycloakTestClient keycloakClient = new KeycloakTestClient();
@@ -39,6 +38,7 @@ public class KeycloakTest {
         bobToken = getAccessToken("bob");
         tenantAdmin = getAccessToken("tenantadmin");
         tenantViewer = getAccessToken("tenantviewer");
+        automationToken = getAccessToken("automation");
         tenantService.deleteAll();
     }
 

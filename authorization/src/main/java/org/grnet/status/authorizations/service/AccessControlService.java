@@ -34,15 +34,24 @@ public class AccessControlService {
             return true;
         }
 
+        // GLOBAL GROUP ACCESS (2-level entitlements): namespace:<group>:role=...
+        boolean hasGlobal = entitlements.stream().anyMatch(e -> {
+            var h = e.getHierarchy();
+            return h != null && h.size() == 2 &&
+                    annotatedGroup.equals(h.get(1)) &&
+                    roleMatches(e.getRole(), requiredRole);
+        });
+
+        if (hasGlobal) {
+            return true;
+        }
+
         //GROUP-LEVEL ACCESS (list endpoints, no ID provided)
-        if (annotatedGroup != null && !annotatedGroup.isBlank() && pathId == null) {
-            // Allow if user has ANY entitlement matching this group + role
+        if (pathId == null) {
             return entitlements.stream().anyMatch(e -> {
                 var h = e.getHierarchy();
-                if (h.size() < 2) return false;
-
-                var subgroup = h.get(1);
-                return subgroup.equals(annotatedGroup) &&
+                return h != null && h.size() >= 2 &&
+                        annotatedGroup.equals(h.get(1)) &&
                         roleMatches(e.getRole(), requiredRole);
             });
         }
@@ -73,7 +82,7 @@ public class AccessControlService {
         return false;
     }
 
-    public List<String> resolveAccessibleGroups(GroupIdResolver resolver) {
+    public List<String> resolveAccessibleGroups(String group, GroupIdResolver resolver) {
 
         var entitlements = oidc.fetchEntitlements();
 
@@ -92,7 +101,7 @@ public class AccessControlService {
             var subgroup = hierarchy.get(1);
             var subgroupValue = hierarchy.get(2);
 
-            if (!"tenants".equals(subgroup)) continue;
+            if (!group.equals(subgroup)) continue;
 
             var resolved = resolver.resolve(subgroupValue);
 
@@ -108,6 +117,10 @@ public class AccessControlService {
     private boolean roleMatches(String userRole, String requiredRole) {
         if (requiredRole == null || requiredRole.isBlank()) {
             return true;
+        }
+
+        if ("member".equals(requiredRole)) {
+            return "member".equals(userRole) || "viewer".equals(userRole) || "admin".equals(userRole);
         }
 
         if ("viewer".equals(requiredRole)) {

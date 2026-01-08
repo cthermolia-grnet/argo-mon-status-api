@@ -341,7 +341,7 @@ public class TenantService {
 
     public PageResource<TenantResponseDto> listAuthorizedTenants(GroupIdResolver tenantNameResolver, int page, int size, UriInfo uriInfo, String search, String sort, String order) {
 
-        var allowedTenantIds = accessControlService.resolveAccessibleGroups(tenantNameResolver);
+        var allowedTenantIds = accessControlService.resolveAccessibleGroups("tenants", tenantNameResolver);
 
 
         if (allowedTenantIds == null) {

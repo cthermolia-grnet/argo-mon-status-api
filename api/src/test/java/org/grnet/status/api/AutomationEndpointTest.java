@@ -1,17 +1,14 @@
 package org.grnet.status.api;
 
 import io.quarkus.test.InjectMock;
-import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
-import org.grnet.status.api.endpoints.AdminEndpoint;
 import org.grnet.status.dtos.tenant.TenantInfoDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
 import org.grnet.status.dtos.tenant.status.EventStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
-import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.enums.EventStatus;
 import org.grnet.status.services.clients.ArgoWebApiClient;
 import org.grnet.status.services.clients.ArgoWebApiClientFactory;
@@ -28,7 +25,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
-@TestHTTPEndpoint(AdminEndpoint.class)
+//@TestHTTPEndpoint(AdminEndpoint.class)
 public class AutomationEndpointTest extends KeycloakTest {
     @InjectMock
     ArgoWebApiClientFactory argoWebApiClientFactory;
@@ -59,6 +56,7 @@ public class AutomationEndpointTest extends KeycloakTest {
 
     @Test
     public void updateTenantStatus() {
+
         currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
 
         var request = new TenantRequestDto();
@@ -70,9 +68,7 @@ public class AutomationEndpointTest extends KeycloakTest {
         tenantInfo.website = "https://test.tenant.org";
         request.info = tenantInfo;
 
-        //var webApi = new ArgoWebApiRequest();
-
-        var response = given()
+        var created = given()
                 .auth().oauth2(adminToken)
                 .basePath("/v1/admin")//
                 .contentType(ContentType.JSON)
@@ -85,30 +81,31 @@ public class AutomationEndpointTest extends KeycloakTest {
                 .extract()
                 .as(TenantResponseDto.class);
 
-//        var request1 = new TenantStatusDto();
-//        request1.jobs = new ArrayList<>();
-//        var eventStatusDto = new EventStatusDto();
-//        eventStatusDto.name = "init_mongo";
-//        eventStatusDto.status = "completed";
-//        eventStatusDto.message = "mongo initialized";
-//        eventStatusDto.start = Instant.parse("2025-01-01T12:00:00Z");
-//        eventStatusDto.end = Instant.parse("2025-01-01T14:00:00Z");
-//        request1.jobs.add(eventStatusDto);
-//        var response1 = given()
-//               // .auth().oauth2(adminToken)
-//                .contentType(ContentType.JSON)
-//                .body(request1)
-//                .contentType(ContentType.JSON)
-//                .when()
-//                .put("/tenants/{id}/status", response.id)
-//                .then()
-//                .statusCode(200)
-//                .extract()
-//                .as(TenantStatusDto.class);
-//
-//
-//        assertEquals(1, response1.jobs.size());
-//        assertEquals(EventStatus.COMPLETED.name().toLowerCase(), response1.jobs.get(0).status);
+        var statusReq = new TenantStatusDto();
+        statusReq.jobs = new ArrayList<>();
+
+        var job = new EventStatusDto();
+        job.name = "init_ams";
+        job.status = EventStatus.COMPLETED.name().toLowerCase(); // "completed"
+        job.message = "Creating indexes in mongo";
+        job.start = Instant.parse("2025-10-22T12:44:48.107Z");
+        job.end = Instant.parse("2025-10-22T12:44:48.107Z");
+        statusReq.jobs.add(job);
+
+        TenantStatusDto updated = given()
+                .auth().oauth2(automationToken)
+                .contentType(ContentType.JSON)
+                .body(statusReq)
+                .when()
+                .put("/v1/automation/tenant/{id}/status", created.id)
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(TenantStatusDto.class);
+
+        assertEquals(1, updated.jobs.size());
+        assertEquals("init_ams", updated.jobs.get(0).name);
+        assertEquals(EventStatus.COMPLETED.name().toLowerCase(), updated.jobs.get(0).status);
     }
 
 

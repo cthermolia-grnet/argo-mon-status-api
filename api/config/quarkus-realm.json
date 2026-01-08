@@ -2804,6 +2804,36 @@
       "groups": []
     },
     {
+      "id": "10000000-cccc-aaaa-bbbb-automation",
+      "username": "automation",
+      "email": "automation@test.dev",
+      "firstName": "Auto",
+      "lastName": "Local",
+      "enabled": true,
+
+      "attributes": {
+        "voperson_id": ["automation_voperson_id"],
+
+        "entitlements": [
+          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:automation:role=admin"
+        ]
+      },
+
+      "credentials": [
+        {
+          "type": "password",
+          "value": "automation"
+        }
+      ],
+
+      "realmRoles": ["user"],
+      "clientRoles": {
+        "backend-service": ["admin"]
+      },
+
+      "groups": []
+    },
+    {
       "id": "1eed6a8e-a853-4597-b4c6-c4c2533546a0",
       "username": "jdoe",
       "enabled": true,

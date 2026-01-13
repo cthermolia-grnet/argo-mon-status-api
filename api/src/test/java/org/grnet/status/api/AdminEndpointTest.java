@@ -104,7 +104,7 @@ public class AdminEndpointTest extends KeycloakTest {
                 .extract()
                 .as(InformativeResponse.class);
 
-        assertEquals("Access denied — super admin privileges required.", error.message);
+        assertEquals("Access denied.", error.message);
     }
 
     private TenantWebApiCreateResponse loadMockTenantResponse(String id) {
@@ -321,7 +321,7 @@ public class AdminEndpointTest extends KeycloakTest {
                 .extract()
                 .as(InformativeResponse.class);
 
-        assertEquals("Access denied — super admin privileges required.", response1.message);
+        assertEquals("Access denied.", response1.message);
     }
 
     @Test
@@ -435,7 +435,7 @@ public class AdminEndpointTest extends KeycloakTest {
                 .as(InformativeResponse.class);
 
         assertEquals(403, error.code);
-        assertEquals("Access denied — super admin privileges required.", error.message);
+        assertEquals("Access denied.", error.message);
 
     }
 

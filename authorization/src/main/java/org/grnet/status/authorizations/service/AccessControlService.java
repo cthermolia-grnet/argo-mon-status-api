@@ -30,10 +30,6 @@ public class AccessControlService {
 
         var entitlements = oidc.fetchEntitlements();
 
-        if (isSuperAdmin(entitlements)) {
-            return true;
-        }
-
         // GLOBAL GROUP ACCESS (2-level entitlements): namespace:<group>:role=...
         boolean hasGlobal = entitlements.stream().anyMatch(e -> {
             var h = e.getHierarchy();
@@ -85,11 +81,6 @@ public class AccessControlService {
     public List<String> resolveAccessibleGroups(String group, GroupIdResolver resolver) {
 
         var entitlements = oidc.fetchEntitlements();
-
-        // super admin sees ALL
-        if (isSuperAdmin(entitlements)) {
-            return null;
-        }
 
         List<String> ids = new ArrayList<>();
 

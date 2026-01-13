@@ -60,7 +60,7 @@ import static org.eclipse.microprofile.openapi.annotations.enums.ParameterIn.QUE
         scheme = "bearer",
         bearerFormat = "JWT",
         in = SecuritySchemeIn.HEADER)
-@CheckEntitlements(requireSuperAdmin = true)
+@CheckEntitlements
 public class AdminEndpoint {
 
     @Inject

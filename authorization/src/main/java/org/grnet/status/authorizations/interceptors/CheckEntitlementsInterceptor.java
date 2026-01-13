@@ -41,19 +41,16 @@ public class CheckEntitlementsInterceptor {
                 ? methodAnn.role()
                 : "";
 
-        var requireSuperAdmin =
-                (classAnn != null && classAnn.requireSuperAdmin()) ||
-                        (methodAnn != null && methodAnn.requireSuperAdmin());
-
         var isSuperAdmin = accessControlService.isSuperAdmin();
 
-        // Explicit requirement
-        if (requireSuperAdmin && !isSuperAdmin) {
-            throw new ForbiddenException("Access denied — super admin privileges required.");
-        }
-
         // Global bypass
-        if (isSuperAdmin) {
+        // - class-level defines it
+        // - method-level can only make it stricter (false)
+        var classBypass = (classAnn == null) || classAnn.superAdminBypass();
+        var methodDisablesBypass = (methodAnn != null) && !methodAnn.superAdminBypass();
+        var effectiveBypass = methodDisablesBypass ? false : classBypass;
+
+        if (isSuperAdmin && effectiveBypass) {
             return ctx.proceed();
         }
 
@@ -65,7 +62,7 @@ public class CheckEntitlementsInterceptor {
                         ? classAnn.idResolver()
                         : NoOpResolver.class;
 
-        GroupIdResolver resolver = resolverInstances.select(resolverClass).get();
+        var resolver = resolverInstances.select(resolverClass).get();
 
         // Extract path ID (e.g. tenantId from URL)
         var pathParams = RequestFilter.getPathParams();
@@ -75,7 +72,7 @@ public class CheckEntitlementsInterceptor {
             pathId = pathParams.values().iterator().next();
         }
 
-        boolean allowed = accessControlService.hasAccess(group, role, pathId, resolver);
+        var allowed = accessControlService.hasAccess(group, role, pathId, resolver);
 
         if (!allowed) {
             throw new ForbiddenException("Access denied.");

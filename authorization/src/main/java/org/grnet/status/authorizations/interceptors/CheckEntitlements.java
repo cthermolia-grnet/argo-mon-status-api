@@ -14,7 +14,7 @@ import java.lang.annotation.*;
 public @interface CheckEntitlements {
 
     @Nonbinding
-    boolean requireSuperAdmin() default false;
+    boolean superAdminBypass() default true;
 
     @Nonbinding
     String group() default "";

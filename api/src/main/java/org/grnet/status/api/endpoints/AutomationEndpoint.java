@@ -6,6 +6,8 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -33,7 +35,7 @@ import java.io.IOException;
         scheme = "bearer",
         bearerFormat = "JWT",
         in = SecuritySchemeIn.HEADER)
-@CheckEntitlements(group = "automation")
+@CheckEntitlements(group = "automation", superAdminBypass = false)
 public class AutomationEndpoint {
 
     @Inject
@@ -82,6 +84,7 @@ public class AutomationEndpoint {
                     implementation = InformativeResponse.class)))
     @PUT
     @Path("/tenant/{id}/status")
+    @Produces(MediaType.APPLICATION_JSON)
     @CheckEntitlements(role = "admin")
     public Response updateStatus(@PathParam("id")
                                  @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,

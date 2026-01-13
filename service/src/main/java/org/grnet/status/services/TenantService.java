@@ -7,6 +7,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.ServiceUnavailableException;
 import jakarta.ws.rs.WebApplicationException;
@@ -31,7 +32,7 @@ import org.grnet.status.enums.ContactType;
 import org.grnet.status.enums.EventName;
 import org.grnet.status.enums.EventStatus;
 import org.grnet.status.enums.TenantGroupStatus;
-import org.grnet.status.exceptions.BadRequestException;
+import org.grnet.status.enums.*;
 import org.grnet.status.exceptions.CustomRuntimeException;
 import org.grnet.status.mappers.TenantMapper;
 import org.grnet.status.repositories.ContactRepository;
@@ -362,8 +363,7 @@ public class TenantService {
 
         var allowedTenantIds = accessControlService.resolveAccessibleGroups("tenants", tenantNameResolver);
 
-
-        if (allowedTenantIds == null) {
+        if (accessControlService.isSuperAdmin()) {
             return getTenantsByPageAndSize(page, size, uriInfo, search, sort, order);
         }
 
@@ -484,11 +484,32 @@ public class TenantService {
         tenantRepository.flush(); // force errors
     }
 
+
+    @Transactional
+    public TenantStatusFullResponse updateTenantManualJobs(String id, @Valid TenantStatusDto request) {
+        validateJobsMode(request.jobs, EventMode.MANUAL);
+
+        if (request.jobs != null) {
+            request.jobs.forEach(this::applyJobDefinition);
+        }
+
+        return updateTenantJobsInternal(id, request);
+    }
+
+    @Transactional
+    public TenantStatusFullResponse updateTenantAutoJobs(String id, @Valid TenantStatusDto request) {
+        validateJobsMode(request.jobs, EventMode.AUTO);
+        if (request.jobs != null) {
+            request.jobs.forEach(this::applyJobDefinition);
+        }
+
+        return updateTenantJobsInternal(id, request);
+    }
+
     /**
      * Update a job status.
      */
-    @Transactional
-    public TenantStatusFullResponse updateTenantJobs(String id, @Valid TenantStatusDto request) {
+    public TenantStatusFullResponse updateTenantJobsInternal(String id, @Valid TenantStatusDto request) {
 
         var tenant = tenantRepository.findById(id);
 
@@ -499,9 +520,9 @@ public class TenantService {
             var updatedStatusJson = TenantMapper.INSTANCE.mergeJobsIntoStatus(tenant.getStatus(), request);
 
             updateTenantStatusInDb(tenant, updatedStatusJson);
-            TenantStatusDto statusDto = TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
+            var statusDto = TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
 
-            TenantStatusFullResponse response = new TenantStatusFullResponse();
+            var response = new TenantStatusFullResponse();
             response.name = tenant.name;
             response.status = statusDto;
 
@@ -523,6 +544,12 @@ public class TenantService {
         var tenant = tenantRepository.findById(id);
 
         var existingStatus = TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
+        request.jobs = mergeJobs(existingStatus.jobs, request.jobs);
+
+        if (request.jobs != null) {
+            request.jobs.forEach(this::applyJobDefinition);
+        }
+
         request.jobs = mergeJobs(existingStatus.jobs, request.jobs);
         try {
             var updatedAlertJson = TenantMapper.INSTANCE.mergeJobsIntoStatus(tenant.getStatus(), request);
@@ -730,23 +757,21 @@ public class TenantService {
 
     //sets the status of jobs and alerts to UNKNOWN
     private TenantStatusDto setDefaultStatus() {
-        TenantStatusDto tenantStatusDto = new TenantStatusDto();
+        var dto = new TenantStatusDto();
+        dto.jobs = new ArrayList<>();
 
-        EventStatusDto initAms = new EventStatusDto();
-        initAms.setStatus(EventStatus.UNKNOWN.name());
-        initAms.setName(EventName.INIT_AMS.name());
+        for (var def : TenantJobEvent.values()) {
+            EventStatusDto job = new EventStatusDto();
+            job.setName(def.key());
+            job.setMode(def.modeValue());
+            job.setStatus(EventStatus.UNKNOWN.name());
+            if (def.isManual()) {
+                job.setMessage("Waiting for manual administrator action");
+            }
+            dto.jobs.add(job);
+        }
 
-        EventStatusDto initMongo = new EventStatusDto();
-        initMongo.setStatus(EventStatus.UNKNOWN.name());
-        initMongo.setName(EventName.INIT_MONGO.name());
-
-        var eventList = new ArrayList<EventStatusDto>();
-        eventList.add(initAms);
-        eventList.add(initMongo);
-        tenantStatusDto.jobs = eventList;
-
-
-        return tenantStatusDto;
+        return dto;
     }
 
     /**
@@ -772,4 +797,32 @@ public class TenantService {
         return null; // or Optional<TenantStatusFullResponse> if you prefer
     }
 
+    private void applyJobDefinition(EventStatusDto job) {
+        if (job == null || job.name == null) return;
+
+        var def = org.grnet.status.enums.TenantJobEvent
+                .fromKey(job.name)
+                .orElseThrow(() -> new BadRequestException("Unknown job name: " + job.name));
+
+        job.setName(def.key());
+        job.setMode(def.modeValue());
+    }
+
+    private void validateJobsMode(List<EventStatusDto> jobs, EventMode expectedMode) {
+
+        if (jobs == null || jobs.isEmpty()) { return; }
+
+        for (EventStatusDto job : jobs) {
+            if (job == null || job.getName() == null) { continue;}
+
+            var def = TenantJobEvent
+                    .fromKey(job.getName())
+                    .orElseThrow(() -> new BadRequestException("Unknown job name: " + job.getName()));
+
+            if (def.mode() != expectedMode) {
+                throw new BadRequestException("Job '" + def.key() + "' is " + def.mode().name().toLowerCase()
+                        + " and cannot be updated");
+            }
+        }
+    }
 }

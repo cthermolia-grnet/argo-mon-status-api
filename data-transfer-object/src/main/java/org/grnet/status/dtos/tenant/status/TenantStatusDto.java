@@ -29,12 +29,19 @@ public class TenantStatusDto {
                         "      \"start\": \"2025-10-22T12:44:48Z\",\n" +
                         "      \"end\": \"2025-10-22T12:44:48Z\",\n" +
                         "      \"message\": \"Creating indexes in mongo\"\n" +
+                        "    },\n" +
+                        "    {\n" +
+                        "      \"name\": \"create_domain_names\",\n" +
+                        "      \"status\": \"completed\",\n" +
+                        "      \"start\": \"2025-10-22T12:44:48Z\",\n" +
+                        "      \"end\": \"2025-10-22T12:44:48Z\",\n" +
+                        "      \"message\": \"Creating domain names\"\n" +
                         "    }\n" +
                         "  ]\n"
         )
         @JsonProperty("jobs")
         @Valid
         // @NotNull(message = "instance can not be null")
-        public List<EventStatusDto> jobs;
+        public List<@Valid EventStatusDto> jobs;
 
 }

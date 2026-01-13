@@ -2,17 +2,20 @@ package org.grnet.status.dtos.tenant.status;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.Setter;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.grnet.status.constraints.ValidEventMode;
 import org.grnet.status.constraints.ValidEventName;
 import org.grnet.status.constraints.ValidEventStatus;
-import org.grnet.status.constraints.ValidTopologyType;
 
 import java.time.Instant;
+import java.util.Map;
 
 @Schema(name = "EventStatusDto", description = "Represents the configuration of a tenant's status event info.")
 @Getter
@@ -86,6 +89,17 @@ public class EventStatusDto {
     @JsonProperty("message")
     public String message;
 
+    @Schema(
+            type = SchemaType.STRING,
+            implementation = String.class,
+            description = "Indicates whether the job is manual or automated.",
+            example = "auto",
+            enumeration = {"manual", "auto"}
+    )
+    @ValidEventMode
+    @JsonProperty("mode")
+    public String mode;
+
     @JsonProperty("name")
     public void setName(String name) {
         this.name = name == null ? null : name.toLowerCase();
@@ -93,5 +107,9 @@ public class EventStatusDto {
     @JsonProperty("status")
     public void setStatus(String status) {
         this.status = status == null ? null : status.toLowerCase();
+    }
+    @JsonProperty("mode")
+    public void setMode(String mode) {
+        this.mode = mode == null ? null : mode.toLowerCase();
     }
 }

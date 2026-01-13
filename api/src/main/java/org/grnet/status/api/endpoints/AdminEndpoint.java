@@ -1457,6 +1457,53 @@ public class AdminEndpoint {
 
     @Tag(name = "Admin")
     @Operation(
+            summary = "Update Tenant's status By Id .",
+            description = "Returns a specific tenant's status.")
+    @APIResponse(
+            responseCode = "200",
+            description = "The corresponding tenant's status.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = TenantStatusFullResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Entity Not Found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @PATCH
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/tenants/{id}/manual/status")
+    public Response updateStatus(
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id, TenantStatusDto request) throws IOException {
+
+        var status = tenantService.updateTenantManualJobs(id, request);
+        return Response.ok().entity(status).build();
+    }
+
+    @Tag(name = "Admin")
+    @Operation(
             summary = "Get Tenant's status By Id .",
             description = "Returns a specific tenant's status.")
     @APIResponse(

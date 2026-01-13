@@ -115,7 +115,7 @@ public class AutomationEndpointTest extends KeycloakTest {
         job.end = Instant.parse("2025-10-22T12:44:48Z");
         statusReq.jobs.add(job);
 
-        TenantStatusFullResponse updated = given()
+        var updated = given()
                 .auth().oauth2(automationToken)
                 .contentType(ContentType.JSON)
                 .body(statusReq)
@@ -126,9 +126,9 @@ public class AutomationEndpointTest extends KeycloakTest {
                 .extract()
                 .as(TenantStatusFullResponse.class);
 
-        assertEquals(2, updated.status.jobs.size());
-        assertEquals(EventName.INIT_AMS.name().toLowerCase(), updated.status.jobs.get(1).name);
-        assertEquals(EventStatus.COMPLETED.name().toLowerCase(), updated.status.jobs.get(1).status);
+        assertEquals(3, updated.status.jobs.size());
+        assertEquals(EventName.INIT_AMS.name().toLowerCase(), updated.status.jobs.get(2).name);
+        assertEquals(EventStatus.COMPLETED.name().toLowerCase(), updated.status.jobs.get(2).status);
     }
 
 

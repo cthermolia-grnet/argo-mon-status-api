@@ -14,11 +14,19 @@ import org.grnet.status.dtos.project.ProjectRequestDto;
 import org.grnet.status.dtos.project.ProjectResponseDto;
 import org.grnet.status.dtos.project.ProjectUpdateDto;
 import org.grnet.status.dtos.tenant.*;
+import org.grnet.status.dtos.tenant.status.EventStatusDto;
+import org.grnet.status.dtos.tenant.status.TenantStatusDto;
+import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
 import org.grnet.status.dtos.tenantproject.TenantProjectDeleteDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.services.clients.*;
+import org.grnet.status.enums.EventName;
+import org.grnet.status.enums.EventStatus;
+import org.grnet.status.enums.TenantJobEvent;
+import org.grnet.status.services.clients.ArgoWebApiClient;
+import org.grnet.status.services.clients.ArgoWebApiClientFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -721,6 +729,58 @@ public class AdminEndpointTest extends KeycloakTest {
     }
 
 
+    @Test
+    public void updateTenantStatus() {
+
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
+
+        var request = new TenantRequestDto();
+        var tenantInfo = new TenantInfoDto();
+        tenantInfo.name = "TENANT TEST";
+        tenantInfo.email = "test@gmail.com";
+        tenantInfo.description = "this is test tenant description";
+        tenantInfo.image = "https://example/image.png";
+        tenantInfo.website = "https://test.tenant.org";
+        request.info = tenantInfo;
+
+        var created = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(request)
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/tenants")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(TenantResponseDto.class);
+
+        var statusReq = new TenantStatusDto();
+        statusReq.jobs = new ArrayList<>();
+
+        var job = new EventStatusDto();
+        job.name = TenantJobEvent.CREATE_DOMAIN_NAMES.name().toLowerCase();
+        job.status = EventStatus.COMPLETED.name().toLowerCase(); // "completed"
+        job.message = "Creating domain names";
+        job.start = Instant.parse("2025-10-22T12:44:48.107Z");
+        job.end = Instant.parse("2025-10-22T12:44:48.107Z");
+        statusReq.jobs.add(job);
+
+        var updated = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(statusReq)
+                .when()
+                .patch("/tenants/{id}/manual/status", created.id)
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(TenantStatusFullResponse.class);
+
+        assertEquals(3, updated.status.jobs.size());
+        assertEquals(job.name, updated.status.jobs.get(1).name);
+        assertEquals(job.status, updated.status.jobs.get(1).status);
+    }
 
 
 

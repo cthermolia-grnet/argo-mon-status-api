@@ -14,7 +14,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.grnet.status.authorizations.interceptors.CheckEntitlements;
@@ -77,15 +76,16 @@ public class AutomationEndpoint {
                     implementation = InformativeResponse.class)))
     @PATCH
     @Path("/tenants/{id}/status")
-    @CheckEntitlements(group = "automation", superAdminBypass = false)
+    @CheckEntitlements(role = "admin")
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateStatus(@PathParam("id")
                                  @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
                                  TenantStatusDto request) throws IOException {
 
-        var status = tenantService.updateTenantJobs(id, request);
+        var status = tenantService.updateTenantAutoJobs(id, request);
         return Response.ok().entity(status).build();
     }
+
     @Tag(name = "Automation")
     @Operation(
             summary = "Get Tenant's status By Id .",
@@ -123,7 +123,7 @@ public class AutomationEndpoint {
 
     @GET
     @Path("/tenants/{id}/status")
-    @CheckEntitlements(group = "automation", superAdminBypass = false)
+    @CheckEntitlements(role = "admin")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getTenantStatus(@Parameter(
             description = "The ID of the tenant to retrieve status.",

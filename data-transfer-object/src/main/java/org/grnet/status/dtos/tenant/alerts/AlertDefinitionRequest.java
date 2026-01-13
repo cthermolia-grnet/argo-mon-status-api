@@ -20,7 +20,7 @@ public class AlertDefinitionRequest {
             type = SchemaType.STRING,
             implementation = String.class,
             description = "event name",
-            example = "init_ams"
+            example="init_ams"
     )
     @JsonProperty("name")
     @ValidEventName

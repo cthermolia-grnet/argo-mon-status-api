@@ -7,6 +7,8 @@ import io.restassured.http.ContentType;
 import org.grnet.status.api.endpoints.AdminEndpoint;
 import org.grnet.status.authorizations.service.AuthGroupSetupService;
 import org.grnet.status.dtos.InformativeResponse;
+import org.grnet.status.dtos.ams.PublishRequest;
+import org.grnet.status.dtos.ams.PublishResponse;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.project.ProjectRequestDto;
 import org.grnet.status.dtos.project.ProjectResponseDto;
@@ -16,8 +18,7 @@ import org.grnet.status.dtos.tenantproject.TenantProjectDeleteDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
-import org.grnet.status.services.clients.ArgoWebApiClient;
-import org.grnet.status.services.clients.ArgoWebApiClientFactory;
+import org.grnet.status.services.clients.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,10 +39,13 @@ public class AdminEndpointTest extends KeycloakTest {
 
     @InjectMock
     ArgoWebApiClientFactory argoWebApiClientFactory;
-    private String currentMockId;
-
     @InjectMock
     AuthGroupSetupService authGroupSetupService;
+    @InjectMock
+    AmsClientFactory amsClientFactory;
+
+    private String currentMockId;
+
 
     @BeforeEach
     public void mockGroupAsyncService() {
@@ -66,6 +70,20 @@ public class AdminEndpointTest extends KeycloakTest {
             return loadMockTenantGetResponse(currentMockId);
         });
         when(argoWebApiClientFactory.buildClient(anyString())).thenReturn(mockClient);
+    }
+
+    @BeforeEach
+    void mockAmsClient() {
+        var mockClient = mock(AmsClient.class);
+
+        when(amsClientFactory.buildClient(anyString()))
+                .thenReturn(mockClient);
+
+        var resp = new PublishResponse();
+        resp.setMessageIds(List.of("mock-message"));
+
+        when(mockClient.publish(anyString(), anyString(), anyString(), any(PublishRequest.class)))
+                .thenReturn(resp);
     }
 
     @BeforeEach
@@ -475,7 +493,7 @@ public class AdminEndpointTest extends KeycloakTest {
     }
     @Test
     public void testAssignMultipleProjects() {
-        currentMockId = "tenant-bbb-ccc";
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
 
         // Create tenant
         var tenantReq = new TenantRequestDto();
@@ -533,7 +551,7 @@ public class AdminEndpointTest extends KeycloakTest {
 
     @Test
     public void testGetProjectsByTenant() {
-        currentMockId = "tenant-xyz";
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
 
         var tenantReq = new TenantRequestDto();
         var info = new TenantInfoDto();
@@ -595,7 +613,7 @@ public class AdminEndpointTest extends KeycloakTest {
 
     @Test
     public void testDeleteTenantProjectAssignment() {
-        currentMockId = "tenant-del";
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
 
         var tenantReq = new TenantRequestDto();
         var tInfo = new TenantInfoDto();

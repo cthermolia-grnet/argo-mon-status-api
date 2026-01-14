@@ -668,14 +668,18 @@ public class TenantService {
         try {
             var now = Instant.now();
 
-            ObjectMapper objectMapper = new ObjectMapper();
-            String json = objectMapper.writeValueAsString(alert);
-            String encodedData = Base64.getEncoder().encodeToString(json.getBytes());
+            var objectMapper = new ObjectMapper();
+            var json = objectMapper.writeValueAsString(alert);
 
-            PublishRequest.Message message = new PublishRequest.Message();
+            Log.infof("Sending to AMS | project=%s | topic=%  notification for:  tenantId=%s | event=%s | properties=%s | created_at=%s",
+                    amsService.getProject(), amsService.getTopic() , id, alert.name, alert.properties, alert.createdAt);
+
+            var encodedData = Base64.getEncoder().encodeToString(json.getBytes());
+
+            var message = new PublishRequest.Message();
             message.setData(encodedData);
 
-            PublishRequest publishData = new PublishRequest();
+            var publishData = new PublishRequest();
             publishData.setMessages(List.of(message));
 
             // fire-and-forget async publish
@@ -687,6 +691,7 @@ public class TenantService {
                     if (throwable == null) {
                         // ✅ success
                         updateTenantAlerts(id, setAlert(alert.name, EventStatus.INITIALISED, "Notification is published to AMS",now));
+                        Log.debugf("AMS publish succeeded for tenantId=%s, alert=%s",id, alert.name );
                     } else {
                         Log.error("AMS publish failed", throwable);
                         updateTenantAlerts(id, setAlert(alert.name, EventStatus.FAILED_INITIALISATION, "Notification failed to be published to AMS", now));

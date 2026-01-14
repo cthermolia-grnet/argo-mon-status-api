@@ -3,6 +3,8 @@ package org.grnet.status.api;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import org.grnet.status.dtos.ams.PublishRequest;
+import org.grnet.status.dtos.ams.PublishResponse;
 import org.grnet.status.dtos.tenant.TenantInfoDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
@@ -12,6 +14,8 @@ import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.enums.EventName;
 import org.grnet.status.enums.EventStatus;
+import org.grnet.status.services.clients.AmsClient;
+import org.grnet.status.services.clients.AmsClientFactory;
 import org.grnet.status.services.clients.ArgoWebApiClient;
 import org.grnet.status.services.clients.ArgoWebApiClientFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,11 +23,13 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
@@ -31,7 +37,8 @@ import static org.mockito.Mockito.when;
 public class AutomationEndpointTest extends KeycloakTest {
     @InjectMock
     ArgoWebApiClientFactory argoWebApiClientFactory;
-
+    @InjectMock
+    AmsClientFactory amsClientFactory;
     private String currentMockId;
 
     @BeforeEach
@@ -48,6 +55,20 @@ public class AutomationEndpointTest extends KeycloakTest {
             return loadMockTenantGetResponse(currentMockId);
         });
         when(argoWebApiClientFactory.buildClient(anyString())).thenReturn(mockClient);
+    }
+
+    @BeforeEach
+    void mockAmsClient() {
+        AmsClient mockClient = mock(AmsClient.class);
+
+        when(amsClientFactory.buildClient(anyString()))
+                .thenReturn(mockClient);
+
+        var resp = new PublishResponse();
+        resp.setMessageIds(List.of("mock-message-id-1"));
+
+        when(mockClient.publish(anyString(), anyString(), anyString(), any(PublishRequest.class)))
+                .thenReturn(resp);
     }
 
 

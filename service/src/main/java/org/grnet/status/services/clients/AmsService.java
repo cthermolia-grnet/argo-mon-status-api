@@ -3,6 +3,7 @@ package org.grnet.status.services.clients;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import lombok.Getter;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.services.utils.EncryptUtil;
@@ -17,8 +18,12 @@ public class AmsService {
     String ams;
     @Inject
     AmsClientFactory amsClientFactory;
+
+    @Getter
     @ConfigProperty(name = "ams.project")
     String project;
+
+    @Getter
     @ConfigProperty(name = "ams.topic")
     String topic;
 
@@ -30,5 +35,4 @@ public class AmsService {
         var amsClient = produceClient();
         amsClient.publish(amsToken, project, topic, request);
     }
-
 }

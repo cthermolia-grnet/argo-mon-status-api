@@ -61,6 +61,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#41](https://github.com/ARGOeu/argo-mon-status-api/pull/41) ARGO-5236 Prevent Project deletion when project belongs to tenant
 - [#47](https://github.com/ARGOeu/argo-mon-status-api/pull/47) ARGO-5244 Fix WebApi application.properties configuration
 - [#51](https://github.com/ARGOeu/argo-mon-status-api/pull/51) ARGO-5276 Restrict super_admin bypass on automation endpoints
+- [#52](https://github.com/ARGOeu/argo-mon-status-api/pull/52) ARGO-5278 Improve tenant tests: consistent mock tenant ID and AMS isolation
 
 
 ### Removed

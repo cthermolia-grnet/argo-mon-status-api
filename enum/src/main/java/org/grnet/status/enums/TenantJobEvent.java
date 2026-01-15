@@ -2,6 +2,7 @@ package org.grnet.status.enums;
 
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Registry of all tenant status jobs.
@@ -9,23 +10,27 @@ import java.util.Optional;
 public enum TenantJobEvent {
 
     // Automatic jobs (updated by automation)
-    INIT_AMS("init_ams", EventMode.AUTO),
-    INIT_MONGO("init_mongo", EventMode.AUTO),
+    INIT_AMS("init_ams", EventMode.AUTO, Set.of(TenantJobProperty.TENANT_ID, TenantJobProperty.TENANT_NAME)),
+    INIT_MONGO("init_mongo", EventMode.AUTO, Set.of(TenantJobProperty.TENANT_ID, TenantJobProperty.TENANT_NAME)),
 
     // Manual jobs (completed by admin actions)
-    CREATE_DOMAIN_NAMES("create_domain_names", EventMode.MANUAL);
+    CREATE_DOMAIN_NAMES("create_domain_names", EventMode.MANUAL, Set.of()); // no properties for now
 
 
     private final String key;
     private final EventMode mode;
+    private final Set<TenantJobProperty> allowedProperties;
 
-    TenantJobEvent(String key, EventMode mode) {
+    TenantJobEvent(String key, EventMode mode, Set<TenantJobProperty> allowedProperties) {
         this.key = key;
         this.mode = mode;
+        this.allowedProperties = allowedProperties;
     }
 
     public String key() { return key; }
     public EventMode mode() { return mode; }
+
+    public Set<TenantJobProperty> allowedProperties() { return allowedProperties; }
 
     /**
      * @return true if this job is intended to be completed manually by an admin

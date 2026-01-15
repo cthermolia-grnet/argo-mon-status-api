@@ -28,10 +28,6 @@ import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
 import org.grnet.status.entities.Contact;
 import org.grnet.status.entities.Tenant;
-import org.grnet.status.enums.ContactType;
-import org.grnet.status.enums.EventName;
-import org.grnet.status.enums.EventStatus;
-import org.grnet.status.enums.TenantGroupStatus;
 import org.grnet.status.enums.*;
 import org.grnet.status.exceptions.CustomRuntimeException;
 import org.grnet.status.mappers.TenantMapper;
@@ -590,6 +586,9 @@ public class TenantService {
             if (newJob.getEnd() == null && oldJob.getEnd()!=null) {
                 newJob.setEnd(oldJob.getEnd());
             }
+            if (newJob.properties == null || newJob.properties.isEmpty()) {
+                newJob.properties = oldJob.properties;
+            }
             map.put(newJob.name, newJob);
         }
         return new ArrayList<>(map.values());
@@ -654,7 +653,9 @@ public class TenantService {
             throw new BadRequestException("Value of property 'name' differs from tenant's name: " + tenant.name);
         }
 
-        alert.getProperties().put("tenant_id", id);
+        validateAlertProperties(alert.name, alert.properties);
+
+        alert.getProperties().put("tenant_id",id);
         alert.setCreatedAt(String.valueOf(now));
         send(id, alert);
 
@@ -688,10 +689,7 @@ public class TenantService {
 
         send(tenant.id, amsAlert);
         send(tenant.id, mongoAlert);
-
     }
-
-
 
     private void send(String id, AlertDefinitionRequest alert) {
         try {
@@ -713,7 +711,7 @@ public class TenantService {
 
             // 1. Immediately update status to INITIALISING before async publish
             updateTenantAlerts(id, setAlert(alert.name, EventStatus.INITIALISING,
-                    "Event notification:"+alert.name+" is sent to Messaging Service for publishing", now));
+                    "Event notification:"+alert.name+" is sent to Messaging Service for publishing", now, alert.properties));
 
             // 2. fire-and-forget async publish
             CompletableFuture
@@ -724,7 +722,7 @@ public class TenantService {
                         // Update status to INITIALISED after publishMessage returns
                         try {
                             updateTenantAlerts(id, setAlert(alert.name, EventStatus.INITIALISED,
-                                    "Event notification: "+alert.name+"is initialising to Messaging Service", now));
+                                    "Event notification: "+alert.name+"is initialising to Messaging Service", now, alert.properties));
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -734,14 +732,14 @@ public class TenantService {
                             if (throwable == null) {
                                 // Update status to PUBLISHED on successful completion
                                 updateTenantAlerts(id, setAlert(alert.name, EventStatus.INITIALISED,
-                                        "Event notification: "+ alert.name+" initialised successfully to Messaging Service", now));
+                                        "Event notification: "+ alert.name+" initialised successfully to Messaging Service", now, alert.properties));
                                 Log.debugf("Messaging Service publish succeeded for tenantId=%s, alert=%s", id, alert.name);
 
                             } else {
                                 // Failure case
                                 Log.errorf(throwable, "Messaging Service publish failed for tenantId=%s, alert=%s", id, alert.name);
                                 updateTenantAlerts(id, setAlert(alert.name, EventStatus.FAILED_INITIALISATION,
-                                        "Event notification: "+ alert.name+" failed to be initialised to Messaging Service", now));
+                                        "Event notification: "+ alert.name+" failed to be initialised to Messaging Service", now, alert.properties));
                             }
                         } catch (Exception e) {
                             Log.error("Failed to update tenant status", e);
@@ -757,7 +755,7 @@ public class TenantService {
     }
 
     //building an alert with info
-    private TenantStatusDto setAlert(String eventName, EventStatus status, String message, Instant start) {
+    private TenantStatusDto setAlert(String eventName, EventStatus status, String message, Instant start, Map<String, String> properties) {
         var tenantStatus = new TenantStatusDto();
         tenantStatus.jobs = new ArrayList<>();
         var alert = new EventStatusDto();
@@ -765,6 +763,10 @@ public class TenantService {
         alert.setName(eventName);
         alert.setStatus(status.name());
         alert.setMessage(message);
+
+        if (properties != null && !properties.isEmpty()) {
+            alert.properties = new HashMap<>(properties); // copy
+        }
         tenantStatus.jobs.add(alert);
 //        if (status.equals(EventStatus.FAILED_INITIALISATION) || status.equals(EventStatus.INITIALISED)) {
 //            alert.end = Instant.now();
@@ -843,6 +845,25 @@ public class TenantService {
             if (def.mode() != expectedMode) {
                 throw new BadRequestException("Job '" + def.key() + "' is " + def.mode().name().toLowerCase()
                         + " and cannot be updated");
+            }
+        }
+    }
+    private void validateAlertProperties(String eventName, Map<String, String> props) {
+        if (props == null || props.isEmpty()) return;
+
+        var def = TenantJobEvent.fromKey(eventName)
+                .orElseThrow(() -> new jakarta.ws.rs.BadRequestException("Unknown job name: " + eventName));
+
+        for (var k : props.keySet()) {
+            var keyEnum = TenantJobProperty.fromKey(k)
+                    .orElseThrow(() -> new jakarta.ws.rs.BadRequestException(
+                            "Unknown property key '" + k + "' for job '" + def.key() + "'"
+                    ));
+
+            if (!def.allowedProperties().contains(keyEnum)) {
+                throw new jakarta.ws.rs.BadRequestException(
+                        "Property '" + keyEnum.key() + "' is not allowed for job '" + def.key() + "'"
+                );
             }
         }
     }

@@ -48,6 +48,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#48](https://github.com/ARGOeu/argo-mon-status-api/pull/48) ARGO-5245 Add Admin Endpoint to Create Tenant Group and Expose Group Status
 - [#49](https://github.com/ARGOeu/argo-mon-status-api/pull/49) ARGO-5248 Protect automation endpoints
 - [#50](https://github.com/ARGOeu/argo-mon-status-api/pull/50) ARGO-5263 Add execution mode for tenant jobs
+- [#53](https://github.com/ARGOeu/argo-mon-status-api/pull/53) ARGO-5279 Introduce job properties for tenant status events
 - [#56](https://github.com/ARGOeu/argo-mon-status-api/pull/56) ARGO-5280 Add execution mode for tenant jobs
 - [#57](https://github.com/ARGOeu/argo-mon-status-api/pull/57) ARGO-5281 Tenant Invitation Management
 - [#58](https://github.com/ARGOeu/argo-mon-status-api/pull/58) ARGO-5298 Include User Tenants in Users Response

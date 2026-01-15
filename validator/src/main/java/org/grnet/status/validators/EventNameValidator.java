@@ -4,6 +4,8 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import org.grnet.status.constraints.ValidEventName;
+import org.grnet.status.enums.EventName;
+import org.grnet.status.enums.TenantJobEvent;
 import org.grnet.status.enums.TenantJobEvent;
 
 import java.util.Arrays;

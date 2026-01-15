@@ -1,11 +1,8 @@
 package org.grnet.status.dtos.tenant.status;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import lombok.Setter;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -99,6 +96,10 @@ public class EventStatusDto {
     @ValidEventMode
     @JsonProperty("mode")
     public String mode;
+
+    @JsonProperty("properties")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Map<String, String> properties;
 
     @JsonProperty("name")
     public void setName(String name) {

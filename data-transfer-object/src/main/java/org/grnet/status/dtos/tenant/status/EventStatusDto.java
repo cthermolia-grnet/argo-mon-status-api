@@ -102,14 +102,14 @@ public class EventStatusDto {
 
     @JsonProperty("name")
     public void setName(String name) {
-        this.name = name == null ? null : name.toLowerCase();
+        this.name = name == null ? null : name.toUpperCase();
     }
     @JsonProperty("status")
     public void setStatus(String status) {
-        this.status = status == null ? null : status.toLowerCase();
+        this.status = status == null ? null : status.toUpperCase();
     }
     @JsonProperty("mode")
     public void setMode(String mode) {
-        this.mode = mode == null ? null : mode.toLowerCase();
+        this.mode = mode == null ? null : mode.toUpperCase();
     }
 }

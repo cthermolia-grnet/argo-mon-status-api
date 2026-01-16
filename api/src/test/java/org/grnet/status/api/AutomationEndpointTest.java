@@ -109,7 +109,7 @@ public class AutomationEndpointTest extends KeycloakTest {
 
         var job = new EventStatusDto();
         job.name = EventName.INIT_AMS.name();
-        job.status = EventStatus.COMPLETED.name().toLowerCase(); // "completed"
+        job.status = EventStatus.COMPLETED.name(); // "completed"
         job.message = "Creating indexes in mongo";
         job.start = Instant.parse("2025-10-22T12:44:48Z");
         job.end = Instant.parse("2025-10-22T12:44:48Z");
@@ -127,8 +127,8 @@ public class AutomationEndpointTest extends KeycloakTest {
                 .as(TenantStatusFullResponse.class);
 
         assertEquals(3, updated.status.jobs.size());
-        assertEquals(EventName.INIT_AMS.name().toLowerCase(), updated.status.jobs.get(2).name);
-        assertEquals(EventStatus.COMPLETED.name().toLowerCase(), updated.status.jobs.get(2).status);
+        assertEquals(EventName.INIT_AMS.name(), updated.status.jobs.get(0).name);
+        assertEquals(EventStatus.COMPLETED.name(), updated.status.jobs.get(0).status);
     }
 
 

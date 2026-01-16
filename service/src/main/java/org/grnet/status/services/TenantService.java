@@ -137,7 +137,7 @@ public class TenantService {
             TenantMapper.INSTANCE.mapMetadata(request, tenant);
             writeInDB(request, tenant, remoteTenantId, userId);
             sendNotifications(tenant);
-         //   var  tenantWithStatus=tenantRepository.findById(tenant.id);
+            //   var  tenantWithStatus=tenantRepository.findById(tenant.id);
             return TenantMapper.INSTANCE.tenantToDto(tenant);
         } catch (Exception e) {
             // If tenant was created remotely, but something failed locally, rollback remote creation
@@ -446,10 +446,8 @@ public class TenantService {
         tenant.setContacts(new HashSet(contacts));
         try {
             tenantRepository.persist(tenant);
-            System.out.println("Tenant persisted successfully");
             return tenant;
         } catch (Exception e) {
-            System.err.println("Persist failed: " + e.getMessage());
             e.printStackTrace();
             throw e; // Rethrow to keep transactional behavior
         }
@@ -528,7 +526,7 @@ public class TenantService {
 
             return response;
 
-         //   return TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
+            //   return TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
         } catch (Exception dbException) {
 
             throw new RuntimeException("DB update failed: " + dbException.getMessage());
@@ -542,7 +540,9 @@ public class TenantService {
     public TenantStatusDto updateTenantAlerts(String id, @Valid TenantStatusDto request) throws IOException {
 
         var tenant = tenantRepository.findById(id);
-
+       if (tenant==null){
+           return null;
+       }
         var existingStatus = TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
         request.jobs = mergeJobs(existingStatus.jobs, request.jobs);
 
@@ -577,17 +577,17 @@ public class TenantService {
         }
         Map<String, EventStatusDto> map = existingJobs.stream()
                 .collect(Collectors.toMap(
-                        e -> e.name.toLowerCase(),   // normalize key
+                        e -> e.name.toUpperCase(),   // normalize key
                         e -> e
                 ));
 
         // Replace or add
         for (EventStatusDto newJob : newJobs) {
-            var oldJob=map.get(newJob.name);
-            if(newJob.getStart()==null) {
-            newJob.setStart(oldJob.getStart());
+            var oldJob = map.get(newJob.name);
+            if (newJob.getStart() == null && oldJob.getStart()!=null) {
+                newJob.setStart(oldJob.getStart());
             }
-            if(newJob.getEnd()==null){
+            if (newJob.getEnd() == null && oldJob.getEnd()!=null) {
                 newJob.setEnd(oldJob.getEnd());
             }
             map.put(newJob.name, newJob);
@@ -628,7 +628,6 @@ public class TenantService {
     }
 
 
-
     private TenantGroupStatus getGroupStatus(Tenant tenant) {
         var groupPath = "/" + namespace + "/tenants/" + tenant.name;
         try {
@@ -655,7 +654,7 @@ public class TenantService {
             throw new BadRequestException("Value of property 'name' differs from tenant's name: " + tenant.name);
         }
 
-        alert.getProperties().put("tenant_id",id);
+        alert.getProperties().put("tenant_id", id);
         alert.setCreatedAt(String.valueOf(now));
         send(id, alert);
 
@@ -689,7 +688,10 @@ public class TenantService {
 
         send(tenant.id, amsAlert);
         send(tenant.id, mongoAlert);
+
     }
+
+
 
     private void send(String id, AlertDefinitionRequest alert) {
         try {
@@ -698,8 +700,8 @@ public class TenantService {
             var objectMapper = new ObjectMapper();
             var json = objectMapper.writeValueAsString(alert);
 
-            Log.infof("Sending to AMS | project=%s | topic=%  notification for:  tenantId=%s | event=%s | properties=%s | created_at=%s",
-                    amsService.getProject(), amsService.getTopic() , id, alert.name, alert.properties, alert.createdAt);
+            Log.infof("Sending to Messaging Service | project=%s | topic=%s notification for: tenantId=%s | event=%s | properties=%s | created_at=%s",
+                    amsService.getProject(), amsService.getTopic(), id, alert.name, alert.properties, alert.createdAt);
 
             var encodedData = Base64.getEncoder().encodeToString(json.getBytes());
 
@@ -709,33 +711,48 @@ public class TenantService {
             var publishData = new PublishRequest();
             publishData.setMessages(List.of(message));
 
-            // fire-and-forget async publish
-            CompletableFuture.runAsync(
-                    () -> amsService.publishMessage(publishData),
-                    executorService
-            ).whenComplete((ignored, throwable) -> {
-                try {
-                    if (throwable == null) {
-                        // ✅ success
-                        updateTenantAlerts(id, setAlert(alert.name, EventStatus.INITIALISED, "Notification is published to AMS",now));
-                        Log.debugf("AMS publish succeeded for tenantId=%s, alert=%s",id, alert.name );
-                    } else {
-                        Log.error("AMS publish failed", throwable);
-                        updateTenantAlerts(id, setAlert(alert.name, EventStatus.FAILED_INITIALISATION, "Notification failed to be published to AMS", now));
-                    }
+            // 1. Immediately update status to INITIALISING before async publish
+            updateTenantAlerts(id, setAlert(alert.name, EventStatus.INITIALISING,
+                    "Event notification:"+alert.name+" is sent to Messaging Service for publishing", now));
 
-                } catch (Exception e) {
-                    // this MUST NOT throw
-                    Log.error("Failed to update tenant status", e);
-                }
-            });
+            // 2. fire-and-forget async publish
+            CompletableFuture
+                    .runAsync(() -> {
+                        amsService.publishMessage(publishData);  // Publish call
+                    }, executorService)
+                    .thenRun(() -> {
+                        // Update status to INITIALISED after publishMessage returns
+                        try {
+                            updateTenantAlerts(id, setAlert(alert.name, EventStatus.INITIALISED,
+                                    "Event notification: "+alert.name+"is initialising to Messaging Service", now));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .whenComplete((ignored, throwable) -> {
+                        try {
+                            if (throwable == null) {
+                                // Update status to PUBLISHED on successful completion
+                                updateTenantAlerts(id, setAlert(alert.name, EventStatus.INITIALISED,
+                                        "Event notification: "+ alert.name+" initialised successfully to Messaging Service", now));
+                                Log.debugf("Messaging Service publish succeeded for tenantId=%s, alert=%s", id, alert.name);
 
-            // immediately return "sent to AMS"
-            updateTenantAlerts(id, setAlert(alert.name, EventStatus.INITIALISING, "Notification is sent to AMS for publishing", now));
+                            } else {
+                                // Failure case
+                                Log.errorf(throwable, "Messaging Service publish failed for tenantId=%s, alert=%s", id, alert.name);
+                                updateTenantAlerts(id, setAlert(alert.name, EventStatus.FAILED_INITIALISATION,
+                                        "Event notification: "+ alert.name+" failed to be initialised to Messaging Service", now));
+                            }
+                        } catch (Exception e) {
+                            Log.error("Failed to update tenant status", e);
+                        }
+                    });
 
         } catch (Exception e) {
-            Log.error("Failed to send alert to AMS", e);
-            throw new RuntimeException("Failed to send alert to AMS", e);
+            Log.error("Failed to send alert to Messaging Service", e);
+            Log.errorf(e, "Failed to send event notification for  tenantId=%s, alert=%s to Messaging Service", id, alert.name);
+
+            throw new RuntimeException("Failed to send event notification: "+alert.name+" to Messaging Service", e);
         }
     }
 
@@ -810,10 +827,14 @@ public class TenantService {
 
     private void validateJobsMode(List<EventStatusDto> jobs, EventMode expectedMode) {
 
-        if (jobs == null || jobs.isEmpty()) { return; }
+        if (jobs == null || jobs.isEmpty()) {
+            return;
+        }
 
         for (EventStatusDto job : jobs) {
-            if (job == null || job.getName() == null) { continue;}
+            if (job == null || job.getName() == null) {
+                continue;
+            }
 
             var def = TenantJobEvent
                     .fromKey(job.getName())

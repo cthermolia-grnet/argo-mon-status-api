@@ -759,8 +759,8 @@ public class AdminEndpointTest extends KeycloakTest {
         statusReq.jobs = new ArrayList<>();
 
         var job = new EventStatusDto();
-        job.name = TenantJobEvent.CREATE_DOMAIN_NAMES.name().toLowerCase();
-        job.status = EventStatus.COMPLETED.name().toLowerCase(); // "completed"
+        job.name = TenantJobEvent.CREATE_DOMAIN_NAMES.name();
+        job.status = EventStatus.COMPLETED.name(); // "completed"
         job.message = "Creating domain names";
         job.start = Instant.parse("2025-10-22T12:44:48.107Z");
         job.end = Instant.parse("2025-10-22T12:44:48.107Z");

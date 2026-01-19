@@ -122,7 +122,7 @@ public class TenantService {
 
         var existTenantOpt = tenantRepository.fetchTenantByName(request.info.name);
         if (existTenantOpt.isPresent()) {
-            var message = "Tenant with id: " + existTenantOpt.get().id + " already exists in ARGO Mon Status API";
+            var message = "Tenant: "+existTenantOpt.get().name+" already exists in ARGO Mon Status API with id: "+existTenantOpt.get().id;
             throw new CustomRuntimeException(409, message, new HashSet<>());
         }
         handleImage(request);

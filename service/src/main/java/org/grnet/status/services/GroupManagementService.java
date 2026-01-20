@@ -10,12 +10,12 @@ import java.util.List;
 
 @ApplicationScoped
 public class GroupManagementService {
+
     @Inject
     GroupManagement groupManagement;
 
     @ConfigProperty(name = "api.auth.entitlements.parent.group")
     String parentGroup;
-
 
     public List<GroupUser> getMembers(String groupName) {
 

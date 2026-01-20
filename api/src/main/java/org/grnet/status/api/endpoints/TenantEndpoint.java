@@ -24,6 +24,7 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.grnet.status.api.resolvers.TenantNameResolver;
+import org.grnet.status.authorizations.dtos.GroupUser;
 import org.grnet.status.authorizations.interceptors.CheckEntitlements;
 import org.grnet.status.constraints.NotFoundEntity;
 import org.grnet.status.dtos.InformativeResponse;
@@ -329,6 +330,66 @@ public class TenantEndpoint {
         return Response.ok().entity(project).build();
     }
 
+    @Operation(summary = "List tenant members.",
+            description = "Retrieves a list of tenant members and related metadata.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Tenant members list retrieved successfully.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = PageableTenantMembers.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Tenant does not exist.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/{id}/members")
+    @CheckEntitlements(role = "admin", idResolver = TenantNameResolver.class)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getMembersByTenant(
+            @Parameter(
+                    description = "The ID of the tenant to retrieve.",
+                    required = true,
+                    example = "6f9ff5ff-nn9g-4378-9200-5rf6719n6vg4",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
+            @Parameter(name = "page", in = QUERY,
+                    description = "Indicates the page number. Page number must be >= 1.") @DefaultValue("1") @Min(value = 1, message = "Page number must be >= 1.")
+            @QueryParam("page")
+            int page,
+            @Parameter(name = "size", in = QUERY,
+                    description = "The page size.")
+            @DefaultValue("10") @Min(value = 1, message = "Page size must be between 1 and 100.") @Max(value = 100, message = "Page size must be between 1 and 100.")
+            @QueryParam("size")
+            int size,
+            @Context UriInfo uriInfo) {
+
+        var members = tenantProjectService.getMembersByTenant(id, page - 1, size, uriInfo);
+
+        return Response.ok().entity(members).build();
+    }
 
     public static class PageableTenants extends PageResource<TenantResponseDto> {
 
@@ -343,6 +404,20 @@ public class TenantEndpoint {
         public void setContent(List<TenantResponseDto> content) {
             this.content = content;
         }
+    }
 
+    public static class PageableTenantMembers extends PageResource<GroupUser> {
+
+        private List<GroupUser> content;
+
+        @Override
+        public List<GroupUser> getContent() {
+            return content;
+        }
+
+        @Override
+        public void setContent(List<GroupUser> content) {
+            this.content = content;
+        }
     }
 }

@@ -6,6 +6,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
+import org.grnet.status.authorizations.dtos.GroupUser;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.project.ProjectResponseDto;
@@ -13,6 +14,8 @@ import org.grnet.status.dtos.tenant.TenantResponseDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectDeleteDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectDto;
+import org.grnet.status.entities.Page;
+import org.grnet.status.entities.PageQueryImpl;
 import org.grnet.status.entities.Project;
 import org.grnet.status.entities.Tenant;
 import org.grnet.status.entities.TenantProjectJunction;
@@ -24,6 +27,8 @@ import org.grnet.status.repositories.TenantProjectJunctionRepository;
 import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.util.Utility;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -40,6 +45,9 @@ public class TenantProjectService {
 
     @Inject
     Utility utility;
+
+    @Inject
+    GroupManagementService groupManagementService;
 
     // --------------------------------------------------------------------
     // SUPER_ADMIN
@@ -131,15 +139,31 @@ public class TenantProjectService {
         return new PageResource<>(dto, ProjectMapper.INSTANCE.projectsToDtos(dto.list()), uriInfo);
     }
 
+    public PageResource<GroupUser> getMembersByTenant(String tenantId, int page, int size, UriInfo uriInfo) {
+
+        var tenant = tenantRepository.findById(tenantId);
+
+        var members = groupManagementService.getMembers("tenants/"+tenant.name);
+
+        var partition = utility.partition(new ArrayList<>(members), size);
+
+        var pageableMembers = partition.get(page) == null ? Collections.EMPTY_LIST : partition.get(page);
+
+        var pageable = new PageQueryImpl<GroupUser>();
+
+        pageable.list = pageableMembers;
+        pageable.index = page;
+        pageable.size = size;
+        pageable.count = members.size();
+        pageable.page = Page.of(page, size);
+
+        return new PageResource<>(pageable, uriInfo);
+    }
+
 
     @Transactional
     public void deleteAssignment(TenantProjectDeleteDto request) {
 
         tenantProjectJunctionRepository.deleteByTenantAndProject(request.tenantId, request.projectId);
     }
-
-
-
-
-
 }

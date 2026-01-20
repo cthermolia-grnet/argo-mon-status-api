@@ -15,6 +15,12 @@
     <!-- Module information -->
     <artifactId>status-enums</artifactId>
     <name>status-enums</name>
+    <dependencies>
+        <dependency>
+            <groupId>io.quarkus.qute</groupId>
+            <artifactId>qute-core</artifactId>
+        </dependency>
+    </dependencies>
     <version>${revision}</version>
 
     <build>

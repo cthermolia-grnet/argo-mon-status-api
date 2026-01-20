@@ -32,9 +32,13 @@ import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.project.ProjectResponseDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
+import org.grnet.status.dtos.tenant.invitations.TenantInvitationRequest;
+import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
 import org.grnet.status.repositories.TenantRepository;
+import org.grnet.status.services.TenantInvitationService;
 import org.grnet.status.services.TenantProjectService;
 import org.grnet.status.services.TenantService;
+import org.grnet.status.util.Utility;
 
 import java.io.IOException;
 import java.util.List;
@@ -55,10 +59,16 @@ import static org.eclipse.microprofile.openapi.annotations.enums.ParameterIn.QUE
 public class TenantEndpoint {
 
     @Inject
+    Utility utility;
+
+    @Inject
     TenantService tenantService;
 
     @Inject
     TenantProjectService tenantProjectService;
+
+    @Inject
+    TenantInvitationService tenantInvitationService;
 
     @Inject
     TenantNameResolver tenantNameResolver;
@@ -391,6 +401,149 @@ public class TenantEndpoint {
         return Response.ok().entity(members).build();
     }
 
+    @Tag(name = "Tenant")
+    @Operation(summary = "Invite a user to be a member of tenant.",
+            description = "Invite a user to be a member of tenant.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Mail send",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = TenantInvitationResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "409",
+            description = "Invitation already exists.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @POST
+    @Path("/{id}/invitation")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(role = "admin", idResolver = TenantNameResolver.class)
+    public Response notifyAms(
+            @Parameter(
+                    description = "The ID of the tenant to start automation process.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
+            @Valid @NotNull(message = "The request body is empty.")
+            TenantInvitationRequest request) {
+
+        var status = tenantInvitationService.createInvitation(id, request, utility.getUserUniqueIdentifier());
+        return Response.ok().entity(status).build();
+    }
+
+    @Operation(
+            summary = "Get all invitations of tenant.",
+            description = "Returns all invitation of a Tenant. "
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "Invitation details.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = PageableTenantInvitations.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Invitation not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "410",
+            description = "Invitation expired.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @GET
+    @Path("/{id}/invitations")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(role = "admin", idResolver = TenantNameResolver.class)
+    public Response getInvitations(
+            @Parameter(
+                    description = "The ID of the tenant to start automation process.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            String id,
+            @Parameter(name = "search", in = QUERY,
+                    description = "Search invitations by username or email.")
+            @QueryParam("search") String search,
+            @Parameter(name = "sort", in = QUERY,
+                    schema = @Schema(type = SchemaType.STRING, defaultValue = "createdAt"),
+                    examples = {
+                            @ExampleObject(name = "Created At", value = "createdAt"),
+                            @ExampleObject(name = "Email", value = "email"),
+                            @ExampleObject(name = "Status", value = "status")
+                    },
+                    description = "The field used to sort the results.")
+            @DefaultValue("createdAt")
+            @QueryParam("sort") String sort,
+            @Parameter(
+                    name = "order",
+                    in = QUERY,
+                    schema = @Schema(type = SchemaType.STRING, defaultValue = "DESC"),
+                    examples = {
+                            @ExampleObject(name = "Ascending", value = "ASC"),
+                            @ExampleObject(name = "Descending", value = "DESC")
+                    },
+                    description = "The order of the sorted results.")
+            @DefaultValue("DESC")
+            @QueryParam("order") String order,
+            @Parameter(name = "page", in = QUERY,
+                    description = "Page number. Must be >= 1.")
+            @DefaultValue("1")
+            @Min(value = 1, message = "Page number must be >= 1.")
+            @QueryParam("page")
+            int page,
+            @Parameter(name = "size", in = QUERY,
+                    description = "Page size.")
+            @DefaultValue("10")
+            @Min(value = 1, message = "Page size must be between 1 and 100.")
+            @Max(value = 100, message = "Page size must be between 1 and 100.")
+            @QueryParam("size")
+            int size, @Context UriInfo uriInfo)
+    {
+        var response = tenantInvitationService.getTenantInvitationsByPageAndSize(search, sort, order, id,page - 1, size, uriInfo);
+
+        return Response.ok(response).build();
+    }
+
+
     public static class PageableTenants extends PageResource<TenantResponseDto> {
 
         private List<TenantResponseDto> content;
@@ -417,6 +570,21 @@ public class TenantEndpoint {
 
         @Override
         public void setContent(List<GroupUser> content) {
+            this.content = content;
+        }
+    }
+
+    public static class PageableTenantInvitations extends PageResource<TenantInvitationResponse> {
+
+        private List<TenantInvitationResponse> content;
+
+        @Override
+        public List<TenantInvitationResponse> getContent() {
+            return content;
+        }
+
+        @Override
+        public void setContent(List<TenantInvitationResponse> content) {
             this.content = content;
         }
     }

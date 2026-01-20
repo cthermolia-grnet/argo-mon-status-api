@@ -24,11 +24,25 @@ public class GroupManagementService {
         return groupManagement.fetchGroupMembers(fullPath);
     }
 
+    public List<GroupUser> getTenantMembersByRole(String groupName, String role) {
+
+        var fullPath = normalizePath(parentGroup) + "/tenants/" + groupName;
+
+        return groupManagement.fetchGroupMembersByRole(fullPath, role);
+    }
+
     public void addMember(String groupName, String username) {
 
         var fullPath = normalizePath(parentGroup) + "/" + groupName;
 
-        groupManagement.addGroupMember(fullPath, username);
+        groupManagement.addGroupMember(fullPath, username, "member");
+    }
+
+    public void addUserToGroup(String groupName, String username, String role) {
+
+        var fullPath = normalizePath(parentGroup) + "/" + groupName;
+
+        groupManagement.addGroupMember(fullPath, username, role);
     }
 
 

@@ -100,7 +100,11 @@
             <version>1.0.0</version>
             <scope>compile</scope>
         </dependency>
-
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-mailer</artifactId>
+            <version>3.29.0</version>
+        </dependency>
     </dependencies>
 
     <build>

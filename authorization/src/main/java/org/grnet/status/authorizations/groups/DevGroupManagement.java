@@ -47,7 +47,13 @@ public class DevGroupManagement implements GroupManagement {
     }
 
     @Override
-    public void addGroupMember(String fullPath, String username) {
+    public List<GroupUser> fetchGroupMembersByRole(String fullPath, String role) {
+        LOG.debugf("DEV: fetchGroupMembers returns empty (%s)", fullPath, role);
+        return List.of();
+    }
+
+    @Override
+    public void addGroupMember(String fullPath, String username, String role) {
         LOG.debugf("DEV: addGroupMemberIdempotent skipped (user=%s, group=%s)", username, fullPath);
     }
 }

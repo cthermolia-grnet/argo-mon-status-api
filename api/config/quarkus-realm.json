@@ -2755,7 +2755,8 @@
         "voperson_id": ["local_admin_voperson_id"],
 
         "entitlements": [
-          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenants:LOCALTENANT:role=admin"
+          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenants:LOCALTENANT:role=admin",
+          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:members:role=member"
         ]
       },
 
@@ -2785,7 +2786,9 @@
         "voperson_id": ["local_viewer_voperson_id"],
 
         "entitlements": [
-          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenants:LOCALTENANT:role=viewer"
+          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenants:LOCALTENANT:role=viewer",
+          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:members:role=member"
+
         ]
       },
 

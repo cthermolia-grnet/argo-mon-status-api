@@ -35,6 +35,7 @@ import org.grnet.status.dtos.statuspage.StatusPageResponseDto;
 import org.grnet.status.dtos.tenant.ContactFullDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
+import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
 import org.grnet.status.dtos.tenantproject.TenantProjectDeleteDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectDto;
@@ -82,6 +83,9 @@ public class AdminEndpoint {
 
     @Inject
     ContactService contactService;
+
+    @Inject
+    TenantInvitationService tenantInvitationService;
 
     @Inject
     GroupManagementService groupManagementService;
@@ -1551,5 +1555,107 @@ public class AdminEndpoint {
         var status = tenantService.getTenantStatus(id);
 
         return Response.ok().entity(status).build();
+    }
+
+    @Tag(name = "Admin")
+    @Operation(
+            summary = "Get all invitations.",
+            description = "Returns all invitation for super admin. "
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "Invitation details.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = PageableInvitations.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Invitation not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "410",
+            description = "Invitation expired.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/invitations")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getInvitation(
+
+            @Parameter(name = "search", in = QUERY,
+                    description = "Search invitations by Tenant Name, username, or email.")
+            @QueryParam("search") String search,
+            @Parameter(name = "sort", in = QUERY,
+                    schema = @Schema(type = SchemaType.STRING, defaultValue = "createdAt"),
+                    examples = {
+                            @ExampleObject(name = "Created At", value = "createdAt"),
+                            @ExampleObject(name = "Email", value = "email"),
+                            @ExampleObject(name = "Username", value = "username"),
+                            @ExampleObject(name = "Tenant Name", value = "tenantName"),
+                            @ExampleObject(name = "Status", value = "status"),
+                    },
+                    description = "The field used to sort the results.")
+            @DefaultValue("createdAt")
+            @QueryParam("sort") String sort,
+            @Parameter(
+                    name = "order",
+                    in = QUERY,
+                    schema = @Schema(type = SchemaType.STRING, defaultValue = "DESC"),
+                    examples = {
+                            @ExampleObject(name = "Ascending", value = "ASC"),
+                            @ExampleObject(name = "Descending", value = "DESC")
+                    },
+                    description = "The order of the sorted results.")
+            @DefaultValue("DESC")
+            @QueryParam("order") String order,
+            @Parameter(name = "page", in = QUERY,
+                    description = "Page number. Must be >= 1.")
+            @DefaultValue("1")
+            @Min(value = 1, message = "Page number must be >= 1.")
+            @QueryParam("page")
+            int page,
+            @Parameter(name = "size", in = QUERY,
+                    description = "Page size.")
+            @DefaultValue("10")
+            @Min(value = 1, message = "Page size must be between 1 and 100.")
+            @Max(value = 100, message = "Page size must be between 1 and 100.")
+            @QueryParam("size")
+            int size, @Context UriInfo uriInfo)
+    {
+        var response = tenantInvitationService.getInvitationsByPageAndSize(search, sort, order, page - 1, size, uriInfo);
+
+        return Response.ok(response).build();
+    }
+
+    public static class PageableInvitations extends PageResource<TenantInvitationResponse> {
+
+        private List<TenantInvitationResponse> content;
+
+        @Override
+        public List<TenantInvitationResponse> getContent() {
+            return content;
+        }
+
+        @Override
+        public void setContent(List<TenantInvitationResponse> content) {
+            this.content = content;
+        }
+
     }
 }

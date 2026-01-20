@@ -33,5 +33,7 @@ public interface GroupManagement {
     /** Update configuration of a group (generic Keycloak extension). */
     void updateConfiguration(String groupId, List<String> groupRoles);
 
-    void addGroupMember(String groupPath, String username);
+    List<GroupUser> fetchGroupMembersByRole(String fullPath, String role);
+
+    void addGroupMember(String fullPath, String username, String role);
 }

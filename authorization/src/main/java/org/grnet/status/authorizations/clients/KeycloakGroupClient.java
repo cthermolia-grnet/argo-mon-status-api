@@ -67,6 +67,11 @@ public interface KeycloakGroupClient {
     @Produces(MediaType.APPLICATION_JSON)
     GroupMembersResponse getGroupMembers(@PathParam("groupId") String groupId);
 
+    @GET
+    @Path("/group-admin/group/{groupId}/members")
+    @Produces(MediaType.APPLICATION_JSON)
+    GroupMembersResponse getMembersByRole(@PathParam("groupId") String groupId, @QueryParam("role") String role);
+
     // -------------------------------------------------------------
     // Update configuration (default config / roles)
     // -------------------------------------------------------------

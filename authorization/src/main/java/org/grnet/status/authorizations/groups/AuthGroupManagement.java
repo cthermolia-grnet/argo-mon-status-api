@@ -164,7 +164,26 @@ public class AuthGroupManagement implements GroupManagement {
 
 
     @Override
-    public void addGroupMember(String fullPath, String username) {
+    public List<GroupUser> fetchGroupMembersByRole(String fullPath, String role) {
+
+        var groupId = getGroupIdByPath(fullPath);
+
+        LOG.infof("AGM getMembersByRole fullPath=%s groupId=%s role=%s", fullPath, groupId, role);
+
+
+        var response = groupClient.getMembersByRole(groupId, role);
+
+        if (response == null || response.results == null) {
+            return List.of();
+        }
+
+        return response.results.stream()
+                .map(entry -> entry.user)
+                .toList();
+    }
+
+    @Override
+    public void addGroupMember(String fullPath, String username, String role) {
 
         var groupId = getGroupIdByPath(fullPath);
 
@@ -178,7 +197,7 @@ public class AuthGroupManagement implements GroupManagement {
             return;
         }
 
-        groupClient.addUserToGroup(groupId, new AddGroupMemberRequest(username, List.of("member")));
+        groupClient.addUserToGroup(groupId, new AddGroupMemberRequest(username, List.of(role)));
     }
 
     // Recursively adds a group's path, id, and default configuration to the lookup map

@@ -18,6 +18,10 @@ public class OIDCEntitlementService {
     @ConfigProperty(name = "api.auth.entitlements.namespace")
     String namespace;
 
+    @ConfigProperty(name = "api.auth.entitlements.parent.group")
+    String parentGroup;
+
+
     /**
      * Extracts and parses entitlements from the OIDC token.
      */
@@ -33,6 +37,25 @@ public class OIDCEntitlementService {
                 .map(v -> v.toString().replace("\"", ""))
                 .filter(s -> s.startsWith(namespace))           // filter by namespace
                 .map(s -> s.replace(namespace + ":", ""))
+                .collect(Collectors.toList());
+
+        return EntitlementUtils.parseEntitlements(raws);
+    }
+
+    /**
+     * Parses entitlements by subgroup.
+     */
+    public List<Entitlement> parseEntitlementsBySubGroup(List<String> entitlements, String subgroup) {
+
+        if (entitlements == null) {
+            return Collections.emptyList();
+        }
+
+        List<String> raws = entitlements.stream()
+                .map(v -> v.replace("\"", ""))
+                .filter(s -> s.startsWith(namespace))           // filter by namespace
+                .map(s -> s.replace(namespace + ":", ""))
+                .filter(s -> s.startsWith( "group:"+parentGroup+":"+subgroup))
                 .collect(Collectors.toList());
 
         return EntitlementUtils.parseEntitlements(raws);

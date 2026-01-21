@@ -37,5 +37,14 @@ public class UserEntitlementsService {
 
         return info;
     }
+
+    public List<UserGroupInfoDto> parseLocalEntitlements(List<String> localEntitlements, String subgroup) {
+
+        var entitlements = oidc.parseEntitlementsBySubGroup(localEntitlements, subgroup);
+
+        return entitlements.stream()
+                .map(this::toInfo)
+                .toList();
+    }
 }
 

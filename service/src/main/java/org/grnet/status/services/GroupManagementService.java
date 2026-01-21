@@ -4,9 +4,11 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.grnet.status.authorizations.dtos.GroupUser;
+import org.grnet.status.authorizations.dtos.GroupUserResponse;
 import org.grnet.status.authorizations.groups.GroupManagement;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class GroupManagementService {
@@ -17,11 +19,24 @@ public class GroupManagementService {
     @ConfigProperty(name = "api.auth.entitlements.parent.group")
     String parentGroup;
 
-    public List<GroupUser> getMembers(String groupName) {
+    public List<GroupUserResponse> getMembers(String groupName) {
 
         var fullPath = normalizePath(parentGroup) + "/" + groupName;
 
-        return groupManagement.fetchGroupMembers(fullPath);
+        return groupManagement
+                .fetchGroupMembers(fullPath)
+                .stream()
+                .map(gu -> {
+                    var user = new GroupUserResponse();
+                    user.id = gu.id;
+                    user.email = gu.email;
+                    user.username = gu.username;
+                    user.firstName = gu.firstName;
+                    user.lastName = gu.lastName;
+                    user.tenants = gu.getTenants();
+                    return user;
+                })
+                .collect(Collectors.toList());
     }
 
     public List<GroupUser> getTenantMembersByRole(String groupName, String role) {

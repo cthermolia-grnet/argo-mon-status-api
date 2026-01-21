@@ -23,7 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.grnet.status.authorizations.dtos.GroupUser;
+import org.grnet.status.authorizations.dtos.GroupUserResponse;
 import org.grnet.status.authorizations.interceptors.CheckEntitlements;
 import org.grnet.status.constraints.NotFoundEntity;
 import org.grnet.status.dtos.InformativeResponse;
@@ -1272,7 +1272,7 @@ public class AdminEndpoint {
             description = "Get members ",
             content = @Content(schema = @Schema(
                     type = SchemaType.OBJECT,
-                    implementation = GroupUser.class)))
+                    implementation = GroupUserResponse.class)))
     @APIResponse(
             responseCode = "401",
             description = "User has not been authenticated.",
@@ -1321,7 +1321,6 @@ public class AdminEndpoint {
         public void setContent(List<ContactFullDto> content) {
             this.content = content;
         }
-
     }
 
     public static class PageableStatusPages extends PageResource<StatusPageResponseDto> {

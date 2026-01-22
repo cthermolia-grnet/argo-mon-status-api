@@ -84,7 +84,7 @@ public class AutomationEndpointTest extends KeycloakTest {
 
         var request = new TenantRequestDto();
         var tenantInfo = new TenantInfoDto();
-        tenantInfo.name = "TENANT TEST";
+        tenantInfo.name = "TENANT-TEST";
         tenantInfo.email = "test@gmail.com";
         tenantInfo.description = "this is test tenant description";
         tenantInfo.image = "https://example/image.png";
@@ -126,7 +126,7 @@ public class AutomationEndpointTest extends KeycloakTest {
                 .extract()
                 .as(TenantStatusFullResponse.class);
 
-        assertEquals(3, updated.status.jobs.size());
+        assertEquals(6, updated.status.jobs.size());
         assertEquals(EventName.INIT_AMS.name(), updated.status.jobs.get(0).name);
         assertEquals(EventStatus.COMPLETED.name(), updated.status.jobs.get(0).status);
     }

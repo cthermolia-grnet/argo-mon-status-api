@@ -157,7 +157,7 @@ public class AdminEndpointTest extends KeycloakTest {
         data.setId(id);
         var info = new TenantWebApiGetResponse.Info();
         info.setCreated("2025-01-01 00:00:00");
-        info.setName("TENANT TEST");
+        info.setName("TENANT-TEST");
         info.setEmail("test@gmail.com");
         info.setDescription("this is test tenant description");
         info.setImage("https://example/image.png");
@@ -179,7 +179,7 @@ public class AdminEndpointTest extends KeycloakTest {
 
         var request = new TenantRequestDto();
         var tenantInfo = new TenantInfoDto();
-        tenantInfo.name = "TENANT TEST";
+        tenantInfo.name = "TENANT-TEST";
         tenantInfo.email = "test@gmail.com";
         tenantInfo.description = "this is test tenant description";
         tenantInfo.image = "https://example/image.png";
@@ -214,7 +214,7 @@ public class AdminEndpointTest extends KeycloakTest {
 
         var request = new TenantRequestDto();
         var tenantInfo = new TenantInfoDto();
-        tenantInfo.name = "TENANT TEST";
+        tenantInfo.name = "TENANT-TEST";
         tenantInfo.email = "test@gmail.com";
         tenantInfo.description = "this is test tenant description";
         tenantInfo.image = "https://example/image.png";
@@ -255,7 +255,7 @@ public class AdminEndpointTest extends KeycloakTest {
 
         var request = new TenantRequestDto();
         var tenantInfo = new TenantInfoDto();
-        tenantInfo.name = "TENANT TEST";
+        tenantInfo.name = "TENANT-TEST";
         tenantInfo.email = "test@gmail.com";
         tenantInfo.description = "this is test tenant description";
         tenantInfo.image = "https://example/image.png";
@@ -306,7 +306,7 @@ public class AdminEndpointTest extends KeycloakTest {
 
         var request = new TenantRequestDto();
         var tenantInfo = new TenantInfoDto();
-        tenantInfo.name = "TENANT TEST";
+        tenantInfo.name = "TENANT-TEST";
         tenantInfo.email = "test@gmail.com";
         tenantInfo.description = "this is test tenant description";
         tenantInfo.image = "https://example/image.png";
@@ -329,7 +329,7 @@ public class AdminEndpointTest extends KeycloakTest {
 
         var request1 = new TenantRequestDto();
         var tenantInfo1 = new TenantInfoDto();
-        tenantInfo1.name = "TENANT TEST UPDATED" ;
+        tenantInfo1.name = "TENANT-TEST-UPDATED" ;
         tenantInfo1.email = "test2-updated@gmail.com";
         tenantInfo1.description = "this is test2 updated tenant description";
         tenantInfo1.image = "https://example/image.png";
@@ -357,7 +357,7 @@ public class AdminEndpointTest extends KeycloakTest {
 
         var request1 = new TenantRequestDto();
         var tenantInfo1 = new TenantInfoDto();
-        tenantInfo1.name = "TENANT TEST UPDATED";
+        tenantInfo1.name = "TENANT-TEST-UPDATED";
         tenantInfo1.email = "test2-updated@gmail.com";
         tenantInfo1.description = "this is test2 updated tenant description";
         tenantInfo1.image = "https://example/image.png";
@@ -385,7 +385,7 @@ public class AdminEndpointTest extends KeycloakTest {
 
         var request = new TenantRequestDto();
         var tenantInfo = new TenantInfoDto();
-        tenantInfo.name = "TENANT TEST";
+        tenantInfo.name = "TENANT-TEST";
         tenantInfo.email = "test@gmail.com";
         tenantInfo.description = "this is test tenant description";
         tenantInfo.image = "https://example/image.png";
@@ -428,7 +428,7 @@ public class AdminEndpointTest extends KeycloakTest {
 
         var request = new TenantRequestDto();
         var tenantInfo = new TenantInfoDto();
-        tenantInfo.name = "TENANT TEST";
+        tenantInfo.name = "TENANT-TEST";
         tenantInfo.email = "test@gmail.com";
         tenantInfo.description = "this is test tenant description";
         tenantInfo.image = "https://example/image.png";
@@ -736,7 +736,7 @@ public class AdminEndpointTest extends KeycloakTest {
 
         var request = new TenantRequestDto();
         var tenantInfo = new TenantInfoDto();
-        tenantInfo.name = "TENANT TEST";
+        tenantInfo.name = "TENANT-TEST";
         tenantInfo.email = "test@gmail.com";
         tenantInfo.description = "this is test tenant description";
         tenantInfo.image = "https://example/image.png";
@@ -777,7 +777,7 @@ public class AdminEndpointTest extends KeycloakTest {
                 .extract()
                 .as(TenantStatusFullResponse.class);
 
-        assertEquals(3, updated.status.jobs.size());
+        assertEquals(6, updated.status.jobs.size());
         assertEquals(job.name, updated.status.jobs.get(1).name);
         assertEquals(job.status, updated.status.jobs.get(1).status);
     }

@@ -12,10 +12,15 @@ public enum TenantJobEvent {
     // Automatic jobs (updated by automation)
     INIT_AMS("init_ams", EventMode.AUTO, Set.of(TenantJobProperty.TENANT_ID, TenantJobProperty.TENANT_NAME)),
     INIT_MONGO("init_mongo", EventMode.AUTO, Set.of(TenantJobProperty.TENANT_ID, TenantJobProperty.TENANT_NAME)),
+    INIT_COMPUTE_ENGINE("init_compute_engine", EventMode.AUTO, Set.of(TenantJobProperty.TENANT_ID, TenantJobProperty.TENANT_NAME)),
 
     // Manual jobs (completed by admin actions)
-    CREATE_DOMAIN_NAMES("create_domain_names", EventMode.MANUAL, Set.of()); // no properties for now
 
+    CREATE_DOMAIN_NAMES("create_domain_names", EventMode.MANUAL, Set.of()), // no properties for nowINIT_MONITORING_BOX("init_monitoring_box", EventMode.MANUAL,Set.of()),
+
+    INIT_TOPOLOGY_CONNECTOR("init_topology_connector", EventMode.MANUAL,Set.of()),
+
+    INIT_POEM("init_poem", EventMode.MANUAL,Set.of());
 
     private final String key;
     private final EventMode mode;

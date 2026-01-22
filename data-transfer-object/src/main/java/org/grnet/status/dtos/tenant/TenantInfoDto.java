@@ -22,7 +22,7 @@ public class TenantInfoDto {
     )
     @NotBlank(message = "Name must not be empty")
     @Pattern(
-            regexp = "^[A-Z\\- ]+$",
+            regexp = "^(?=.*[A-Z])[A-Z\\-]+$",
             message = "Name must contain only uppercase Latin letters, spaces, or hyphens"
     )@JsonProperty("name")
 

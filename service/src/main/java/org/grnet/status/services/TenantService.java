@@ -666,29 +666,25 @@ public class TenantService {
         }
         return null;
     }
-
-    //send notifications to AMS to initialize ams and mongo
+    // send notifications to AMS to initialize ams and mongo
     private void sendNotifications(Tenant tenant) {
 
-        AlertDefinitionRequest amsAlert = new AlertDefinitionRequest();
-        amsAlert.name = EventName.INIT_AMS.name();
-        var amsProperties = new HashMap<String, String>();
-        amsProperties.put("tenant_id", tenant.id);
-        amsProperties.put("tenant_name", tenant.name);
-        amsAlert.setProperties(amsProperties);
-        amsAlert.setCreatedAt(String.valueOf(Instant.now()));
+        String createdAt = String.valueOf(Instant.now());
 
+        send(tenant.id, buildAlert(EventName.INIT_AMS, tenant, createdAt));
+        send(tenant.id, buildAlert(EventName.INIT_MONGO, tenant, createdAt));
+        send(tenant.id, buildAlert(EventName.INIT_COMPUTE_ENGINE, tenant, createdAt));
+    }
 
-        AlertDefinitionRequest mongoAlert = new AlertDefinitionRequest();
-        mongoAlert.name = EventName.INIT_MONGO.name();
-        var mongoProperties = new HashMap<String, String>();
-        mongoProperties.put("tenant_id", tenant.id);
-        mongoProperties.put("tenant_name", tenant.name);
-        mongoAlert.setProperties(mongoProperties);
-        mongoAlert.setCreatedAt(String.valueOf(Instant.now()));
-
-        send(tenant.id, amsAlert);
-        send(tenant.id, mongoAlert);
+    private AlertDefinitionRequest buildAlert(EventName eventName, Tenant tenant, String createdAt) {
+        AlertDefinitionRequest alert = new AlertDefinitionRequest();
+        alert.name = eventName.name();
+        alert.setCreatedAt(createdAt);
+        alert.setProperties(Map.of(
+                "tenant_id", tenant.id,
+                "tenant_name", tenant.name
+        ));
+        return alert;
     }
 
     private void send(String id, AlertDefinitionRequest alert) {

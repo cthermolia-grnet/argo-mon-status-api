@@ -777,7 +777,7 @@ public class AdminEndpointTest extends KeycloakTest {
                 .extract()
                 .as(TenantStatusFullResponse.class);
 
-        assertEquals(6, updated.status.jobs.size());
+        assertEquals(7, updated.status.jobs.size());
         assertEquals(job.name, updated.status.jobs.get(1).name);
         assertEquals(job.status, updated.status.jobs.get(1).status);
     }

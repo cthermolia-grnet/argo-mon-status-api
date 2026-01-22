@@ -16,11 +16,13 @@ public enum TenantJobEvent {
 
     // Manual jobs (completed by admin actions)
 
-    CREATE_DOMAIN_NAMES("create_domain_names", EventMode.MANUAL, Set.of()), // no properties for nowINIT_MONITORING_BOX("init_monitoring_box", EventMode.MANUAL,Set.of()),
+    CREATE_DOMAIN_NAMES("create_domain_names", EventMode.MANUAL, Set.of()), // no properties for now
+
+    INIT_MONITORING_BOX("init_monitoring_box", EventMode.MANUAL, Set.of()), // no properties for now
 
     INIT_TOPOLOGY_CONNECTOR("init_topology_connector", EventMode.MANUAL,Set.of()),
 
-    INIT_POEM("init_poem", EventMode.MANUAL,Set.of());
+    INIT_POEM("init_poem", EventMode.MANUAL,Set.of());// no properties for now
 
     private final String key;
     private final EventMode mode;

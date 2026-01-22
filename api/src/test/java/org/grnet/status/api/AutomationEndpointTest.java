@@ -126,7 +126,7 @@ public class AutomationEndpointTest extends KeycloakTest {
                 .extract()
                 .as(TenantStatusFullResponse.class);
 
-        assertEquals(6, updated.status.jobs.size());
+        assertEquals(7, updated.status.jobs.size());
         assertEquals(EventName.INIT_AMS.name(), updated.status.jobs.get(0).name);
         assertEquals(EventStatus.COMPLETED.name(), updated.status.jobs.get(0).status);
     }

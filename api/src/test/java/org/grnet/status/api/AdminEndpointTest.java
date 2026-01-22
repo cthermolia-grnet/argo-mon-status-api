@@ -782,8 +782,6 @@ public class AdminEndpointTest extends KeycloakTest {
         assertEquals(job.status, updated.status.jobs.get(1).status);
     }
 
-
-
     @Test
     public void testCreateProject() {
         var req = buildCreateRequest();

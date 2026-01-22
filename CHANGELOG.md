@@ -55,7 +55,6 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#59](https://github.com/ARGOeu/argo-mon-status-api/pull/59) ARGO-5300 Initialize manual jobs in events for jobs in tenant's status 
 - [#61](https://github.com/ARGOeu/argo-mon-status-api/pull/1)  ARGO-5304 Add init_compute_engine as a job in the status of tenant
 
-
 ### Fix
 
 - [#7](https://github.com/ARGOeu/argo-mon-status-api/pull/7) ARGO-5152: Update Keycloak Redirect URIs and Enable CORS for Local UI Development
@@ -70,7 +69,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#47](https://github.com/ARGOeu/argo-mon-status-api/pull/47) ARGO-5244 Fix WebApi application.properties configuration
 - [#51](https://github.com/ARGOeu/argo-mon-status-api/pull/51) ARGO-5276 Restrict super_admin bypass on automation endpoints
 - [#52](https://github.com/ARGOeu/argo-mon-status-api/pull/52) ARGO-5278 Improve tenant tests: consistent mock tenant ID and AMS isolation
-- [#54](https://github.com/ARGOeu/argo-mon-status-api/pull/54) ARGO-5282 Harmonize EventStatus, EventName enum values to always be UPPERCASE #54
+- [#54](https://github.com/ARGOeu/argo-mon-status-api/pull/54) ARGO-5282 Harmonize EventStatus, EventName enum values to always be UPPERCASE
 - [#60](https://github.com/ARGOeu/argo-mon-status-api/pull/60) ARGO-5281 Tenant Invitation Management (fix)
 
 

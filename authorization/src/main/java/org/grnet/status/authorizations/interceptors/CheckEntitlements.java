@@ -2,8 +2,6 @@ package org.grnet.status.authorizations.interceptors;
 
 import jakarta.interceptor.InterceptorBinding;
 import jakarta.enterprise.util.Nonbinding;
-import org.grnet.status.authorizations.resolvers.GroupIdResolver;
-import org.grnet.status.authorizations.resolvers.NoOpResolver;
 
 import java.lang.annotation.*;
 
@@ -23,11 +21,14 @@ public @interface CheckEntitlements {
     String role() default "";
 
     @Nonbinding
-    Class<? extends GroupIdResolver> idResolver() default NoOpResolver.class;
+    Resolver[] resolvers() default {};
 
     @Nonbinding
     String[] hierarchy() default {};
 
     @Nonbinding
     String pathParam() default "";
+
+    @Nonbinding
+    boolean byPassAuthorization() default false;
 }

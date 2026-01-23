@@ -7,10 +7,16 @@ import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
 import jakarta.ws.rs.ForbiddenException;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.grnet.status.authorizations.service.AccessControlService;
 import org.grnet.status.authorizations.filters.RequestFilter;
 import org.grnet.status.authorizations.resolvers.GroupIdResolver;
 import org.grnet.status.authorizations.resolvers.NoOpResolver;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @CheckEntitlements
 @Interceptor
@@ -23,6 +29,10 @@ public class CheckEntitlementsInterceptor {
     @Inject
     Instance<GroupIdResolver> resolverInstances;
 
+    @ConfigProperty(name = "api.auth.entitlements.parent.group")
+    String parentGroup;
+
+
     @AroundInvoke
     public Object check(InvocationContext ctx) throws Exception {
 
@@ -30,6 +40,10 @@ public class CheckEntitlementsInterceptor {
         var classAnn  = ctx.getTarget().getClass().getAnnotation(CheckEntitlements.class);
 
         if (methodAnn == null && classAnn == null) {
+            return ctx.proceed();
+        }
+
+        if(methodAnn != null && methodAnn.byPassAuthorization()){
             return ctx.proceed();
         }
 
@@ -54,25 +68,27 @@ public class CheckEntitlementsInterceptor {
             return ctx.proceed();
         }
 
-        // Determine resolver (method override > class resolver > default)
-        Class<? extends GroupIdResolver> resolverClass =
-                (methodAnn != null && methodAnn.idResolver() != NoOpResolver.class)
-                        ? methodAnn.idResolver()
-                        : (classAnn != null && classAnn.idResolver() != NoOpResolver.class)
-                        ? classAnn.idResolver()
-                        : NoOpResolver.class;
+        var groups = new ArrayList<String>();
+        groups.add(parentGroup);
+        groups.add(group);
 
-        var resolver = resolverInstances.select(resolverClass).get();
+        if(methodAnn != null){
 
-        // Extract path ID (e.g. tenantId from URL)
-        var pathParams = RequestFilter.getPathParams();
-        String pathId = null;
+            var resolvers = methodAnn.resolvers();
 
-        if (pathParams != null && !pathParams.isEmpty()) {
-            pathId = pathParams.values().iterator().next();
+            for(int i= 0; i<resolvers.length; i++){
+
+                var resolverClass = resolvers[i].idResolver();
+
+                var actualResolver = resolverInstances.select(resolverClass).get();
+
+                var pathValue = actualResolver.resolve(resolvers[i].pathId());
+
+                groups.add(pathValue);
+            }
         }
 
-        var allowed = accessControlService.hasAccess(group, role, pathId, resolver);
+        var allowed = accessControlService.hasAccess(role, groups.stream().filter(s -> s != null && !s.isBlank()).collect(Collectors.toList()), group);
 
         if (!allowed) {
             throw new ForbiddenException("Access denied.");

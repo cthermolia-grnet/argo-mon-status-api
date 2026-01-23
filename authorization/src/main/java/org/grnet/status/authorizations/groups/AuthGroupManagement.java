@@ -200,6 +200,43 @@ public class AuthGroupManagement implements GroupManagement {
         groupClient.addUserToGroup(groupId, new AddGroupMemberRequest(username, List.of(role)));
     }
 
+    @Override
+    public void addMemberToGroupByGroupId(String id, String username, String role) {
+
+        var members = groupClient.getGroupMembers(id);
+        var results = (members == null || members.results == null) ? List.<GroupMemberEntry>of() : members.results;
+
+        var alreadyMember = results.stream()
+                .anyMatch(m -> m != null && m.user != null && username.equalsIgnoreCase(m.user.username));
+
+        if (alreadyMember) {
+            return;
+        }
+
+        groupClient.addUserToGroup(id, new AddGroupMemberRequest(username, List.of(role)));
+    }
+
+    @Override
+    public List<PartialGroup> fetchGroups() {
+
+        var groups = new ArrayList<PartialGroup>();
+
+        var response = groupClient.getGroups("");
+
+        for (Group group : response.results) {
+            collectGroupRecursive(group, groups);
+        }
+        return groups;
+    }
+
+    @Override
+    public void removeMemberFromGroup(String fullPath, String memberId) {
+
+        var groupId = getGroupIdByPath(fullPath);
+
+        groupClient.removeMemberFromGroup(groupId, memberId);
+    }
+
     // Recursively adds a group's path, id, and default configuration to the lookup map
     private void collectGroupRecursive(Group group, Map<String, String> map) {
         // Path → ID

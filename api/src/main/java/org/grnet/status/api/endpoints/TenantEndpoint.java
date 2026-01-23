@@ -26,6 +26,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.grnet.status.api.resolvers.TenantNameResolver;
 import org.grnet.status.authorizations.dtos.GroupUser;
 import org.grnet.status.authorizations.interceptors.CheckEntitlements;
+import org.grnet.status.authorizations.interceptors.Resolver;
 import org.grnet.status.constraints.NotFoundEntity;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.pagination.PageResource;
@@ -70,9 +71,6 @@ public class TenantEndpoint {
     @Inject
     TenantInvitationService tenantInvitationService;
 
-    @Inject
-    TenantNameResolver tenantNameResolver;
-
     @Operation(
             summary = "List Tenants Available to the User",
             description = "Retrieves a paginated list of tenants the authenticated user is allowed to access."
@@ -108,7 +106,7 @@ public class TenantEndpoint {
     @SecurityRequirement(name = "Authentication")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "viewer")
+    @CheckEntitlements(byPassAuthorization = true)
     public Response listTenants(
             @Parameter(name = "search", in = QUERY,
                     description = "Search tenants by name.")
@@ -145,11 +143,10 @@ public class TenantEndpoint {
             @QueryParam("size")
             int size, @Context UriInfo uriInfo) {
 
-        var result = tenantService.listAuthorizedTenants(tenantNameResolver, page - 1, size, uriInfo, search, sort, order);
+        var result = tenantService.listAuthorizedTenants(page - 1, size, uriInfo, search, sort, order);
 
         return Response.ok().entity(result).build();
     }
-
 
     @Operation(
             summary = "Get Tenant By Id .",
@@ -188,7 +185,9 @@ public class TenantEndpoint {
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "viewer", idResolver = TenantNameResolver.class)
+    @CheckEntitlements(role = "viewer", resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
     public Response getTenant(
             @Parameter(description = "The ID of the tenant to retrieve.",
                     required = true,
@@ -245,7 +244,9 @@ public class TenantEndpoint {
     @PUT
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "admin", idResolver = TenantNameResolver.class)
+    @CheckEntitlements(role = "admin", resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
     public Response updateTenant(
             @Parameter(
                     description = "The ID of the tenant to retrieve.",
@@ -295,7 +296,9 @@ public class TenantEndpoint {
     @SecurityRequirement(name = "Authentication")
     @GET
     @Path("/{id}/projects")
-    @CheckEntitlements(role = "admin", idResolver = TenantNameResolver.class)
+    @CheckEntitlements(role = "admin", resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
     @Produces(MediaType.APPLICATION_JSON)
     public Response getProjectsByTenant(
             @Parameter(
@@ -375,7 +378,9 @@ public class TenantEndpoint {
     @SecurityRequirement(name = "Authentication")
     @GET
     @Path("/{id}/members")
-    @CheckEntitlements(role = "admin", idResolver = TenantNameResolver.class)
+    @CheckEntitlements(role = "admin", resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
     @Produces(MediaType.APPLICATION_JSON)
     public Response getMembersByTenant(
             @Parameter(
@@ -438,7 +443,9 @@ public class TenantEndpoint {
     @Path("/{id}/invitation")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "admin", idResolver = TenantNameResolver.class)
+    @CheckEntitlements(role = "admin", resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
     public Response notifyAms(
             @Parameter(
                     description = "The ID of the tenant to start automation process.",
@@ -454,6 +461,7 @@ public class TenantEndpoint {
         return Response.ok().entity(status).build();
     }
 
+    @Tag(name = "Tenant")
     @Operation(
             summary = "Get all invitations of tenant.",
             description = "Returns all invitation of a Tenant. "
@@ -491,7 +499,9 @@ public class TenantEndpoint {
     @GET
     @Path("/{id}/invitations")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "admin", idResolver = TenantNameResolver.class)
+    @CheckEntitlements(role = "admin", resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
     public Response getInvitations(
             @Parameter(
                     description = "The ID of the tenant to start automation process.",
@@ -543,6 +553,69 @@ public class TenantEndpoint {
         return Response.ok(response).build();
     }
 
+    @Tag(name = "Tenant")
+    @Operation(
+            summary = "Delete member from a tenant group.",
+            description = "Delete member from a tenant group.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Member deleted successfully from a tenant group.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Entity Not Found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @DELETE
+    @Path("/{id}/members/{member_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(role = "admin", resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    @Authenticated
+    public Response deleteMemberFromGroup(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
+            @Parameter(description = "The member's id.",
+                    required = true,
+                    example = "r682e43f-4569-4fb0-b865-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("member_id") String memberId) {
+
+        tenantService.deleteMemberFromGroup(id, memberId);
+
+        var response = new InformativeResponse();
+        response.code = 200;
+        response.message = "Member deleted successfully from group.";
+
+        return Response.ok().entity(response).build();
+    }
 
     public static class PageableTenants extends PageResource<TenantResponseDto> {
 

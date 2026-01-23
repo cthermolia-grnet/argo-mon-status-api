@@ -33,10 +33,31 @@ public class OIDCEntitlementService {
             return Collections.emptyList();
         }
 
-        List<String> raws = arr.stream()
+        var raws = arr.stream()
                 .map(v -> v.toString().replace("\"", ""))
                 .filter(s -> s.startsWith(namespace))           // filter by namespace
                 .map(s -> s.replace(namespace + ":", ""))
+                .collect(Collectors.toList());
+
+        return EntitlementUtils.parseEntitlements(raws);
+    }
+
+    /**
+     * Extracts and parses entitlements from the OIDC token by subgroup.
+     */
+    public List<Entitlement> fetchEntitlementsBySubGroupId(String subgroup) {
+
+        var arr = tokenIntrospection.getJsonObject().getJsonArray("entitlements");
+
+        if (arr == null) {
+            return Collections.emptyList();
+        }
+
+        var raws = arr.stream()
+                .map(v -> v.toString().replace("\"", ""))
+                .filter(s -> s.startsWith(namespace))           // filter by namespace
+                .map(s -> s.replace(namespace + ":", ""))
+                .filter(s -> s.startsWith( "group:"+parentGroup+":"+subgroup))
                 .collect(Collectors.toList());
 
         return EntitlementUtils.parseEntitlements(raws);
@@ -51,7 +72,7 @@ public class OIDCEntitlementService {
             return Collections.emptyList();
         }
 
-        List<String> raws = entitlements.stream()
+        var raws = entitlements.stream()
                 .map(v -> v.replace("\"", ""))
                 .filter(s -> s.startsWith(namespace))           // filter by namespace
                 .map(s -> s.replace(namespace + ":", ""))

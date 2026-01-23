@@ -46,6 +46,11 @@ public class MailerService {
     @Location("tenant_invitation_response_notify_admin.html")
     Template tenantInvitationNotifyAdminTemplate;
 
+    @Inject
+    @Location("tenant_added_to_group.html")
+    Template tenantAddedToGroupTemplate;
+
+
 
     public void sendTenantInvitationEmail(List<String> recipientEmail,
                                           String tenantName,
@@ -85,6 +90,24 @@ public class MailerService {
 
 
         sendBcc(tenantInvitationAcceptTemplate, params, MailType.TENANT_INVITATION_RESPONSE_NOTIFY_USER, recipientEmail);
+    }
+
+    public void sendEmailToMemberAddedGroup(List<String> recipientEmail,
+                                                String tenantName,
+                                                String role, String uiBaseUrl) {
+
+        HashMap<String, Object> params = new HashMap<>();
+        var resolvedLogo = serviceUrl + "/v1/images/logo.png";
+        params.put("logoUrl", resolvedLogo);
+
+        params.put("replyTo", replyTo);
+        params.put("title", title);
+        params.put("tenantName", tenantName);
+        params.put("role", role);
+        params.put("uiUrl", uiBaseUrl);
+
+
+        sendBcc(tenantAddedToGroupTemplate, params, MailType.TENANT_ACCESS_GRANTED_USER, recipientEmail);
     }
 
     public void sendInvitationResponseToAdmins(List<String> adminEmails,

@@ -87,4 +87,9 @@ public interface KeycloakGroupClient {
     @Path("/group-admin/group/{groupId}/configuration/{configId}")
     GroupMembership getConfiguration(@PathParam("groupId") String groupId,
                                      @PathParam("configId") String configId);
+
+    @DELETE
+    @Path("/group-admin/group/{groupId}/member/user/{memberId}")
+    void removeMemberFromGroup(@PathParam("groupId") String groupId,
+                               @PathParam("memberId") String memberId);
 }

@@ -3,6 +3,8 @@ package org.grnet.status.api.resolvers;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import jakarta.ws.rs.NotFoundException;
+import org.grnet.status.authorizations.filters.RequestFilter;
 import org.grnet.status.authorizations.resolvers.GroupIdResolver;
 import org.grnet.status.repositories.TenantRepository;
 
@@ -13,11 +15,18 @@ public class TenantNameResolver implements GroupIdResolver {
     TenantRepository tenantRepository;
 
     @Override
-    public String resolve(String subgroupValue) {
+    public String resolve(String pathId) {
 
-        var tenantOpt = tenantRepository.fetchTenantByName(subgroupValue);
+        var pathParams = RequestFilter.getPathParams();
 
-        return tenantOpt.map(tenant -> tenant.id).orElse(null);
+        var tenantId = pathParams.get(pathId);
 
+        var tenant = tenantRepository.findByIdOptional(tenantId);
+
+        if(tenant.isPresent()){
+            return tenant.get().name;
+        } else {
+            throw new NotFoundException("There is no Tenant with the following id: " +tenantId);
+        }
     }
 }

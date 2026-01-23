@@ -35,7 +35,7 @@ import org.grnet.status.services.ReportService;
         scheme = "bearer",
         bearerFormat = "JWT",
         in = SecuritySchemeIn.HEADER)
-@CheckEntitlements(group = "tenants")
+@CheckEntitlements(group = "members")
 public class ReportEndpoint {
 
     @Inject
@@ -89,6 +89,7 @@ public class ReportEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/encrypt")
+    @CheckEntitlements(role = "member")
     public Response encrypt(EncryptRequestDto request) {
 
         var response = reportService.encrypt(request);
@@ -143,6 +144,7 @@ public class ReportEndpoint {
     @Path("/reports")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(role = "member")
     public Response fetchReports(ReportRequestDto request) {
 
             var reports = reportService.fetchReports(request);

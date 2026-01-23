@@ -9,12 +9,10 @@ import org.grnet.status.authorizations.resolvers.GroupIdResolver;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class AccessControlService {
-
-    @ConfigProperty(name = "api.auth.entitlements.parent.group")
-    String parentGroup;
 
     @Inject
     OIDCEntitlementService oidc;
@@ -78,30 +76,16 @@ public class AccessControlService {
         return false;
     }
 
-    public List<String> resolveAccessibleGroups(String group, GroupIdResolver resolver) {
+    public List<String> resolveAccessibleGroupsByName(String group) {
 
-        var entitlements = oidc.fetchEntitlements();
+        var entitlements = oidc.fetchEntitlementsBySubGroupId(group);
 
-        List<String> ids = new ArrayList<>();
-
-        for (Entitlement e : entitlements) {
-
-            var hierarchy = e.getHierarchy();
-            if (hierarchy.size() < 3) continue;
-
-            var subgroup = hierarchy.get(1);
-            var subgroupValue = hierarchy.get(2);
-
-            if (!group.equals(subgroup)) continue;
-
-            var resolved = resolver.resolve(subgroupValue);
-
-            if (resolved != null) {
-                ids.add(resolved);
-            }
-        }
-
-        return ids;
+       return entitlements
+                .stream()
+                .map(Entitlement::getHierarchy)
+                .filter(h->h != null && !h.isEmpty())
+                .map(h->h.get(h.size() - 1))
+                .collect(Collectors.toList());
     }
 
 
@@ -135,5 +119,24 @@ public class AccessControlService {
     private boolean isSuperAdmin(List<Entitlement> entitlements) {
         return entitlements.stream()
                 .anyMatch(e -> "super_admin".equals(e.getRole()));
+    }
+
+    public boolean hasAccess(String role, List<String> targetHierarchy, String group) {
+
+        var entitlements = oidc.fetchEntitlements();
+
+        return entitlements.stream()
+                .filter(e -> e.getGroup().equals(group) && e.getRole().equals(role))
+                .anyMatch(e -> hierarchyCovers(e.getHierarchy(), targetHierarchy));
+    }
+
+    public boolean hierarchyCovers(List<String> entitlementHierarchy, List<String> targetHierarchy) {
+
+        if (entitlementHierarchy.size() > targetHierarchy.size()) return false;
+        for (int i = 0; i < entitlementHierarchy.size(); i++) {
+            if (!entitlementHierarchy.get(i).equals(targetHierarchy.get(i))) return false;
+        }
+
+        return true;
     }
 }

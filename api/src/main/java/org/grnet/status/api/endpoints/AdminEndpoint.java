@@ -24,6 +24,8 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.grnet.status.authorizations.dtos.GroupUserResponse;
+import org.grnet.status.authorizations.dtos.MemberRequest;
+import org.grnet.status.authorizations.dtos.PartialGroup;
 import org.grnet.status.authorizations.interceptors.CheckEntitlements;
 import org.grnet.status.constraints.NotFoundEntity;
 import org.grnet.status.dtos.InformativeResponse;
@@ -1265,6 +1267,54 @@ public class AdminEndpoint {
     }
 
     @Tag(name = "Admin")
+    @Operation(summary = "Get list of groups.",
+            description = "Returns the groups of the Status Page.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Get groups.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = PageableGroups.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/groups")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response fetchGroups(@Parameter(name = "page", in = QUERY,
+            description = "Indicates the page number. Page number must be >= 1.")
+                                @DefaultValue("1") @Min(value = 1, message = "Page number must be >= 1.")
+                                @QueryParam("page")
+                                int page,
+                                @Parameter(name = "size", in = QUERY,
+                                        description = "The page size.")
+                                @DefaultValue("10") @Min(value = 1, message = "Page size must be between 1 and 100.") @Max(value = 100, message = "Page size must be between 1 and 100.")
+                                @QueryParam("size")
+                                int size,
+                                @Context UriInfo uriInfo) {
+
+        var project = groupManagementService.fetchGroups(page - 1, size, uriInfo);
+
+        return Response.ok().entity(project).build();
+    }
+
+    @Tag(name = "Admin")
     @Operation(summary = "Get list of members",
             description = "Returns the members of the Status Page")
     @APIResponse(
@@ -1325,50 +1375,6 @@ public class AdminEndpoint {
         return Response.ok().entity(project).build();
     }
 
-    public static class PageableContacts extends PageResource<ContactFullDto> {
-
-        private List<ContactFullDto> content;
-
-        @Override
-        public List<ContactFullDto> getContent() {
-            return content;
-        }
-
-        @Override
-        public void setContent(List<ContactFullDto> content) {
-            this.content = content;
-        }
-    }
-
-    public static class PageableStatusPages extends PageResource<StatusPageResponseDto> {
-
-        private List<StatusPageResponseDto> content;
-
-        @Override
-        public List<StatusPageResponseDto> getContent() {
-            return content;
-        }
-
-        @Override
-        public void setContent(List<StatusPageResponseDto> content) {
-            this.content = content;
-        }
-    }
-
-    public static class PageableProject extends PageResource<ProjectResponseDto> {
-
-        private List<ProjectResponseDto> content;
-
-        @Override
-        public List<ProjectResponseDto> getContent() {
-            return content;
-        }
-
-        @Override
-        public void setContent(List<ProjectResponseDto> content) {
-            this.content = content;
-        }
-    }
 
     @Tag(name = "Admin")
     @Operation(
@@ -1421,7 +1427,6 @@ public class AdminEndpoint {
 
         return Response.ok().entity(contactTypes).build();
     }
-
 
     @Tag(name = "Admin")
     @Operation(summary = "Notify AMS to initialize the automation process of an event for a tenant",
@@ -1651,11 +1656,67 @@ public class AdminEndpoint {
             @Min(value = 1, message = "Page size must be between 1 and 100.")
             @Max(value = 100, message = "Page size must be between 1 and 100.")
             @QueryParam("size")
-            int size, @Context UriInfo uriInfo)
-    {
+            int size, @Context UriInfo uriInfo) {
         var response = tenantInvitationService.getInvitationsByPageAndSize(search, sort, order, page - 1, size, uriInfo);
 
         return Response.ok(response).build();
+    }
+
+    @Tag(name = "Admin")
+    @Operation(
+            summary = "Add member to tenant group.",
+            description = "Add member to tenant group.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Member added to tenant group.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Entity Not Found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @POST
+    @Path("/tenants/{id}/members")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Authenticated
+    public Response addMemberToGroup(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
+            @Valid @NotNull(message = "The request body is empty.") MemberRequest request) {
+
+        tenantService.addMemberToGroup(id, request.username, request.role, request.email);
+
+        var response = new InformativeResponse();
+        response.code = 200;
+        response.message = "Member added successfully to group";
+
+        return Response.ok().entity(response).build();
     }
 
     public static class PageableGroupUserResponse extends PageResource<GroupUserResponse> {
@@ -1686,6 +1747,65 @@ public class AdminEndpoint {
         public void setContent(List<TenantInvitationResponse> content) {
             this.content = content;
         }
+    }
 
+    public static class PageableGroups extends PageResource<PartialGroup> {
+
+        private List<PartialGroup> content;
+
+        @Override
+        public List<PartialGroup> getContent() {
+            return content;
+        }
+
+        @Override
+        public void setContent(List<PartialGroup> content) {
+            this.content = content;
+        }
+    }
+
+    public static class PageableContacts extends PageResource<ContactFullDto> {
+
+        private List<ContactFullDto> content;
+
+        @Override
+        public List<ContactFullDto> getContent() {
+            return content;
+        }
+
+        @Override
+        public void setContent(List<ContactFullDto> content) {
+            this.content = content;
+        }
+    }
+
+    public static class PageableStatusPages extends PageResource<StatusPageResponseDto> {
+
+        private List<StatusPageResponseDto> content;
+
+        @Override
+        public List<StatusPageResponseDto> getContent() {
+            return content;
+        }
+
+        @Override
+        public void setContent(List<StatusPageResponseDto> content) {
+            this.content = content;
+        }
+    }
+
+    public static class PageableProject extends PageResource<ProjectResponseDto> {
+
+        private List<ProjectResponseDto> content;
+
+        @Override
+        public List<ProjectResponseDto> getContent() {
+            return content;
+        }
+
+        @Override
+        public void setContent(List<ProjectResponseDto> content) {
+            this.content = content;
+        }
     }
 }

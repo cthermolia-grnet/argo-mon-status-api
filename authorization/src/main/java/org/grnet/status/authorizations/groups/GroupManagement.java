@@ -1,6 +1,8 @@
 package org.grnet.status.authorizations.groups;
 
+import org.grnet.status.authorizations.dtos.Group;
 import org.grnet.status.authorizations.dtos.GroupUser;
+import org.grnet.status.authorizations.dtos.PartialGroup;
 
 import java.util.List;
 import java.util.Map;
@@ -36,4 +38,21 @@ public interface GroupManagement {
     List<GroupUser> fetchGroupMembersByRole(String fullPath, String role);
 
     void addGroupMember(String fullPath, String username, String role);
+
+    void addMemberToGroupByGroupId(String id, String username, String role);
+
+    List<PartialGroup> fetchGroups();
+
+    void removeMemberFromGroup(String fullPath, String memberId);
+
+    default void collectGroupRecursive(Group group, List<PartialGroup> groups) {
+
+        groups.add(new PartialGroup(group.id, group.name,group.path));
+
+        if (group.extraSubGroups != null) {
+            for (Group child : group.extraSubGroups) {
+                collectGroupRecursive(child, groups);
+            }
+        }
+    }
 }

@@ -80,6 +80,14 @@ public class TenantService {
 
     @Inject
     AmsService amsService;
+
+    @Inject
+    MailerService mailerService;
+
+    @ConfigProperty(name = "api.ui.url")
+    String uiBaseUrl;
+
+
     private final ExecutorService executorService = Executors.newFixedThreadPool(2); // Adjust as needed
 
     public TenantResponseDto create(TenantRequestDto request, String userId) throws IOException {
@@ -362,13 +370,13 @@ public class TenantService {
     }
 
 
-    public PageResource<TenantResponseDto> listAuthorizedTenants(GroupIdResolver tenantNameResolver, int page, int size, UriInfo uriInfo, String search, String sort, String order) {
-
-        var allowedTenantIds = accessControlService.resolveAccessibleGroups("tenants", tenantNameResolver);
+    public PageResource<TenantResponseDto> listAuthorizedTenants(int page, int size, UriInfo uriInfo, String search, String sort, String order) {
 
         if (accessControlService.isSuperAdmin()) {
             return getTenantsByPageAndSize(page, size, uriInfo, search, sort, order);
         }
+
+        var allowedTenantIds = accessControlService.resolveAccessibleGroupsByName("tenants");
 
         var tenants = tenantRepository.fetchTenantsByIdsAndPageAndSize(allowedTenantIds, page, size, search, sort, order);
 
@@ -388,18 +396,15 @@ public class TenantService {
         return new PageResource<>(tenants, tenantList, uriInfo);
     }
 
-    private void handleImage(TenantRequestDto request) throws IOException {
+    private void handleImage(TenantRequestDto request) {
 
         var image = request.info.image;
         if (image != null && image.startsWith("data:image/")) {
+
             imageUploadUtil.validateBase64Image(image);
             var savedPath = imageUploadUtil.saveBase64Image(baseUploadTenantsImagesDir, image, request.info.name, "/logos/");
             request.info.image = apiServerUrl + savedPath;
-
-
         }
-        // If not Base64, leave image as-is (null or external URL)
-
     }
 
     private Set<Contact> resolveAndMergeContacts(TenantRequestDto request) {
@@ -428,7 +433,6 @@ public class TenantService {
             }
         }
         return result;
-
     }
 
     private void deleteOrphanContacts(Set<Contact> oldContacts) {
@@ -454,7 +458,6 @@ public class TenantService {
             e.printStackTrace();
             throw e; // Rethrow to keep transactional behavior
         }
-
     }
 
     //updates the tenant in the database
@@ -484,7 +487,6 @@ public class TenantService {
         tenantRepository.persist(tenant);
         tenantRepository.flush(); // force errors
     }
-
 
     @Transactional
     public TenantStatusFullResponse updateTenantManualJobs(String id, @Valid TenantStatusDto request) {
@@ -856,6 +858,7 @@ public class TenantService {
             }
         }
     }
+
     private void validateAlertProperties(String eventName, Map<String, String> props) {
         if (props == null || props.isEmpty()) return;
 
@@ -874,5 +877,34 @@ public class TenantService {
                 );
             }
         }
+    }
+
+    public void addMemberToGroup(String tenantId, String username, String role, String email){
+
+        var tenant = tenantRepository.findById(tenantId);
+
+        var parentPath = "/" + namespace + "/tenants/"+tenant.name;
+
+        groupManagement.addGroupMember(parentPath, username, role);
+
+        try {
+            mailerService.sendEmailToMemberAddedGroup(
+                    List.of(email),
+                    tenant.name,
+                    role,
+                    uiBaseUrl
+            );
+        } catch (Exception e) {
+            Log.warn("Added to group email failed: " + email, e);
+        }
+    }
+
+    public void deleteMemberFromGroup(String tenantId, String memberId){
+
+        var tenant = tenantRepository.findById(tenantId);
+
+        var parentPath = "/" + namespace + "/tenants/"+tenant.name;
+
+        groupManagement.removeMemberFromGroup(parentPath, memberId);
     }
 }

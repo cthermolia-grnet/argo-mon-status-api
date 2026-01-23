@@ -36,7 +36,7 @@ import java.util.List;
 
 import static org.eclipse.microprofile.openapi.annotations.enums.ParameterIn.QUERY;
 
-@Path("/v1/users")
+@Path("/v1/users/invitations")
 @Authenticated
 @SecurityScheme(
         securitySchemeName = "Authentication",
@@ -91,8 +91,9 @@ public class TenantInvitationEndpoint {
                     implementation = InformativeResponse.class)))
     @SecurityRequirement(name = "Authentication")
     @GET
-    @Path("/invitations/{id}")
+    @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(role = "member")
     public Response getInvitationById(
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantInvitationRepository.class, message = "There is no Invitation with the following id: ")
@@ -145,9 +146,10 @@ public class TenantInvitationEndpoint {
                     implementation = InformativeResponse.class)))
     @SecurityRequirement(name = "Authentication")
     @PATCH
-    @Path("/invitations/{id}")
+    @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(role = "member")
     public Response respond(
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantInvitationRepository.class, message = "There is no Invitation with the following id: ") String id,
@@ -194,8 +196,8 @@ public class TenantInvitationEndpoint {
                     implementation = InformativeResponse.class)))
     @SecurityRequirement(name = "Authentication")
     @GET
-    @Path("/invitations")
     @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(role = "member")
     public Response getInvite(
             @Parameter(name = "page", in = QUERY,
                     description = "Page number. Must be >= 1.")

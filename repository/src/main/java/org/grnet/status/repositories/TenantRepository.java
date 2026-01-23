@@ -60,13 +60,13 @@ public class TenantRepository implements Repository<Tenant, String> {
 
     }
 
-    public PageQuery<Tenant> fetchTenantsByIdsAndPageAndSize(List<String> allowedIds, int page, int size, String search, String sort, String order) {
+    public PageQuery<Tenant> fetchTenantsByIdsAndPageAndSize(List<String> allowedNames, int page, int size, String search, String sort, String order) {
 
         var joiner = new StringJoiner(StringUtils.SPACE);
-        joiner.add("from Tenant t WHERE t.id in :allowedIds");
+        joiner.add("from Tenant t WHERE t.name in :allowedNames");
 
         var params = new HashMap<String, Object>();
-        params.put("allowedIds", allowedIds);
+        params.put("allowedNames", allowedNames);
 
         if (StringUtils.isNotEmpty(search)) {
             joiner.add("AND (t.name ilike :search OR t.email ilike :search)");

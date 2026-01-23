@@ -71,7 +71,27 @@ public enum MailType {
 
             return new MailTemplate(subject, body);
         }
-    };
+    },
+
+    TENANT_ACCESS_GRANTED_USER {
+        @Override
+        public MailTemplate execute(Template emailTemplate, HashMap<String, Object> templateParams) {
+
+            String body = emailTemplate
+                    .data("logoUrl", templateParams.get("logoUrl"))
+                    .data("title", templateParams.get("title"))
+                    .data("replyTo", templateParams.get("replyTo"))
+
+                    .data("tenantName", templateParams.get("tenantName"))
+                    .data("role", templateParams.get("role"))
+                    .data("uiUrl", templateParams.get("uiUrl"))
+                    .render();
+
+            String subject = "[" + templateParams.get("title") + "] Welcome! You’ve Been Added to the Tenant " + templateParams.get("tenantName");
+
+            return new MailTemplate(subject, body);
+        }
+    },;
 
     public abstract MailTemplate execute(Template mailTemplate, HashMap<String, Object> templateParams);
 

@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.grnet.status.authorizations.dtos.GroupUser;
 import org.grnet.status.authorizations.dtos.GroupUserResponse;
+import org.grnet.status.authorizations.dtos.PartialGroup;
 import org.grnet.status.authorizations.groups.GroupManagement;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.entities.Page;
@@ -100,13 +101,10 @@ public class GroupManagementService {
         groupManagement.addGroupMember(fullPath, username, "member");
     }
 
-    public void addUserToGroup(String groupName, String username, String role) {
+    public void addUserToGroup(String id, String username, String role) {
 
-        var fullPath = normalizePath(parentGroup) + "/" + groupName;
-
-        groupManagement.addGroupMember(fullPath, username, role);
+        groupManagement.addMemberToGroupByGroupId(id, username, role);
     }
-
 
     private static String normalizePath(String p) {
         if (p == null || p.isBlank()) return "";
@@ -119,5 +117,24 @@ public class GroupManagementService {
         if (p.endsWith("/")) p = p.substring(0, p.length() - 1);
 
         return p;
+    }
+
+    public PageResource<PartialGroup> fetchGroups(int page, int size, UriInfo uriInfo){
+
+        var groups = groupManagement.fetchGroups();
+
+        var partition = utility.partition(new ArrayList<>(groups), size);
+
+        var pageableMembers = partition.get(page) == null ? Collections.EMPTY_LIST : partition.get(page);
+
+        var pageable = new PageQueryImpl<PartialGroup>();
+
+        pageable.list = pageableMembers;
+        pageable.index = page;
+        pageable.size = size;
+        pageable.count = groups.size();
+        pageable.page = Page.of(page, size);
+
+        return new PageResource<>(pageable, uriInfo);
     }
 }

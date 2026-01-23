@@ -1598,14 +1598,13 @@ public class AdminEndpoint {
     public Response getInvitation(
 
             @Parameter(name = "search", in = QUERY,
-                    description = "Search invitations by Tenant Name, username, or email.")
+                    description = "Search invitations by Tenant Name or user email.")
             @QueryParam("search") String search,
             @Parameter(name = "sort", in = QUERY,
                     schema = @Schema(type = SchemaType.STRING, defaultValue = "createdAt"),
                     examples = {
                             @ExampleObject(name = "Created At", value = "createdAt"),
                             @ExampleObject(name = "Email", value = "email"),
-                            @ExampleObject(name = "Username", value = "username"),
                             @ExampleObject(name = "Tenant Name", value = "tenantName"),
                             @ExampleObject(name = "Status", value = "status"),
                     },

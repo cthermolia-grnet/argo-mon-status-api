@@ -45,14 +45,13 @@ public class TenantInvitationRepository implements Repository<TenantInvitation, 
         var params = new HashMap<String, Object>();
 
         if (StringUtils.isNotBlank(search)) {
-            joiner.add("where (t.name ILIKE :search OR ti.username ILIKE :search OR ti.email ILIKE :search)");
+            joiner.add("where (t.name ILIKE :search OR ti.email ILIKE :search)");
             params.put("search", "%" + search.trim() + "%");
         }
 
         var allowedSortFields = Set.of(
                 "createdAt",
                 "email",
-                "username",
                 "name",
                 "status"
         );
@@ -79,16 +78,20 @@ public class TenantInvitationRepository implements Repository<TenantInvitation, 
         return result;
     }
 
-    public PageQuery<TenantInvitation> fetchTenantInvitationsByPageAndSize(String search, String sort, String order, String tenantId, int page, int size) {
+    public PageQuery<TenantInvitation> fetchInvitationsByTenantByPageAndSize(String search, String sort, String order, String tenantId, int page, int size) {
 
         var joiner = new StringJoiner(" ");
-
-        joiner.add("SELECT ti from TenantInvitation ti");
-
         var params = new HashMap<String, Object>();
 
+
+        joiner.add("SELECT ti FROM TenantInvitation ti")
+                .add("LEFT JOIN ti.tenant t");
+
+        joiner.add("WHERE t.id = :tenantId");
+        params.put("tenantId", tenantId);
+
         if (StringUtils.isNotBlank(search)) {
-            joiner.add("where (ti.email ILIKE :search)");
+            joiner.add("AND (ti.email ILIKE :search or ti.role ILIKE :search)");
             params.put("search", "%" + search.trim() + "%");
         }
 
@@ -104,7 +107,7 @@ public class TenantInvitationRepository implements Repository<TenantInvitation, 
 
         var direction = "ASC".equalsIgnoreCase(order) ? "ASC" : "DESC";
 
-        var orderByField = "name".equals(sort) ? "t.name" : "ti." + sort;
+        var orderByField = "ti." + sort;
 
         joiner.add("order by " + orderByField + " " + direction);
 

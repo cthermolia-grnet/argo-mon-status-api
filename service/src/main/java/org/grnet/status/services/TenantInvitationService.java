@@ -77,7 +77,7 @@ public class TenantInvitationService {
      */
     public PageResource<TenantInvitationResponse> getAllInvitationsByUser(String userEmail, int page, int size, UriInfo uriInfo) {
 
-        var invitations = tenantInvitationRepository.findAllByEmail(userEmail, page - 1, size);
+        var invitations = tenantInvitationRepository.findAllByEmail(userEmail, page , size);
 
         return new PageResource<>(invitations, TenantInvitationMapper.INSTANCE.listToDtos(invitations.list()), uriInfo);
     }
@@ -100,9 +100,9 @@ public class TenantInvitationService {
 
 
 
-    public PageResource<TenantInvitationResponse> getTenantInvitationsByPageAndSize (String search, String sort, String order, String tenantId, int page, int size, UriInfo uriInfo) {
+    public PageResource<TenantInvitationResponse> getInvitationsByTenantByPageAndSize (String search, String sort, String order, String tenantId, int page, int size, UriInfo uriInfo) {
 
-        var tenantInvitations = tenantInvitationRepository.fetchTenantInvitationsByPageAndSize(search, sort, order, tenantId, page, size);
+        var tenantInvitations = tenantInvitationRepository.fetchInvitationsByTenantByPageAndSize(search, sort, order, tenantId, page, size);
 
         return new PageResource<>(tenantInvitations, TenantInvitationMapper.INSTANCE.listToDtos(tenantInvitations.list()), uriInfo);
     }

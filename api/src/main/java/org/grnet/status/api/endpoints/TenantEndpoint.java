@@ -501,7 +501,7 @@ public class TenantEndpoint {
             @PathParam("id")
             String id,
             @Parameter(name = "search", in = QUERY,
-                    description = "Search invitations by username or email.")
+                    description = "Search invitations by role or email.")
             @QueryParam("search") String search,
             @Parameter(name = "sort", in = QUERY,
                     schema = @Schema(type = SchemaType.STRING, defaultValue = "createdAt"),
@@ -538,7 +538,7 @@ public class TenantEndpoint {
             @QueryParam("size")
             int size, @Context UriInfo uriInfo)
     {
-        var response = tenantInvitationService.getTenantInvitationsByPageAndSize(search, sort, order, id,page - 1, size, uriInfo);
+        var response = tenantInvitationService.getInvitationsByTenantByPageAndSize(search, sort, order, id,page - 1, size, uriInfo);
 
         return Response.ok(response).build();
     }

@@ -211,7 +211,7 @@ public class TenantInvitationEndpoint {
             @QueryParam("size")
             int size, @Context UriInfo uriInfo)
     {
-        var response = tenantInvitationService.getAllInvitationsByUser(utility.getUserEmail(), page, size, uriInfo);
+        var response = tenantInvitationService.getAllInvitationsByUser(utility.getUserEmail(), page - 1 , size, uriInfo);
 
         return Response.ok(response).build();
     }

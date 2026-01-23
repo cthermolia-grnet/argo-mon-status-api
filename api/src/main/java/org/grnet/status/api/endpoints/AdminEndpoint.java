@@ -1272,7 +1272,7 @@ public class AdminEndpoint {
             description = "Get members ",
             content = @Content(schema = @Schema(
                     type = SchemaType.OBJECT,
-                    implementation = GroupUserResponse.class)))
+                    implementation = PageableGroupUserResponse.class)))
     @APIResponse(
             responseCode = "401",
             description = "User has not been authenticated.",
@@ -1301,9 +1301,26 @@ public class AdminEndpoint {
     @GET
     @Path("/members")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response fetchMembers() {
+    public Response fetchMembers(
+            @Parameter(name = "search", in = QUERY,
+                    description = "Search term applied on members (username, email, first name, last name).")
+            @QueryParam("search") String search,
+            @Parameter(name = "page", in = QUERY,
+                    description = "Indicates the page number. Page number must be >= 1.")
+            @DefaultValue("1")
+            @Min(value = 1, message = "Page number must be >= 1.")
+            @QueryParam("page") int page,
 
-        var project = groupManagementService.getMembers("members");
+            @Parameter(name = "size", in = QUERY,
+                    description = "The page size.")
+            @DefaultValue("10")
+            @Min(value = 1, message = "Page size must be between 1 and 100.")
+            @Max(value = 100, message = "Page size must be between 1 and 100.")
+            @QueryParam("size") int size,
+
+            @Context UriInfo uriInfo) {
+
+        var project = groupManagementService.getAllMembers("members", search, page -1, size, uriInfo);
 
         return Response.ok().entity(project).build();
     }
@@ -1639,6 +1656,21 @@ public class AdminEndpoint {
         var response = tenantInvitationService.getInvitationsByPageAndSize(search, sort, order, page - 1, size, uriInfo);
 
         return Response.ok(response).build();
+    }
+
+    public static class PageableGroupUserResponse extends PageResource<GroupUserResponse> {
+
+        private List<GroupUserResponse> content;
+
+        @Override
+        public List<GroupUserResponse> getContent() {
+            return content;
+        }
+
+        @Override
+        public void setContent(List<GroupUserResponse> content) {
+            this.content = content;
+        }
     }
 
     public static class PageableInvitations extends PageResource<TenantInvitationResponse> {

@@ -885,6 +885,23 @@ public class AdminEndpointTest extends KeycloakTest {
         assertEquals(200, response.code);
         assertEquals("Project has been successfully deleted.", response.message);
     }
+    @Test
+    public void superAdminFetchAllMembers() {
+
+        var response = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/members?page=1&size=5")
+                .then()
+                .assertThat()
+                .statusCode(200)
+                .extract()
+                .as(AdminEndpoint.PageableGroupUserResponse.class);
+
+        assertNotNull(response.getContent());
+        assertEquals(5, response.getContent().size());
+    }
 
     private ProjectRequestDto buildCreateRequest() {
 

@@ -16,7 +16,6 @@ import org.grnet.status.util.Utility;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static io.netty.util.AsciiString.contains;
@@ -42,7 +41,8 @@ public class GroupManagementService {
 
             var lowerSearch = search.toLowerCase();
             members = members.stream()
-                    .filter(u ->    contains(u.username, lowerSearch) ||
+                    .filter(u ->    contains(u.id, lowerSearch) ||
+                                    contains(u.username, lowerSearch) ||
                                     contains(u.email, lowerSearch) ||
                                     contains(u.firstName, lowerSearch) ||
                                     contains(u.lastName, lowerSearch))

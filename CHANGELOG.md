@@ -53,7 +53,8 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#57](https://github.com/ARGOeu/argo-mon-status-api/pull/57) ARGO-5281 Tenant Invitation Management
 - [#58](https://github.com/ARGOeu/argo-mon-status-api/pull/58) ARGO-5298 Include User Tenants in Users Response
 - [#59](https://github.com/ARGOeu/argo-mon-status-api/pull/59) ARGO-5300 Initialize manual jobs in events for jobs in tenant's status 
-- [#61](https://github.com/ARGOeu/argo-mon-status-api/pull/1)  ARGO-5304 Add init_compute_engine as a job in the status of tenant
+- [#61](https://github.com/ARGOeu/argo-mon-status-api/pull/1) ARGO-5304 Add init_compute_engine as a job in the status of tenant
+- [#63](https://github.com/ARGOeu/argo-mon-status-api/pull/63) ARGO-5302 Add search and pagination support to admin members endpoint
 
 ### Fix
 
@@ -72,6 +73,8 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#54](https://github.com/ARGOeu/argo-mon-status-api/pull/54) ARGO-5282 Harmonize EventStatus, EventName enum values to always be UPPERCASE
 - [#60](https://github.com/ARGOeu/argo-mon-status-api/pull/60) ARGO-5281 Tenant Invitation Management (fix)
 - [#64](https://github.com/ARGOeu/argo-mon-status-api/pull/64) ARGO-5309 Permit Tenant Name with Nums & add missing manual init_monitoring_box job
+- [#66](https://github.com/ARGOeu/argo-mon-status-api/pull/66) ARGO-5310 Allow Super Admins to search members by user ID
+
 
 
 

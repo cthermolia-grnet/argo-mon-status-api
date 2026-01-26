@@ -1303,7 +1303,7 @@ public class AdminEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public Response fetchMembers(
             @Parameter(name = "search", in = QUERY,
-                    description = "Search term applied on members (username, email, first name, last name).")
+                    description = "Search term applied on members (user id, username, email, first name, last name).")
             @QueryParam("search") String search,
             @Parameter(name = "page", in = QUERY,
                     description = "Indicates the page number. Page number must be >= 1.")

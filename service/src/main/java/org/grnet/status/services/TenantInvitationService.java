@@ -21,6 +21,9 @@ import org.grnet.status.repositories.TenantRepository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
+
+import static org.grnet.status.enums.InvitationAction.REVOKE;
 
 
 @ApplicationScoped
@@ -125,6 +128,11 @@ public class TenantInvitationService {
         return result;
     }
 
+    public TenantInvitationResponse revokeInvitation(String tenantId, String invitationId, String userUniqueId) {
+
+        return revoke(tenantId, invitationId, userUniqueId);
+    }
+
 
     /**
      * Accept or reject invitation for the authenticated user.
@@ -155,6 +163,22 @@ public class TenantInvitationService {
         if (tenant == null) {
             throw new WebApplicationException("Tenant not found.", 404);
         }
+
+        return TenantInvitationMapper.INSTANCE.tenantInvitationToDto(invitation);
+    }
+
+    @Transactional
+    public TenantInvitationResponse revoke(String tenantId, String invitationId, String userUniqueId) {
+
+        var invitation = tenantInvitationRepository.findById(invitationId);
+
+        if (!Objects.equals(invitation.tenant.getId(), tenantId)) {
+            throw new WebApplicationException("Invitation is not linked to this tenant.", 409);
+        }
+
+        invitation.status = mapToStatus(REVOKE);
+        invitation.respondedAt = Instant.now();
+        invitation.respondedBy = userUniqueId;
 
         return TenantInvitationMapper.INSTANCE.tenantInvitationToDto(invitation);
     }
@@ -241,6 +265,7 @@ public class TenantInvitationService {
         return switch (action) {
             case ACCEPT -> InvitationStatus.ACCEPTED;
             case REJECT -> InvitationStatus.REJECTED;
+            case REVOKE ->  InvitationStatus.REVOKED;
         };
     }
 }

@@ -35,6 +35,7 @@ import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationRequest;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
+import org.grnet.status.repositories.TenantInvitationRepository;
 import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.services.TenantInvitationService;
 import org.grnet.status.services.TenantProjectService;
@@ -448,7 +449,7 @@ public class TenantEndpoint {
     })
     public Response notifyAms(
             @Parameter(
-                    description = "The ID of the tenant to start automation process.",
+                    description = "The ID of the tenant to create an invitation.",
                     required = true,
                     example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
                     schema = @Schema(type = SchemaType.STRING))
@@ -504,7 +505,7 @@ public class TenantEndpoint {
     })
     public Response getInvitations(
             @Parameter(
-                    description = "The ID of the tenant to start automation process.",
+                    description = "The ID of the tenant under which the invitation was created.",
                     required = true,
                     example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
                     schema = @Schema(type = SchemaType.STRING))
@@ -549,6 +550,68 @@ public class TenantEndpoint {
             int size, @Context UriInfo uriInfo)
     {
         var response = tenantInvitationService.getInvitationsByTenantByPageAndSize(search, sort, order, id,page - 1, size, uriInfo);
+
+        return Response.ok(response).build();
+    }
+
+    @Tag(name = "Tenant")
+    @Operation(
+            summary = "Revoke an invitation invitation.",
+            description = "Revoke an invitation."
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "Invitation updated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = TenantInvitationResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Invitation not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "409",
+            description = "Invitation already responded.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "410",
+            description = "Invitation expired.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @PATCH
+    @Path("/{id}/invitations/{invitation_id}")
+    @CheckEntitlements(role = "admin", resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response revoke(
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Invitation with the following id: ")
+            String id,
+            @PathParam("invitation_id")
+            @Valid @NotFoundEntity(repository = TenantInvitationRepository.class, message = "There is no Invitation with the following invitation_id: ")
+            String invitationId) {
+
+        var response = tenantInvitationService.revokeInvitation(id, invitationId, utility.getUserUniqueIdentifier());
 
         return Response.ok(response).build();
     }

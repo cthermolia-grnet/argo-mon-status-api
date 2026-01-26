@@ -196,6 +196,18 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
     }
 
     @Test
+    public void revokeInvitation() {
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
+
+        var tenant = createTenant("LOCALTENANT");
+        var created = createInvitation(tenant.id, "local-viewer@test.dev", "viewer");
+
+        var revoke = revokeInvitation(currentMockId, created.id);
+
+        assertEquals("REVOKED", String.valueOf(revoke.status));
+    }
+
+    @Test
     public void alreadyRespondedInvitation() {
         currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
 
@@ -326,6 +338,19 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
                 .body(req)
                 .when()
                 .patch("/v1/users/invitations/{id}", invitationId)
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(TenantInvitationResponse.class);
+    }
+
+    private TenantInvitationResponse revokeInvitation(String tenantId, String invitationId) {
+
+        return given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .when()
+                .patch("/v1/tenants/{id}/invitations/{invitation_id}", tenantId, invitationId)
                 .then()
                 .statusCode(200)
                 .extract()

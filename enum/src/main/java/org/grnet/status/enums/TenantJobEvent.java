@@ -10,7 +10,8 @@ import java.util.Set;
 public enum TenantJobEvent {
 
     // Automatic jobs (updated by automation)
-    INIT_AMS("init_ams", EventMode.AUTO, Set.of(TenantJobProperty.TENANT_ID, TenantJobProperty.TENANT_NAME)),
+    INIT_AMS("i" +
+            "nit_ams", EventMode.AUTO, Set.of(TenantJobProperty.TENANT_ID, TenantJobProperty.TENANT_NAME)),
     INIT_MONGO("init_mongo", EventMode.AUTO, Set.of(TenantJobProperty.TENANT_ID, TenantJobProperty.TENANT_NAME)),
     INIT_COMPUTE_ENGINE("init_compute_engine", EventMode.AUTO, Set.of(TenantJobProperty.TENANT_ID, TenantJobProperty.TENANT_NAME)),
 

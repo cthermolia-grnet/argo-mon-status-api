@@ -292,8 +292,12 @@ public class TenantService {
         // 2. Update remote API first
         // ------------------------------
 
-        var webApiRequest = TenantMapper.INSTANCE.toWebApiRequest(request);
+        // create an initial webApiRequest with the existing web api data for the tenant
+        var webApiRequest=TenantMapper.INSTANCE.dataToTenantWebApiRequest(previousWebApiTenant.getData().get(0));
+        //update the initial webApiRequest with the new data for info and topology while keeping users and dbConf as it is
+        TenantMapper.INSTANCE.updateExistingWebApiRequest(request,webApiRequest);
 
+        //updates the tenant in the webApi
         webApiService.updateTenantWebApi(webApiRequest, id);
         // ------------------------------
         // 3. Local DB update

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.inject.Inject;
 import org.grnet.status.dtos.tenant.*;
 import org.grnet.status.dtos.tenant.metadata.TenantMetadata;
+import org.grnet.status.dtos.tenant.metadata.TenantTopologyDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
@@ -35,9 +36,44 @@ public interface TenantMapper {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.of("UTC"));
 
 
+   // @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "info", source = "info")
     @Mapping(target = "topology", source = "metadata.instance.topology")
+    @Mapping(target = "users", ignore = true)
+    @Mapping(target = "db_conf", ignore = true)
     TenantWebApiRequest toWebApiRequest(TenantRequestDto dto);
+
+    //map the fields received from web api as TenantWebApiGetResponse.Data.get(0)
+    //to an initial TenantWebApiRequest
+    @Mapping(source = "info", target = "info")
+    @Mapping(source = "topology", target = "topology")
+    @Mapping(source = "db_conf", target = "db_conf")
+    @Mapping(source = "users", target = "users")
+
+    TenantWebApiRequest dataToTenantWebApiRequest(TenantWebApiGetResponse.Data data);
+
+    //updates existing TenantWebApiRequest with the fields of the TenantRequestDto
+    @Mapping(target = "info", source = "info")
+    @Mapping(target = "topology", source = "metadata.instance.topology")
+    @Mapping(target = "users", ignore = true)   // keep existing
+    @Mapping(target = "db_conf", ignore = true)  // keep existing
+    void updateExistingWebApiRequest(TenantRequestDto dto, @MappingTarget TenantWebApiRequest existing);
+
+
+    TenantInfoDto infoToDto(TenantWebApiGetResponse.Info info);
+
+    TenantTopologyDto topologyToDto(TenantWebApiGetResponse.Topology topology);
+
+    DBConfDto dbConfToDto(TenantWebApiGetResponse.DbConf dbConf);
+
+    List<DBConfDto> dbConfListToDto(List<TenantWebApiGetResponse.DbConf> dbConfs);
+
+    @Mapping(source = "api_key", target = "api_key")
+    UserDto userToDto(TenantWebApiGetResponse.User user);
+
+    List<UserDto> userListToDto(List<TenantWebApiGetResponse.User> users);
+
+
 
 
     default List<TenantResponseDto> webApiTenantsToDtos(

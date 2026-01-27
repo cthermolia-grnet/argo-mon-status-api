@@ -81,7 +81,11 @@ public class WebApiService {
         try {
 
             var client = produceClient();
-            return client.updateTenant(id, accessToken, webApiRequest);
+            //return client.updateTenant(id, accessToken, webApiRequest);
+            client.updateTenantInfo(id,accessToken,webApiRequest);
+            client.updateTenantTopology(id,accessToken,webApiRequest);
+            return client.updateTenantDBConf(id,accessToken,webApiRequest);
+
         } catch (Exception e) {
             throw new WebApplicationException("Remote API update failed: " + e.getMessage(), 502);
         }

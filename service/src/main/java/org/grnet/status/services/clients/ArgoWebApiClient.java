@@ -56,4 +56,27 @@ public interface ArgoWebApiClient {
     TenantWebApiGetResponse getTenants(
             @HeaderParam("x-api-key") String apiKey) throws WebApplicationException, ProcessingException;
 
+
+    @PUT
+    @Path("/api/v2/admin/tenants/{id}/info")
+    TenantWebApiResponse updateTenantInfo(String id,
+                                          @HeaderParam("x-api-key") String apiKey,
+                                          TenantWebApiRequest request
+    ) throws WebApplicationException, ProcessingException;
+
+
+    @PUT
+    @Path("/api/v2/admin/tenants/{id}/topology")
+    TenantWebApiResponse updateTenantTopology(String id,
+                                              @HeaderParam("x-api-key") String apiKey,
+                                              TenantWebApiRequest request
+    ) throws WebApplicationException, ProcessingException;
+
+    @PUT
+    @Path("/api/v2/admin/tenants/{id}/db-conf")
+    TenantWebApiResponse updateTenantDBConf(String id,
+                                              @HeaderParam("x-api-key") String apiKey,
+                                              TenantWebApiRequest request
+    ) throws WebApplicationException, ProcessingException;
+
 }

@@ -74,6 +74,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#60](https://github.com/ARGOeu/argo-mon-status-api/pull/60) ARGO-5281 Tenant Invitation Management (fix)
 - [#64](https://github.com/ARGOeu/argo-mon-status-api/pull/64) ARGO-5309 Permit Tenant Name with Nums & add missing manual init_monitoring_box job
 - [#66](https://github.com/ARGOeu/argo-mon-status-api/pull/66) ARGO-5310 Allow Super Admins to search members by user ID
+- [#67](https://github.com/ARGOeu/argo-mon-status-api/pull/67) ARGO-5314 Tenant users wiped out in web-api envrihub and aquainfra
 
 
 

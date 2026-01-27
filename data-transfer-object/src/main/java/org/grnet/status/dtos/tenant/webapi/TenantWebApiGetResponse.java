@@ -53,6 +53,7 @@ public class TenantWebApiGetResponse {
         private Info info;
         private List<DbConf> db_conf;
         private Topology topology;
+        private List<User> users;
 
         public String getId() {
             return id;
@@ -86,6 +87,13 @@ public class TenantWebApiGetResponse {
             this.topology = topology;
         }
 
+        public List<User> getUsers() {
+            return users;
+        }
+
+        public void setUsers(List<User> users) {
+            this.users = users;
+        }
     }
 
     public static class Info {
@@ -163,6 +171,46 @@ public class TenantWebApiGetResponse {
         private String username;
         private String password;
 
+        public String getStore() {
+            return store;
+        }
+
+        public void setStore(String store) {
+            this.store = store;
+        }
+
+        public String getServer() {
+            return server;
+        }
+
+        public void setServer(String server) {
+            this.server = server;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        public void setPort(int port) {
+            this.port = port;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+
         // getters/setters
     }
 
@@ -187,6 +235,54 @@ public class TenantWebApiGetResponse {
         }
 
         // getters/setters
+    }
+    public static class User {
+        private String id;
+        private String name;
+        private String email;
+        private String api_key;
+        private List<String> roles;
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public String getApi_key() {
+            return api_key;
+        }
+
+        public void setApi_key(String api_key) {
+            this.api_key = api_key;
+        }
+
+        public List<String> getRoles() {
+            return roles;
+        }
+
+        public void setRoles(List<String> roles) {
+            this.roles = roles;
+        }
+// getters/setters
     }
 
 }

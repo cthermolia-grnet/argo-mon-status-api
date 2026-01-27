@@ -26,7 +26,10 @@ public class MailerService {
     String serviceUrl;
 
     @ConfigProperty(name = "quarkus.mailer.from")
-    String contactMail;
+    String sendFrom;
+
+    @ConfigProperty(name = "quarkus.mailer.reply-to")
+    String replyTo;
 
     @ConfigProperty(name = "api.mail.title", defaultValue = "ARGO MON Status")
     String title;
@@ -50,7 +53,8 @@ public class MailerService {
                                           String invitationUrl) {
 
         HashMap<String, Object> params = new HashMap<>();
-        params.put("contactMail", contactMail);
+        params.put("sendFrom", sendFrom);
+        params.put("replyTo", replyTo);
         params.put("title", title);
 
         var resolvedLogo = serviceUrl + "/v1/images/logo.png";
@@ -72,7 +76,8 @@ public class MailerService {
         var resolvedLogo = serviceUrl + "/v1/images/logo.png";
         params.put("logoUrl", resolvedLogo);
 
-        params.put("contactMail", contactMail);
+        params.put("sendFrom", sendFrom);
+        params.put("replyTo", replyTo);
         params.put("title", title);
         params.put("tenantName", tenantName);
         params.put("role", role);
@@ -94,7 +99,8 @@ public class MailerService {
         var resolvedLogo = serviceUrl + "/v1/images/logo.png";
         params.put("logoUrl", resolvedLogo);
 
-        params.put("contactMail", contactMail);
+        params.put("sendFrom", sendFrom);
+        params.put("replyTo", replyTo);
         params.put("title", title);
         params.put("tenantName", tenantName);
         params.put("inviteeEmail", inviteeEmail);
@@ -116,6 +122,7 @@ public class MailerService {
         mail.setHtml(mailTemplate.getBody());
         mail.setSubject(mailTemplate.getSubject());
         mail.setBcc(recipients);
+        mail.setReplyTo(replyTo);
 
         try {
             mailer.send(mail);

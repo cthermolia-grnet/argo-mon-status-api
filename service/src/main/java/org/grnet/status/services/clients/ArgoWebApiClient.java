@@ -36,12 +36,12 @@ public interface ArgoWebApiClient {
     @Path("/api/v2/admin/tenants/{id}")
     TenantWebApiGetResponse getTenant(
             @HeaderParam("x-api-key") String apiKey,
-            String id
+            @PathParam("id") String id
     ) throws WebApplicationException, ProcessingException;
 
     @PUT
     @Path("/api/v2/admin/tenants/{id}")
-    TenantWebApiResponse updateTenant(String id,
+    TenantWebApiResponse updateTenant(  @PathParam("id") String id,
                                       @HeaderParam("x-api-key") String apiKey,
                                       TenantWebApiRequest request
     ) throws WebApplicationException, ProcessingException;
@@ -49,7 +49,7 @@ public interface ArgoWebApiClient {
     @DELETE
     @Path("/api/v2/admin/tenants/{id}")
     TenantWebApiResponse deleteTenant(
-            String id, @HeaderParam("x-api-key") String apiKey) throws WebApplicationException, ProcessingException;
+            @PathParam("id") String id, @HeaderParam("x-api-key") String apiKey) throws WebApplicationException, ProcessingException;
 
     @GET
     @Path("/api/v2/admin/tenants")

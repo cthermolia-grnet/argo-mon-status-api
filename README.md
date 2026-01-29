@@ -124,6 +124,28 @@ mvn clean install -DskipTests=true -U
 This command installs all required dependencies in your local Maven repository.
 
 ---
+## Start Argo Web API in Development Profile
+
+In development mode, Argo Mon Status Page Api uses a locally hosted Argo Web API instead of the production service. To start the local Argo Web API instance, follow these instructions:
+
+1. Clone the Argo Web API repository
+Clone the repository and checkout the devel branch:
+
+git clone -b devel https://github.com/argoeu/argo-web-api
+
+
+2. Navigate to the Docker folder
+Change directory to the Docker setup folder:
+
+cd argo-web-api/docker
+
+3. Start the local Argo Web API using Docker Compose
+Run the following command to start the services:
+
+docker-compose up
+
+The local instance of the Argo Web API will then be accessible at:
+http://localhost:8843
 
 ## Start the Application with Quarkus Dev Services
 

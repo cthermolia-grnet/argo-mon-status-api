@@ -356,7 +356,6 @@ public class TenantService {
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
-
             tenantList.add(webtenant);
         });
         return new PageResource<>(tenants, tenantList, uriInfo);

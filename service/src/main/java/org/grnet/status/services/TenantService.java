@@ -13,6 +13,7 @@ import jakarta.ws.rs.ServiceUnavailableException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.grnet.status.authorizations.groups.AuthGroupManagement;
 import org.grnet.status.authorizations.groups.GroupManagement;
 import org.grnet.status.authorizations.resolvers.GroupIdResolver;
 import org.grnet.status.authorizations.service.AccessControlService;
@@ -281,8 +282,11 @@ public class TenantService {
 
         var previousWebApiTenant = webApiService.retrieveTenantWebApi(id);
 
-        if (!Objects.equals(previousWebApiTenant.getData().get(0).getInfo().getName(), request.info.name)) {
-            throw new ForbiddenException("Tenant name cannot be changed");
+        var previousData = previousWebApiTenant.getData().get(0);
+
+        if (request.info != null && request.info.name != null &&
+                !Objects.equals(previousData.getInfo().getName(), request.info.name)) {
+            throw new WebApplicationException("Tenant name cannot be changed", 409);
         }
 
         var previousRemoteState = TenantMapper.INSTANCE.webApiTenantToTenantRequestDto(

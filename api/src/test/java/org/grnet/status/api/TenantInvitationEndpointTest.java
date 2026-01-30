@@ -4,6 +4,7 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import org.grnet.status.dtos.pagination.PageResource;
+import org.grnet.status.dtos.tenant.ContactDto;
 import org.grnet.status.dtos.tenant.TenantInfoDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -228,12 +230,20 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
     private TenantResponseDto createTenant(String tenantName) {
         var request = new TenantRequestDto();
         var tenantInfo = new TenantInfoDto();
+        var tenantContact = new ContactDto();
         tenantInfo.name = tenantName;
         tenantInfo.email = "test@gmail.com";
         tenantInfo.description = "this is test tenant description";
         tenantInfo.image = "https://example/image.png";
         tenantInfo.website = "https://test.tenant.org";
+
+        tenantContact.email = "test@gmail.com";
+        tenantContact.name = "Test user";
+        tenantContact.type = "ADMIN";
+
         request.info = tenantInfo;
+        request.contacts = Collections.singletonList(tenantContact);
+
 
         return given()
                 .auth().oauth2(adminToken)

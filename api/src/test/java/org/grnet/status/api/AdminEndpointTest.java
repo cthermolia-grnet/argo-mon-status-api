@@ -22,7 +22,6 @@ import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.services.clients.*;
-import org.grnet.status.enums.EventName;
 import org.grnet.status.enums.EventStatus;
 import org.grnet.status.enums.TenantJobEvent;
 import org.grnet.status.services.clients.ArgoWebApiClient;
@@ -33,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import static io.restassured.RestAssured.given;
@@ -177,34 +177,10 @@ public class AdminEndpointTest extends KeycloakTest {
     public void createTenant() {
         currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
 
-        var request = new TenantRequestDto();
-        var tenantInfo = new TenantInfoDto();
-        tenantInfo.name = "TENANT-TEST";
-        tenantInfo.email = "test@gmail.com";
-        tenantInfo.description = "this is test tenant description";
-        tenantInfo.image = "https://example/image.png";
-        tenantInfo.website = "https://test.tenant.org";
-        request.info = tenantInfo;
+        var request = createTenant("LOCALTENANT");
 
-        var api = "https://test.api.grnet.gr";
-        var secret = "VaWi0ZBjGrxXPuB0o+KARpH63EKDaiwttfLE54POPtaw4QRxYktsabA+CT76sX0D";
-
-        var response = given()
-                .auth().oauth2(adminToken)
-                .contentType(ContentType.JSON)
-
-                .queryParam("api", api)
-                .queryParam("secret", secret)
-                .body(request)
-                .contentType(ContentType.JSON)
-                .when()
-                .post("/tenants")
-                .then()
-                .statusCode(200)
-                .extract()
-                .as(TenantResponseDto.class);
-        assertEquals(request.info.name, response.info.name);
-        assertEquals(currentMockId, response.id);  // check that the id matches what you set
+        assertEquals(request.info.name, request.info.name);
+        assertEquals(currentMockId, request.id);  // check that the id matches what you set
     }
 
     @Test
@@ -212,41 +188,22 @@ public class AdminEndpointTest extends KeycloakTest {
 
         currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
 
-        var request = new TenantRequestDto();
-        var tenantInfo = new TenantInfoDto();
-        tenantInfo.name = "TENANT-TEST";
-        tenantInfo.email = "test@gmail.com";
-        tenantInfo.description = "this is test tenant description";
-        tenantInfo.image = "https://example/image.png";
-        tenantInfo.website = "https://test.tenant.org";
-        request.info = tenantInfo;
+        var request = createTenant("TENANT-TEST");
 
         //var webApi = new ArgoWebApiRequest();
-
-        var response = given()
-                .auth().oauth2(adminToken)
-                .contentType(ContentType.JSON)
-                .body(request)
-                .contentType(ContentType.JSON)
-                .when()
-                .post("/tenants")
-                .then()
-                .statusCode(200)
-                .extract()
-                .as(TenantResponseDto.class);
 
         var getTenant = given()
                 .auth().oauth2(adminToken)
                 .contentType(ContentType.JSON)
                 .when()
-                .get("/tenants/{id}", response.id)
+                .get("/tenants/{id}", request.id)
                 .then()
                 .assertThat()
                 .statusCode(200)
                 .extract()
                 .as(TenantResponseDto.class);
 
-        assertEquals(tenantInfo.name, getTenant.info.name);
+        assertEquals(request.info.name, getTenant.info.name);
     }
 
     @Test
@@ -255,12 +212,19 @@ public class AdminEndpointTest extends KeycloakTest {
 
         var request = new TenantRequestDto();
         var tenantInfo = new TenantInfoDto();
+        var tenantContact = new ContactDto();
         tenantInfo.name = "TENANT-TEST";
         tenantInfo.email = "test@gmail.com";
         tenantInfo.description = "this is test tenant description";
         tenantInfo.image = "https://example/image.png";
         tenantInfo.website = "https://test.tenant.org";
+        tenantContact.email = "test@gmail.com";
+        tenantContact.name = "Test user";
+        tenantContact.type = "ADMIN";
+
         request.info = tenantInfo;
+        request.contacts = Collections.singletonList(tenantContact);
+
 
         //var webApi = new ArgoWebApiRequest();
 
@@ -278,12 +242,19 @@ public class AdminEndpointTest extends KeycloakTest {
 
         var request1 = new TenantRequestDto();
         var tenantInfo1 = new TenantInfoDto();
-        tenantInfo1.name = tenantInfo.name;
+        var tenantContact1 = new ContactDto();
+        tenantInfo1.name = request.info.name;
         tenantInfo1.email = "test2-updated@gmail.com";
         tenantInfo1.description = "this is test2 updated tenant description";
         tenantInfo1.image = "https://example/image.png";
         tenantInfo1.website = "https://test2.updated.tenant.org";
+        tenantContact1.email = "test@gmail.com";
+        tenantContact1.name = "Test user";
+        tenantContact1.type = "ADMIN";
+
         request1.info = tenantInfo1;
+        request1.contacts = Collections.singletonList(tenantContact1);
+
         var response1 = given()
                 .auth().oauth2(adminToken)
                 .contentType(ContentType.JSON)
@@ -304,28 +275,9 @@ public class AdminEndpointTest extends KeycloakTest {
 
         currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
 
-        var request = new TenantRequestDto();
-        var tenantInfo = new TenantInfoDto();
-        tenantInfo.name = "TENANT-TEST";
-        tenantInfo.email = "test@gmail.com";
-        tenantInfo.description = "this is test tenant description";
-        tenantInfo.image = "https://example/image.png";
-        tenantInfo.website = "https://test.tenant.org";
-        request.info = tenantInfo;
+        var request = createTenant("LOCALTENANT");
 
         //var webApi = new ArgoWebApiRequest();
-
-        var response = given()
-                .auth().oauth2(adminToken)
-                .contentType(ContentType.JSON)
-                .body(request)
-                .contentType(ContentType.JSON)
-                .when()
-                .post("/tenants")
-                .then()
-                .statusCode(200)
-                .extract()
-                .as(TenantResponseDto.class);
 
         var request1 = new TenantRequestDto();
         var tenantInfo1 = new TenantInfoDto();
@@ -341,7 +293,7 @@ public class AdminEndpointTest extends KeycloakTest {
                 .body(request1)
                 .contentType(ContentType.JSON)
                 .when()
-                .put("/tenants/{id}", response.id)
+                .put("/tenants/{id}", request.id)
                 .then()
                 .statusCode(403)
                 .extract()
@@ -383,35 +335,18 @@ public class AdminEndpointTest extends KeycloakTest {
 
         currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
 
-        var request = new TenantRequestDto();
-        var tenantInfo = new TenantInfoDto();
-        tenantInfo.name = "TENANT-TEST";
-        tenantInfo.email = "test@gmail.com";
-        tenantInfo.description = "this is test tenant description";
-        tenantInfo.image = "https://example/image.png";
-        tenantInfo.website = "https://test.tenant.org";
-        request.info = tenantInfo;
+        var request = createTenant("LOCALTENANT");
 
         //var webApi = new ArgoWebApiRequest();
 
-        var response = given()
-                .auth().oauth2(adminToken)
-                .contentType(ContentType.JSON)
-                .body(request)
-                .contentType(ContentType.JSON)
-                .when()
-                .post("/tenants")
-                .then()
-                .statusCode(200)
-                .extract()
-                .as(TenantResponseDto.class);
+
 
         var response1 = given()
                 .auth().oauth2(adminToken)
                 .contentType(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .when()
-                .delete("/tenants/{id}", response.id)
+                .delete("/tenants/{id}", request.id)
                 .then()
                 .statusCode(200)
                 .extract()
@@ -426,35 +361,16 @@ public class AdminEndpointTest extends KeycloakTest {
 
         currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
 
-        var request = new TenantRequestDto();
-        var tenantInfo = new TenantInfoDto();
-        tenantInfo.name = "TENANT-TEST";
-        tenantInfo.email = "test@gmail.com";
-        tenantInfo.description = "this is test tenant description";
-        tenantInfo.image = "https://example/image.png";
-        tenantInfo.website = "https://test.tenant.org";
-        request.info = tenantInfo;
+        var request = createTenant("LOCALTENANT");
 
         //var webApi = new ArgoWebApiRequest();
-
-        var response = given()
-                .auth().oauth2(adminToken)
-                .contentType(ContentType.JSON)
-                .body(request)
-                .contentType(ContentType.JSON)
-                .when()
-                .post("/tenants")
-                .then()
-                .statusCode(200)
-                .extract()
-                .as(TenantResponseDto.class);
 
         var error = given()
                 .auth().oauth2(tenantViewer)
                 .contentType(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .when()
-                .delete("/tenants/{id}", response.id)
+                .delete("/tenants/{id}", request.id)
                 .then()
                 .statusCode(403)
                 .extract()
@@ -503,23 +419,7 @@ public class AdminEndpointTest extends KeycloakTest {
     public void testAssignMultipleProjects() {
         currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
 
-        // Create tenant
-        var tenantReq = new TenantRequestDto();
-        var tinfo = new TenantInfoDto();
-        tinfo.name = "TENANTASSIGNPROJECTS";
-        tinfo.email = "tx@example.com";
-        tinfo.description = "This is a description";
-        tenantReq.info = tinfo;
-
-        var tenant = given()
-                .auth().oauth2(adminToken)
-                .contentType(ContentType.JSON)
-                .body(tenantReq)
-                .post("/tenants")
-                .then()
-                .statusCode(200)
-                .extract()
-                .as(TenantResponseDto.class);
+        var request = createTenant("LOCALTENANT");
 
         // Create two projects
         var p1 = given()
@@ -541,7 +441,7 @@ public class AdminEndpointTest extends KeycloakTest {
                 .extract().as(ProjectResponseDto.class);
 
         var req = new TenantProjectRequestDto();
-        req.tenantId = tenant.id;
+        req.tenantId = request.id;
         req.projectIds = List.of(p1.id, p2.id);
 
         var response = given()
@@ -561,23 +461,7 @@ public class AdminEndpointTest extends KeycloakTest {
     public void testGetProjectsByTenant() {
         currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
 
-        var tenantReq = new TenantRequestDto();
-        var info = new TenantInfoDto();
-        info.name = "TENANTGETPROJECT";
-        info.email = "fetch@example.com";
-        info.description = "This is a description";
-        tenantReq.info = info;
-
-        var tenant = given()
-                .auth()
-                .oauth2(adminToken)
-                .contentType(ContentType.JSON)
-                .body(tenantReq)
-                .post("/tenants")
-                .then()
-                .statusCode(200)
-                .extract()
-                .as(TenantResponseDto.class);
+        var request = createTenant("LOCALTENANT");
 
         var projectReq = buildCreateRequest();
         var project = given()
@@ -592,7 +476,7 @@ public class AdminEndpointTest extends KeycloakTest {
                 .as(ProjectResponseDto.class);
 
         var assignReq = new TenantProjectRequestDto();
-        assignReq.tenantId = tenant.id;
+        assignReq.tenantId = request.id;
         assignReq.projectIds = List.of(project.id);
 
         given()
@@ -608,7 +492,7 @@ public class AdminEndpointTest extends KeycloakTest {
         var result = given()
                 .auth()
                 .oauth2(adminToken)
-                .get("/tenants/" + tenant.id + "/projects")
+                .get("/tenants/" + request.id + "/projects")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -623,22 +507,7 @@ public class AdminEndpointTest extends KeycloakTest {
     public void testDeleteTenantProjectAssignment() {
         currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
 
-        var tenantReq = new TenantRequestDto();
-        var tInfo = new TenantInfoDto();
-        tInfo.name = "TENANTDELETE";
-        tInfo.email = "td@example.com";
-        tInfo.description = "This is a description for testing";
-        tenantReq.info = tInfo;
-
-        var tenant = given()
-                .auth().oauth2(adminToken)
-                .contentType(ContentType.JSON)
-                .body(tenantReq)
-                .post("/tenants")
-                .then()
-                .statusCode(200)
-                .extract()
-                .as(TenantResponseDto.class);
+        var request = createTenant("LOCALTENANT");
 
         var project = given()
                 .auth().oauth2(adminToken)
@@ -651,7 +520,7 @@ public class AdminEndpointTest extends KeycloakTest {
                 .as(ProjectResponseDto.class);
 
         var assignReq = new TenantProjectRequestDto();
-        assignReq.tenantId = tenant.id;
+        assignReq.tenantId = request.id;
         assignReq.projectIds = List.of(project.id);
 
         given()
@@ -664,7 +533,7 @@ public class AdminEndpointTest extends KeycloakTest {
 
         var deleteReq = new TenantProjectDeleteDto();
         deleteReq.projectId = project.id;
-        deleteReq.tenantId = tenant.id;
+        deleteReq.tenantId = request.id;
 
         var response = given()
                 .auth().oauth2(adminToken)
@@ -680,7 +549,7 @@ public class AdminEndpointTest extends KeycloakTest {
 
         var after = given()
                 .auth().oauth2(adminToken)
-                .get("/tenants/" + tenant.id + "/projects")
+                .get("/tenants/" + request.id + "/projects")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -736,12 +605,19 @@ public class AdminEndpointTest extends KeycloakTest {
 
         var request = new TenantRequestDto();
         var tenantInfo = new TenantInfoDto();
+        var tenantContact = new ContactDto();
         tenantInfo.name = "TENANT-TEST";
         tenantInfo.email = "test@gmail.com";
         tenantInfo.description = "this is test tenant description";
         tenantInfo.image = "https://example/image.png";
         tenantInfo.website = "https://test.tenant.org";
+        tenantContact.email = "test@gmail.com";
+        tenantContact.name = "Test user";
+        tenantContact.type = "ADMIN";
+
         request.info = tenantInfo;
+        request.contacts = Collections.singletonList(tenantContact);
+
 
         var created = given()
                 .auth().oauth2(adminToken)
@@ -901,6 +777,36 @@ public class AdminEndpointTest extends KeycloakTest {
 
         assertNotNull(response.getContent());
         assertEquals(5, response.getContent().size());
+    }
+
+    private TenantResponseDto createTenant(String tenantName) {
+        var request = new TenantRequestDto();
+        var tenantInfo = new TenantInfoDto();
+        var tenantContact = new ContactDto();
+        tenantInfo.name = tenantName;
+        tenantInfo.email = "test@gmail.com";
+        tenantInfo.description = "this is test tenant description";
+        tenantInfo.image = "https://example/image.png";
+        tenantInfo.website = "https://test.tenant.org";
+
+        tenantContact.email = "test@gmail.com";
+        tenantContact.name = "Test user";
+        tenantContact.type = "ADMIN";
+
+        request.info = tenantInfo;
+        request.contacts = Collections.singletonList(tenantContact);
+
+
+        return given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post("/tenants")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(TenantResponseDto.class);
     }
 
     private ProjectRequestDto buildCreateRequest() {

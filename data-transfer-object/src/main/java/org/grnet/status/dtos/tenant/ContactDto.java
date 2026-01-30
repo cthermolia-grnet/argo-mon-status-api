@@ -16,7 +16,6 @@ public class ContactDto {
             example = "9e2c9890-56c7-432a-bd6e-32e1da6eaa84-5"
     )
     @JsonProperty(value = "id", access = JsonProperty.Access.READ_ONLY)
-
     public String id;
 
     @Schema(
@@ -24,8 +23,7 @@ public class ContactDto {
             description = "Contacts 's name",
             example = "Joe Doe"
     )
-    @NotNull(message = "Name must not be null")
-    @NotBlank(message = "Name must not be empty")
+    @NotBlank(message = "Contact name must not be empty")
     @JsonProperty("name")
     public String name;
 
@@ -34,8 +32,7 @@ public class ContactDto {
             description = "Contacts's email",
             example = "joedoe@gmail.com"
     )
-    @NotNull(message = "Email must not be null")
-    @NotBlank(message = "Email must not be empty")
+    @NotBlank(message = "Contact email must not be empty")
     @JsonProperty("email")
     public String email;
 
@@ -46,6 +43,7 @@ public class ContactDto {
             example = "ADMIN"
     )
     @JsonProperty("type")
+    @NotBlank(message = "Contact type must not be empty")
     @ValidContactType
     public String type;
 

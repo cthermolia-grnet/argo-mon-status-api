@@ -5,6 +5,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.dtos.ams.PublishResponse;
+import org.grnet.status.dtos.tenant.ContactDto;
 import org.grnet.status.dtos.tenant.TenantInfoDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
@@ -89,8 +91,14 @@ public class AutomationEndpointTest extends KeycloakTest {
         tenantInfo.description = "this is test tenant description";
         tenantInfo.image = "https://example/image.png";
         tenantInfo.website = "https://test.tenant.org";
-        request.info = tenantInfo;
+        var tenantContact = new ContactDto();
 
+        tenantContact.email = "test@gmail.com";
+        tenantContact.name = "Test user";
+        tenantContact.type = "ADMIN";
+
+        request.info = tenantInfo;
+        request.contacts = Collections.singletonList(tenantContact);
         var created = given()
                 .auth().oauth2(adminToken)
                 .basePath("/v1/admin")//

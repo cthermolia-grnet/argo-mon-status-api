@@ -3,6 +3,7 @@ package org.grnet.status.dtos.tenant;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Getter;
 import lombok.Setter;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -26,6 +27,7 @@ public class TenantRequestDto {
     public TenantInfoDto info;
 
     @JsonProperty("contacts")
+    @NotEmpty(message = "At least one contact should be added")
     @Valid
     public List<ContactDto> contacts;
 

@@ -26,7 +26,7 @@ public class InstanceDto {
     @URL(message = "Invalid URL format")
     @NotNull(message = "instance ui url can not be null")
 
-    public String uiUrl;
+    public String uiUrl="";
 
     @Schema(
             type = SchemaType.STRING,
@@ -38,7 +38,7 @@ public class InstanceDto {
     @Valid
     @URL(message = "Invalid URL format")
     @NotNull(message = "poem can not be null")
-    public String poemUrl;
+    public String poemUrl="";
 
 
     @Schema(
@@ -49,7 +49,7 @@ public class InstanceDto {
     @JsonProperty("topology")
     @Valid
     @NotNull(message = "instance topology can not be null")
-    public TenantTopologyDto topology;
+    public TenantTopologyDto topology=new TenantTopologyDto();
 
 
 }

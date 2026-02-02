@@ -39,5 +39,5 @@ public class TenantRequestDto {
     )
     @JsonProperty("metadata")
     @Valid
-    public TenantMetadata metadata;
+    public TenantMetadata metadata=new TenantMetadata();
 }

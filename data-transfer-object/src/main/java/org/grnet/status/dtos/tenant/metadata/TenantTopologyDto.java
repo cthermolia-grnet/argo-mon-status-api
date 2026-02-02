@@ -25,7 +25,7 @@ public class TenantTopologyDto {
     @Valid
     @NotNull(message = "topology type can not be null")
     @ValidTopologyType
-    public String type;
+    public String type="";
 
     @Schema(
             type = SchemaType.STRING,
@@ -37,7 +37,7 @@ public class TenantTopologyDto {
     @Valid
     @NotNull(message = "topology url can not be null")
     @URL(message = "Invalid URL format")
-    public String url;
+    public String url="";
 
     @Schema(
             type = SchemaType.STRING,
@@ -48,5 +48,5 @@ public class TenantTopologyDto {
     @JsonProperty("feed")
     @Valid
     @NotNull(message = "topology feed can not be null")
-    public String feed;
+    public String feed="";
 }

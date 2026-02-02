@@ -12,7 +12,7 @@ import java.util.Arrays;
 public class TopologyTypeValidator implements ConstraintValidator<ValidTopologyType, String> {
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-        if (value == null) return true;
+        if (value == null|| value.equals("")) return true;
         return Arrays.stream(TopologyType.values())
                 .anyMatch(e -> e.name().equals(value));
     }

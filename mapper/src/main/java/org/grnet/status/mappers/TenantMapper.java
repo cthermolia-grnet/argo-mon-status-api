@@ -118,9 +118,22 @@ public interface TenantMapper {
         dto.info = dtoInfo;
         dto.updatedBy = tenant.updatedBy;
         dto.metadata = mapMetadataObject(tenant.getMetadata());
-        if (dto.metadata != null && dto.metadata.instance != null && dto.metadata.instance.topology != null) {
-            dto.metadata.instance.topology.feed = webApiGetResponse.getData().get(0).getTopology().getFeed();
-        }
+//        if (dto.metadata != null && dto.metadata.instance != null && dto.metadata.instance.topology != null) {
+//            dto.metadata.instance.topology.feed = webApiGetResponse.getData().get(0).getTopology().getFeed();
+//        }
+        Optional.ofNullable(dto)
+                .map(d -> d.metadata)
+                .map(m -> m.instance)
+                .map(i -> i.topology)
+                .ifPresent(topology -> {
+                    Optional.ofNullable(webApiGetResponse)
+                            .map(TenantWebApiGetResponse::getData)
+                            .filter(list -> !list.isEmpty())
+                            .map(list -> list.get(0))
+                            .map(dataItem -> dataItem.getTopology())
+                            .map(topologyFromResponse -> topologyFromResponse.getFeed())
+                            .ifPresent(feed -> topology.feed = feed);
+                });
         dto.status = mapStatusObject(tenant.getStatus());
         dto.contacts = contactsToDtos(tenant.getContacts());
 

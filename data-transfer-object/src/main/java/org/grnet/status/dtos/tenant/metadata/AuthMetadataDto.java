@@ -19,7 +19,7 @@ public class AuthMetadataDto {
     )
     @JsonProperty("auth_name")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public String authName;
+    public String authName="";
 
 
     @Schema(
@@ -32,5 +32,5 @@ public class AuthMetadataDto {
     @Valid
     @URL(message = "Invalid URL format")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public String authUrl;
+    public String authUrl="";
 }

@@ -587,16 +587,21 @@ public class TenantService {
         // Replace or add
         for (EventStatusDto newJob : newJobs) {
             var oldJob = map.get(newJob.name);
-            if (newJob.getStart() == null && oldJob.getStart()!=null) {
-                newJob.setStart(oldJob.getStart());
+            if (oldJob != null) {
+
+                if (newJob.getStart() == null && oldJob.getStart() != null) {
+                    newJob.setStart(oldJob.getStart());
+                }
+                if (newJob.getEnd() == null && oldJob.getEnd() != null) {
+                    newJob.setEnd(oldJob.getEnd());
+                }
+                if (newJob.properties == null || newJob.properties.isEmpty()) {
+                    newJob.properties = oldJob.properties;
+                }
             }
-            if (newJob.getEnd() == null && oldJob.getEnd()!=null) {
-                newJob.setEnd(oldJob.getEnd());
-            }
-            if (newJob.properties == null || newJob.properties.isEmpty()) {
-                newJob.properties = oldJob.properties;
-            }
-            map.put(newJob.name, newJob);
+                map.put(newJob.name, newJob);
+
+
         }
         return new ArrayList<>(map.values());
     }

@@ -12,7 +12,7 @@ import java.util.Arrays;
 public class ContactTypeValidator implements ConstraintValidator<ValidContactType, String> {
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-        if (value == null) return true;
+        if (value == null||value.equals("")) return true;
         return Arrays.stream(ContactType.values())
                 .anyMatch(e -> e.name().equals(value));
     }

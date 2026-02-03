@@ -168,6 +168,7 @@ public class TenantWebApiGetResponse {
         private String store;
         private String server;
         private int port;
+        private String database;
         private String username;
         private String password;
 
@@ -193,6 +194,16 @@ public class TenantWebApiGetResponse {
 
         public void setPort(int port) {
             this.port = port;
+        }
+
+
+
+        public String getDatabase() {
+            return database;
+        }
+
+        public void setDatabase(String database) {
+            this.database = database;
         }
 
         public String getUsername() {

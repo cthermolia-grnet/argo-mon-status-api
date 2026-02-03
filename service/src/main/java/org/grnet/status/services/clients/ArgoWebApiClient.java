@@ -59,7 +59,7 @@ public interface ArgoWebApiClient {
 
     @PUT
     @Path("/api/v2/admin/tenants/{id}/info")
-    TenantWebApiResponse updateTenantInfo(String id,
+    TenantWebApiResponse updateTenantInfo( @PathParam("id") String id,
                                           @HeaderParam("x-api-key") String apiKey,
                                           TenantWebApiRequest request
     ) throws WebApplicationException, ProcessingException;
@@ -67,14 +67,14 @@ public interface ArgoWebApiClient {
 
     @PUT
     @Path("/api/v2/admin/tenants/{id}/topology")
-    TenantWebApiResponse updateTenantTopology(String id,
+    TenantWebApiResponse updateTenantTopology( @PathParam("id") String id,
                                               @HeaderParam("x-api-key") String apiKey,
                                               TenantWebApiRequest request
     ) throws WebApplicationException, ProcessingException;
 
     @PUT
     @Path("/api/v2/admin/tenants/{id}/db-conf")
-    TenantWebApiResponse updateTenantDBConf(String id,
+    TenantWebApiResponse updateTenantDBConf( @PathParam("id") String id,
                                               @HeaderParam("x-api-key") String apiKey,
                                               TenantWebApiRequest request
     ) throws WebApplicationException, ProcessingException;

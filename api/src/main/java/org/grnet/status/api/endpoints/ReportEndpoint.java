@@ -2,6 +2,7 @@ package org.grnet.status.api.endpoints;
 
 import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -139,13 +140,19 @@ public class ReportEndpoint {
             content = @Content(schema = @Schema(
                     type = SchemaType.OBJECT,
                     implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "502",
+            description = "Connection error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
     @SecurityRequirement(name = "Authentication")
     @POST
     @Path("/reports")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @CheckEntitlements(role = "member")
-    public Response fetchReports(ReportRequestDto request) {
+    public Response fetchReports(@Valid ReportRequestDto request) {
 
             var reports = reportService.fetchReports(request);
 

@@ -62,7 +62,7 @@ public class ReportEndpointTest extends KeycloakTest {
                 .as(EncryptResponseDto.class);
 
         var reportRequest = new ReportRequestDto();
-        reportRequest.api = webapi;
+        reportRequest.api = "https://api.test.gr";
         reportRequest.secret = encryptedKey.secret;
 
         given()

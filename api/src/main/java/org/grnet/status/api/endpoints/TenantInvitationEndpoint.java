@@ -156,7 +156,7 @@ public class TenantInvitationEndpoint {
             @Valid @NotNull(message = "The request body is empty.")
             TenantInvitationActionResponse request) {
 
-        var response = tenantInvitationService.respondToInvitation(id, request, utility.getUserEmail(), utility.getUserUniqueIdentifier());
+        var response = tenantInvitationService.respondToInvitation(id, request, utility.getUserEmail(), utility.getUserUniqueIdentifier(), utility.getUsername());
 
         return Response.ok(response).build();
     }

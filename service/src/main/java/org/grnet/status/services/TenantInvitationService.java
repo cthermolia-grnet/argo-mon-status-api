@@ -113,13 +113,24 @@ public class TenantInvitationService {
     public TenantInvitationResponse respondToInvitation(String invitationId,
                                                         TenantInvitationActionResponse request,
                                                         String userEmail,
-                                                        String userUniqueId) {
+                                                        String userUniqueId,
+                                                        String username) {
 
         var result = respond(invitationId, request, userEmail, userUniqueId);
 
+        if (result.status == InvitationStatus.ACCEPTED) {
+            executor.runAsync(() -> {
+                try {
+                    groupManagementService.addUserToGroup(result.tenantName, username, result.role);
+                } catch (Exception e) {
+                    Log.warn("Failed to add user to group member", e);
+                }
+            });
+        }
+
         executor.runAsync(() -> {
             try {
-                sendInvitationNotifications(result.tenantName, result.email, result.role, result.status);
+                sendInvitationNotifications(result);
             } catch (Exception e) {
                 Log.warn("Invitation notifications failed (async).", e);
             }
@@ -145,9 +156,6 @@ public class TenantInvitationService {
                                                     String userUniqueId) {
 
         var invitation = tenantInvitationRepository.findById(invitationId);
-        if (invitation == null) {
-            throw new WebApplicationException("Invitation not found.", 404);
-        }
 
         enforceInviteOwnership(invitation.email, userEmail);
         enforcePending(invitation.status);
@@ -157,12 +165,6 @@ public class TenantInvitationService {
         invitation.status = newStatus;
         invitation.respondedAt = Instant.now();
         invitation.respondedBy = userUniqueId;
-
-        // Resolve tenant (prefer relation already present)
-        var tenant = tenantRepository.findById(invitation.tenant.getId());
-        if (tenant == null) {
-            throw new WebApplicationException("Tenant not found.", 404);
-        }
 
         return TenantInvitationMapper.INSTANCE.tenantInvitationToDto(invitation);
     }
@@ -193,29 +195,29 @@ public class TenantInvitationService {
     // -------------------------
 
 
-    private void sendInvitationNotifications(String tenantName,
-                                         String inviteeEmail,
-                                         String invitationRole,
-                                         InvitationStatus newStatus) {
+    private void sendInvitationNotifications(TenantInvitationResponse response) {
 
         // Invitee mail (only on ACCEPT)
-        if (newStatus == InvitationStatus.ACCEPTED) {
+        if (response.status == InvitationStatus.ACCEPTED) {
+
+            var tenantDetailsUrl = uiBaseUrl + "/tenants/" + response.tenantId + "/details";
+
             try {
                 mailerService.sendInvitationAcceptedToInvitee(
-                        List.of(inviteeEmail),
-                        tenantName,
-                        invitationRole,
-                        uiBaseUrl
+                        List.of(response.email),
+                        response.tenantName,
+                        response.role,
+                        tenantDetailsUrl
                 );
             } catch (Exception e) {
-                Log.warn("Invitation accepted email to invitee failed: " + inviteeEmail, e);
+                Log.warn("Invitation accepted email to invitee failed: " + response.email, e);
             }
         }
 
         // Admins mail (ACCEPT/REJECT)
         try {
 
-            var admins = groupManagementService.getTenantMembersByRole(tenantName, "admin");
+            var admins = groupManagementService.getTenantMembersByRole(response.tenantName, "admin");
 
             if (admins == null) {
                 Log.warn("AGM returned null admins list");
@@ -231,17 +233,19 @@ public class TenantInvitationService {
                     .toList();
 
             if (adminEmails.isEmpty()) {
-                Log.warnf("No admin emails found for tenant=%s (invitee=%s). No email will be sent.", tenantName, inviteeEmail);
+                Log.warnf("No admin emails found for tenant=%s (invitee=%s). No email will be sent.", response.tenantName, response.email);
                 return;
             }
 
+            var tenantMembersUrl = uiBaseUrl + "/tenants/" + response.tenantId + "/members";
+
             mailerService.sendInvitationResponseToAdmins(
                     adminEmails,
-                    tenantName,
-                    inviteeEmail,
-                    invitationRole,
-                    newStatus,
-                    uiBaseUrl
+                    response.tenantName,
+                    response.email,
+                    response.role,
+                    response.status,
+                    tenantMembersUrl
             );
 
         } catch (Exception e) {

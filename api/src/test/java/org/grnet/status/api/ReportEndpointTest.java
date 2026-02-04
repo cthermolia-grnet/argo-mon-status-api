@@ -12,6 +12,8 @@ import org.grnet.status.dtos.encrypt.EncryptRequestDto;
 import org.grnet.status.dtos.encrypt.EncryptResponseDto;
 import org.grnet.status.dtos.report.ReportRequestDto;
 import org.grnet.status.dtos.report.ReportResponseDto;
+import org.grnet.status.dtos.report.FullReportResponseDto;
+import org.grnet.status.dtos.report.WebApiReportResponse;
 import org.grnet.status.services.clients.ArgoWebApiClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +42,7 @@ public class ReportEndpointTest extends KeycloakTest {
     public void mockArgoClient() throws Exception {
 
         var mockResponse = loadMockReports();
+
         when(argoWebApiClient.fetchReports(any())).thenReturn(mockResponse);
     }
 
@@ -76,11 +79,20 @@ public class ReportEndpointTest extends KeycloakTest {
                 .statusCode(200)
                 .extract()
                 .as(ReportResponseDto[].class);
+
+
     }
+
+
+
 
     private ArgoReportsResponse loadMockReports() throws Exception {
         try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("mocks/reports.json")) {
             return new ObjectMapper().readValue(is, ArgoReportsResponse.class);
         }
     }
+
+
+
+
 }

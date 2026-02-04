@@ -1,42 +1,62 @@
 {
   "data": [
     {
+      "id": "8aa28cec-2940-4fcf-ad95-57fbdaf5bbad",
+      "info": {
+        "name": "MOCK-TENANT",
+        "description": "A/R report based on mapping MOCK-TENANT service groups"
+      }
+    },
+
+    {
+      "id": "a3a28cec-2940-4fcf-ad95-57fbdaf5bbad",
       "info": {
         "name": "SLA",
         "description": "A/R report based on mapping SLAs to EGI service groups"
       }
     },
     {
+      "id": "8aa28cec-2940-4fcf-ad95-57fbdaf5bbgh",
+
       "info": {
         "name": "Test-Thresholds",
         "description": "A test job with thresholds."
       }
     },
     {
+      "id": "8aa28cec-2940-4fcf-ad95-57fbdaf5bbaz",
+
       "info": {
         "name": "TEST-REPORT-1",
         "description": "test1"
       }
     },
     {
+      "id": "8aa28cec-2940-4fcf-ad95-57fbdaf5aaad",
+
       "info": {
         "name": "Critical",
         "description": "A/R report for the Core EGI Services"
       }
     },
     {
+      "id": "8aa28cec-2940-4fcf-ad95-asfbdaf5bbad",
       "info": {
         "name": "OPS-MONITOR-Critical",
         "description": "A/R report for the Operations Most critical services"
       }
     },
     {
+      "id": "asa28cec-2940-4fcf-ad95-57fbdaf5bbad",
+
       "info": {
         "name": "ALL",
         "description": "Report containing all endpoints"
       }
     },
     {
+      "id": "8aa28cec-2940-4csf-ad95-57fbdaf5bbad",
+
       "info": {
         "name": "OPERATORS",
         "description": "Report for generating results and notifications for operators"

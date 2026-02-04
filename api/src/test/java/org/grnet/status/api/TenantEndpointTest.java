@@ -1,5 +1,6 @@
 package org.grnet.status.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -7,19 +8,25 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.dtos.ams.PublishResponse;
+import org.grnet.status.dtos.argo.ArgoReportsResponse;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.project.ProjectRequestDto;
 import org.grnet.status.dtos.project.ProjectResponseDto;
+import org.grnet.status.dtos.report.FullReportResponseDto;
+import org.grnet.status.dtos.report.WebApiReportResponse;
 import org.grnet.status.dtos.tenant.*;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
+import org.grnet.status.dtos.tenant.webapi.TenantWebApiResponse;
 import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
 import org.grnet.status.services.clients.AmsClient;
 import org.grnet.status.services.clients.AmsClientFactory;
 import org.grnet.status.services.clients.ArgoWebApiClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.ap.internal.gem.TargetTypeGem;
 
+import java.io.InputStream;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -56,7 +63,12 @@ public class TenantEndpointTest extends KeycloakTest {
             // Use the currentMockId set by the test
             return loadMockTenantGetResponse(currentMockId);
         });
+        var mockOneReportResponse = loadMockReport();
+        when(argoWebApiClient.fetchReportById(any(), any())).thenReturn(mockOneReportResponse);
+        var mockResponse = loadMockReports();
+        when(argoWebApiClient.fetchReports(any())).thenReturn(mockResponse);
     }
+
 
     @BeforeEach
     void mockAmsClient() {
@@ -113,6 +125,18 @@ public class TenantEndpointTest extends KeycloakTest {
         info.setWebsite("https://test.tenant.org");
         info.setUpdated("2025-01-02 00:00:00");
         data.setInfo(info);
+
+        var argoEngineUser = new TenantWebApiGetResponse.User();
+        argoEngineUser.setName("argo_engine_MOCK-TENANT");
+        argoEngineUser.setEmail("devlists.grnet.gr");
+        argoEngineUser.setId("85abe3bb-ecfb-4442-9f62-30d023ce08c3");
+        argoEngineUser.setApi_key("5e2f401f4226321f5c2ccba0c7b509172273481f0ec36ee22e8e910875a9b239");
+        var roles = new ArrayList<String>();
+        roles.add("admin");
+        argoEngineUser.setRoles(roles);
+
+        data.setUsers(List.of(argoEngineUser));
+
         tenantWebApiResponse.getData().add(data);
         data.setInfo(info);
         var status = new TenantWebApiGetResponse.Status();
@@ -121,6 +145,7 @@ public class TenantEndpointTest extends KeycloakTest {
         tenantWebApiResponse.setStatus(status);
         return tenantWebApiResponse;
     }
+
     @Test
     public void getTenant() {
 
@@ -154,7 +179,7 @@ public class TenantEndpointTest extends KeycloakTest {
 
         var request1 = new TenantRequestDto();
         var tenantInfo1 = new TenantInfoDto();
-        var tenantContact1 =  new ContactDto();
+        var tenantContact1 = new ContactDto();
 
         tenantInfo1.name = "LOCALTENANT";
         tenantInfo1.email = "test2-updated@gmail.com";
@@ -308,13 +333,12 @@ public class TenantEndpointTest extends KeycloakTest {
         request.info = tenantInfo;
         request.contacts = Collections.singletonList(tenantContact);
 
-
         return given()
                 .auth().oauth2(adminToken)
                 .contentType(ContentType.JSON)
                 .body(request)
                 .when()
-                .post("v1/admin/tenants")
+                .post("/v1/admin/tenants")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -334,4 +358,38 @@ public class TenantEndpointTest extends KeycloakTest {
 
         return dto;
     }
+//    @Test
+//    public void fetchReportById() {
+//        var request = createTenant("MOCK-TENANT");
+//
+//        var response = given()
+//                .auth()
+//                .oauth2(tenantViewer)
+//                .contentType(ContentType.JSON)
+//                .when()
+//                .get("/{id}/reports/{report-id}", request.id, "any-id")
+//                .then()
+//                .statusCode(200)
+//                .extract()
+//                .as(FullReportResponseDto.class);
+////
+////        assertEquals("MOCK-TENANT", response.getTenant());
+//
+//    }
+
+
+
+    private WebApiReportResponse loadMockReport() throws Exception {
+        try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("mocks/mock-report.json")) {
+            return new ObjectMapper().readValue(is, WebApiReportResponse.class);
+        }
+    }
+
+    private ArgoReportsResponse loadMockReports() throws Exception {
+        try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("mocks/reports.json")) {
+            return new ObjectMapper().readValue(is, ArgoReportsResponse.class);
+        }
+    }
+
+
 }

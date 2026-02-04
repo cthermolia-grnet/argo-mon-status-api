@@ -83,7 +83,6 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#73](https://github.com/ARGOeu/argo-mon-status-api/pull/70) ARGO-5336 Enable Trust-All TLS Configuration for argo-web-api REST Client in Dev Profile
 - [#77](https://github.com/ARGOeu/argo-mon-status-api/pull/77) ARGO-5319: Make the web-api error better for users
 
-
 ### Removed
 
 -[#15](https://github.com/ARGOeu/argo-mon-status-api/pull/15) ARGO-5183 Remove User DB & Update Keycloak Scope

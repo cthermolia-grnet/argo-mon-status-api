@@ -5,6 +5,7 @@ import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.grnet.status.dtos.argo.ArgoReportsResponse;
 import org.grnet.status.dtos.argo.ArgoStatusGroupsResponse;
+import org.grnet.status.dtos.report.WebApiReportResponse;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
@@ -80,5 +81,9 @@ public interface ArgoWebApiClient {
                                               @HeaderParam("x-api-key") String apiKey,
                                               TenantWebApiRequest request
     ) throws WebApplicationException, ProcessingException;
+
+    @GET
+    @Path("/api/v2/reports/{id}")
+    WebApiReportResponse fetchReportById(@PathParam("id") String id, @HeaderParam("x-api-key") String apiKey) throws WebApplicationException, ProcessingException;
 
 }

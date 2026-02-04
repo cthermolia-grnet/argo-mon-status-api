@@ -31,12 +31,14 @@ import org.grnet.status.constraints.NotFoundEntity;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.project.ProjectResponseDto;
+import org.grnet.status.dtos.report.FullReportResponseDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationRequest;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
 import org.grnet.status.repositories.TenantInvitationRepository;
 import org.grnet.status.repositories.TenantRepository;
+import org.grnet.status.services.ReportService;
 import org.grnet.status.services.TenantInvitationService;
 import org.grnet.status.services.TenantProjectService;
 import org.grnet.status.services.TenantService;
@@ -71,6 +73,9 @@ public class TenantEndpoint {
 
     @Inject
     TenantInvitationService tenantInvitationService;
+
+    @Inject
+    ReportService reportService;
 
     @Operation(
             summary = "List Tenants Available to the User",
@@ -680,6 +685,72 @@ public class TenantEndpoint {
         return Response.ok().entity(response).build();
     }
 
+
+
+    @Tag(name = "Tenant")
+    @Operation(summary = "Fetch Tenant' s report By Report ID",
+            description = "Retrieves the reportwith the specific Report ID, for a tenant with specific Tenant ID,  from the ARGO Web API.")
+    @APIResponse(
+            responseCode = "200",
+            description = "The report retrieved",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.ARRAY,
+                    implementation = FullReportResponseDto.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "409",
+            description = "Assessment already exists.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "501",
+            description = "Not Implemented.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/{id}/reports/{report-id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+
+    @CheckEntitlements(role = "admin", resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response fetchReportByID(@Parameter(
+            description = "The ID of the tenant to retrieve report.",
+            required = true,
+            example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+            schema = @Schema(type = SchemaType.STRING)) @PathParam("id")
+                                    @Valid  @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,@Parameter(
+            description = "The ID of the report to retrieve.",
+            required = true,
+            example = "b442e43f-9869-4fb0-b881-631bc5746ec0",
+            schema = @Schema(type = SchemaType.STRING)) @PathParam("report-id")
+                                    @Valid  String reportId) {
+
+        var reports = reportService.fetchReportById(id,reportId);
+
+        return Response.ok(reports).build();
+    }
     public static class PageableTenants extends PageResource<TenantResponseDto> {
 
         private List<TenantResponseDto> content;

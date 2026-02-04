@@ -1,0 +1,61 @@
+{
+  "status": {
+    "message": "Report retrieved",
+    "code": "200"
+  },
+  "data": [
+    {
+      "id": "8aa28cec-2940-4fcf-ad95-57fbdaf5bbad",
+      "tenant": "MOCK-TENANT",
+      "disabled": false,
+      "info": {
+        "name": "CORE",
+        "description": "Core A/R Report",
+        "created": "2026-01-29 17:52:20",
+        "updated": "2026-01-29 17:52:20"
+      },
+      "computations": {
+        "ar": true,
+        "status": true,
+        "trends": [
+          "flapping",
+          "status",
+          "tags"
+        ]
+      },
+      "thresholds": {
+        "availability": 80,
+        "reliability": 90,
+        "uptime": 0.8,
+        "unknown": 0.1,
+        "downtime": 0.1
+      },
+      "topology_schema": {
+        "group": {
+          "type": "PROJECT",
+          "group": {
+            "type": "SERVICEGROUPS"
+          }
+        }
+      },
+      "profiles": [
+        {
+          "id": "2fbb311d-0e9c-4f93-84ac-37207817d708",
+          "name": "ARGO_MON",
+          "type": "metric"
+        },
+        {
+          "id": "b443b830-ab4b-4220-84e8-40671e2d8e10",
+          "name": "core",
+          "type": "aggregation"
+        },
+        {
+          "id": "65cf4c04-e599-4f1c-a243-c832330f9e79",
+          "name": "default_ops",
+          "type": "operations"
+        }
+      ],
+      "filter_tags": []
+    }
+  ]
+}

@@ -8,6 +8,7 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.general.ExistResponseDto;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.status.StatusGroupRequestDto;
@@ -16,7 +17,7 @@ import org.grnet.status.enums.ArgoItemStatusEnum;
 import org.grnet.status.mappers.GeneralMapper;
 import org.grnet.status.mappers.StatusPageMapper;
 import org.grnet.status.repositories.StatusPageRepository;
-import org.grnet.status.services.clients.ArgoWebApiClientFactory;
+import org.grnet.status.services.clients.ArgoWebApiClient;
 import org.grnet.status.services.utils.EncryptUtil;
 import org.grnet.status.services.utils.ImageUploadUtil;
 
@@ -28,10 +29,9 @@ public class StatusPageService {
 
     @Inject
     StatusPageRepository statusPageRepository;
-
     @Inject
-    ArgoWebApiClientFactory argoWebApiClientFactory;
-
+    @RestClient
+    ArgoWebApiClient argoWebApiClient;
     @Inject
     EncryptUtil encryptUtil;
 
@@ -72,14 +72,13 @@ public class StatusPageService {
         var logo = request.config.theming.logo;
         if (logo != null && logo.startsWith("data:image/")) {
             imageUploadUtil.validateBase64Image(logo);
-            var savedPath = imageUploadUtil.saveBase64Image(baseUploadLogoDir, logo, entity.getId(),"/logos/");
+            var savedPath = imageUploadUtil.saveBase64Image(baseUploadLogoDir, logo, entity.getId(), "/logos/");
             var fullUrl = apiServerUrl + savedPath;
             entity.setConfig(updateLogo(entity.getConfig(), fullUrl));
         }
 
         return StatusPageMapper.INSTANCE.entityToDto(entity);
     }
-
 
 
     /**
@@ -110,7 +109,7 @@ public class StatusPageService {
         if (logo != null && logo.startsWith("data:image/")) {
             imageUploadUtil.validateBase64Image(logo);
             imageUploadUtil.deleteImageIfExists(baseUploadLogoDir, id);
-            var savedPath = imageUploadUtil.saveBase64Image(baseUploadLogoDir, logo, entity.getId(),"/logos/");
+            var savedPath = imageUploadUtil.saveBase64Image(baseUploadLogoDir, logo, entity.getId(), "/logos/");
             var fullUrl = apiServerUrl + savedPath;
             entity.setConfig(updateLogo(entity.getConfig(), fullUrl));
 
@@ -126,14 +125,12 @@ public class StatusPageService {
     }
 
 
-
-
     /**
      * Get a statuspage by ID.
      */
     public StatusPageResponseDto getStatusPageById(String id) {
 
-        var statusPage =  statusPageRepository.findById(id);
+        var statusPage = statusPageRepository.findById(id);
 
         return StatusPageMapper.INSTANCE.entityToDto(statusPage);
     }
@@ -142,13 +139,13 @@ public class StatusPageService {
     /**
      * Retrieves a page of Subjects submitted by the specified user.
      *
-     * @param page The index of the page to retrieve (starting from 0).
-     * @param size The maximum number of Subjects to include in a page.
+     * @param page    The index of the page to retrieve (starting from 0).
+     * @param size    The maximum number of Subjects to include in a page.
      * @param uriInfo The Uri Info.
-     * @param userID The ID of the user.
+     * @param userID  The ID of the user.
      * @return A list of SubjectResponse objects representing the submitted Subjects in the requested page.
      */
-    public PageResource<StatusPageResponseDto> getStatusPageByUserAndPage(int page, int size, UriInfo uriInfo, String userID){
+    public PageResource<StatusPageResponseDto> getStatusPageByUserAndPage(int page, int size, UriInfo uriInfo, String userID) {
 
         var statusPages = statusPageRepository.fetchStatusPageByUserAndPage(page, size, userID);
 
@@ -156,13 +153,12 @@ public class StatusPageService {
     }
 
 
-    public PageResource<StatusPageResponseDto> getStatusPageByPage(int page, int size, UriInfo uriInfo){
+    public PageResource<StatusPageResponseDto> getStatusPageByPage(int page, int size, UriInfo uriInfo) {
 
         var statusPages = statusPageRepository.fetchStatusPageByPage(page, size);
 
         return new PageResource<>(statusPages, StatusPageMapper.INSTANCE.entitiesToDtos(statusPages.list()), uriInfo);
     }
-
 
 
     /**
@@ -198,7 +194,6 @@ public class StatusPageService {
     }
 
 
-
     //----------------------------------------------------------------------------------------------------
     //  HELPER METHODS
     //----------------------------------------------------------------------------------------------------
@@ -222,9 +217,9 @@ public class StatusPageService {
     public void validateArgoConnection(String api, String encryptedSecret) {
         try {
             var secret = encryptUtil.decrypt(encryptedSecret);
-            var client = argoWebApiClientFactory.buildClient(api);
+            // var client = argoWebApiClientFactory.buildClient(api);
 
-            client.fetchReports(secret);
+            argoWebApiClient.fetchReports(secret);
 
         } catch (Exception ex) {
             throw new BadRequestException("Invalid ARGO API or Secret");

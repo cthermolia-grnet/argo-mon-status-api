@@ -4,7 +4,9 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.api.endpoints.StatusPageEndpoint;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.argo.ArgoReportsResponse;
@@ -13,7 +15,7 @@ import org.grnet.status.dtos.general.ExistResponseDto;
 import org.grnet.status.dtos.status.StatusGroupResponseDto;
 import org.grnet.status.dtos.statuspage.*;
 import org.grnet.status.services.clients.ArgoWebApiClient;
-import org.grnet.status.services.clients.ArgoWebApiClientFactory;
+import org.grnet.status.services.utils.EncryptUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,19 +32,29 @@ import static org.mockito.Mockito.when;
 @TestHTTPEndpoint(StatusPageEndpoint.class)
 public class StatusPageEndpointTest extends KeycloakTest {
 
-    @InjectMock
-    ArgoWebApiClientFactory argoWebApiClientFactory;
+    @ConfigProperty(name = "web.api.url")
+    String webapi;
+    @ConfigProperty(name = "web.api.access.token")
+    String webApiToken;
 
+    @InjectMock
+    @RestClient
+    ArgoWebApiClient argoWebApiClient;
     @ConfigProperty(name = "base.upload.logo.dir")
     String baseUploadLogoDir;
 
+    @Inject
+    EncryptUtil encryptUtil;
 
     @BeforeEach
     public void mockArgoClient() throws Exception {
-        var mockClient = org.mockito.Mockito.mock(ArgoWebApiClient.class);
-        when(mockClient.fetchReports(anyString())).thenReturn(loadMockReports());
-        when(mockClient.fetchStatusGroups(any(), any())).thenReturn(loadMockStatusGroups());
-        when(argoWebApiClientFactory.buildClient(anyString())).thenReturn(mockClient);
+        when(argoWebApiClient.fetchReports(anyString())).thenReturn(loadMockReports());
+        when(argoWebApiClient.fetchStatusGroups(any(), any())).thenReturn(loadMockStatusGroups());
+    }
+
+
+    private String encrypt() {
+        return encryptUtil.encrypt(webApiToken);
     }
 
     @Test
@@ -50,8 +62,9 @@ public class StatusPageEndpointTest extends KeycloakTest {
         var request = new StatusPageRequestDto();
         request.name = "Slug Check Page";
         request.slug = "check-this-slug";
-        request.api = "https://api.devel.mon.argo.grnet.gr";
-        request.secret = "VaWi0ZBjGrxXPuB0o+KARpH63EKDaiwttfLE54POPtaw4QRxYktsabA+CT76sX0D";
+        request.api = webapi;
+        request.secret = encrypt();
+
         request.report = "Critical";
 
         var existResponse = given()
@@ -73,11 +86,13 @@ public class StatusPageEndpointTest extends KeycloakTest {
         var request = new StatusPageRequestDto();
         request.name = "Test Page AB";
         request.slug = "test-page-" + UUID.randomUUID();
-        request.api = "https://api.devel.mon.argo.grnet.gr";
-        request.secret = "VaWi0ZBjGrxXPuB0o+KARpH63EKDaiwttfLE54POPtaw4QRxYktsabA+CT76sX0D";
+        // request.api = "https://api.devel.mon.argo.grnet.gr";
+        request.api = webapi;
+        //  request.secret = "VaWi0ZBjGrxXPuB0o+KARpH63EKDaiwttfLE54POPtaw4QRxYktsabA+CT76sX0D";
+        request.secret = encrypt();
         request.report = "Critical";
 
-       createTestStatusPageDto(request);
+        createTestStatusPageDto(request);
 
         given()
                 .auth().oauth2(aliceToken)
@@ -95,40 +110,43 @@ public class StatusPageEndpointTest extends KeycloakTest {
     @Test
     public void createStatusPageSlugExist() {
 
-            var request = new StatusPageRequestDto();
-            request.name = "Test Page AB";
-            request.slug = "test-page-" + UUID.randomUUID();
-            request.api = "https://api.devel.mon.argo.grnet.gr";
-            request.secret = "VaWi0ZBjGrxXPuB0o+KARpH63EKDaiwttfLE54POPtaw4QRxYktsabA+CT76sX0D";
-            request.report = "Critical";
+        var request = new StatusPageRequestDto();
+        request.name = "Test Page AB";
+        request.slug = "test-page-" + UUID.randomUUID();
+        // request.api = "https://api.devel.mon.argo.grnet.gr";
+        request.api = webapi;
+        // request.secret = "VaWi0ZBjGrxXPuB0o+KARpH63EKDaiwttfLE54POPtaw4QRxYktsabA+CT76sX0D";
 
-            createTestStatusPageDto(request);
+        request.secret = encrypt();
+        request.report = "Critical";
 
-            given()
-                    .auth().oauth2(tenantViewer)
-                    .contentType(ContentType.JSON)
-                    .body(request)
-                    .when()
-                    .post()
-                    .then()
-                    .assertThat()
-                    .statusCode(201)
-                    .extract()
-                    .as(StatusPageResponseDto.class);
+        createTestStatusPageDto(request);
 
-            var error = given()
-                    .auth().oauth2(aliceToken)
-                    .contentType(ContentType.JSON)
-                    .body(request)
-                    .when()
-                    .post()
-                    .then()
-                    .assertThat()
-                    .statusCode(400)
-                    .extract()
-                    .as(InformativeResponse.class);
+        given()
+                .auth().oauth2(tenantViewer)
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post()
+                .then()
+                .assertThat()
+                .statusCode(201)
+                .extract()
+                .as(StatusPageResponseDto.class);
 
-            assertEquals("A page with slug '" + request.slug + "' already exists.", error.message);
+        var error = given()
+                .auth().oauth2(aliceToken)
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post()
+                .then()
+                .assertThat()
+                .statusCode(400)
+                .extract()
+                .as(InformativeResponse.class);
+
+        assertEquals("A page with slug '" + request.slug + "' already exists.", error.message);
 
     }
 
@@ -143,8 +161,8 @@ public class StatusPageEndpointTest extends KeycloakTest {
         request.report = "Critical";
 
         // Ensure mock throws
-        when(argoWebApiClientFactory.buildClient(anyString()))
-                .thenThrow(new RuntimeException("connection error"));
+//        when(argoWebApiClientFactory.buildClient(anyString()))
+//                .thenThrow(new RuntimeException("connection error"));
 
         createTestStatusPageDto(request);
 
@@ -170,9 +188,11 @@ public class StatusPageEndpointTest extends KeycloakTest {
         var request = new StatusPageRequestDto();
         request.name = "Invalid Page";
         request.slug = "invalid-page-" + UUID.randomUUID();
-        request.api = "https://api.devel.mon.argo.grnet.gr";
-        request.secret = "VaWi0ZBjGrxXPuB0o+KARpH63EKDaiwttfLE54POPtaw4QRxYktsabA+CT76sX0D";
+        request.api = webapi;
+        request.secret = encrypt();
         request.report = "Critical";
+
+        System.out.println("SECRET IS : " + request.secret);
 
         // Create DTO but override a name to be invalid
         createTestStatusPageDto(request);
@@ -199,8 +219,8 @@ public class StatusPageEndpointTest extends KeycloakTest {
         var request = new StatusPageRequestDto();
         request.name = "Invalid Page";
         request.slug = "invalid-page-" + UUID.randomUUID();
-        request.api = "https://api.devel.mon.argo.grnet.gr";
-        request.secret = "VaWi0ZBjGrxXPuB0o+KARpH63EKDaiwttfLE54POPtaw4QRxYktsabA+CT76sX0D";
+        request.api = webapi;
+        request.secret = encrypt();
         request.report = "Critical";
 
         // Create DTO but override a name to be invalid
@@ -229,8 +249,8 @@ public class StatusPageEndpointTest extends KeycloakTest {
         var request = new StatusPageRequestDto();
         request.name = "Bad Color Page";
         request.slug = "bad-color-" + UUID.randomUUID();
-        request.api = "https://api.devel.mon.argo.grnet.gr";
-        request.secret = "VaWi0ZBjGrxXPuB0o+KARpH63EKDaiwttfLE54POPtaw4QRxYktsabA+CT76sX0D";
+        request.api = webapi;
+        request.secret = encrypt();
         request.report = "Critical";
 
         createTestStatusPageDto(request);
@@ -365,8 +385,8 @@ public class StatusPageEndpointTest extends KeycloakTest {
         var request = new StatusPageRequestDto();
         request.name = "Test Page AB";
         request.slug = "test-page-" + UUID.randomUUID();
-        request.api = "https://api.devel.mon.argo.grnet.gr";
-        request.secret = "VaWi0ZBjGrxXPuB0o+KARpH63EKDaiwttfLE54POPtaw4QRxYktsabA+CT76sX0D";
+        request.api = webapi;
+        request.secret = encrypt();
         request.report = "Critical";
 
         createTestStatusPageDto(request);
@@ -395,7 +415,7 @@ public class StatusPageEndpointTest extends KeycloakTest {
                 .extract()
                 .as(StatusPageResponseDto.class);
 
-        assertEquals(createStatusPage.name, getStatusPage.name );
+        assertEquals(createStatusPage.name, getStatusPage.name);
     }
 
     @Test
@@ -404,8 +424,8 @@ public class StatusPageEndpointTest extends KeycloakTest {
         var request = new StatusPageRequestDto();
         request.name = "Initial Page";
         request.slug = "test-page-" + UUID.randomUUID();
-        request.api = "https://api.devel.mon.argo.grnet.gr";
-        request.secret = "VaWi0ZBjGrxXPuB0o+KARpH63EKDaiwttfLE54POPtaw4QRxYktsabA+CT76sX0D";
+        request.api = webapi;
+        request.secret = encrypt();
         request.report = "Critical";
         createTestStatusPageDto(request);
 
@@ -460,8 +480,8 @@ public class StatusPageEndpointTest extends KeycloakTest {
         var request = new StatusPageRequestDto();
         request.name = "Page With Logo";
         request.slug = "page-with-logo-" + UUID.randomUUID();
-        request.api = "https://api.devel.mon.argo.grnet.gr";
-        request.secret = "VaWi0ZBjGrxXPuB0o+KARpH63EKDaiwttfLE54POPtaw4QRxYktsabA+CT76sX0D";
+        request.api = webapi;
+        request.secret = encrypt();
         request.report = "Critical";
 
         createTestStatusPageDto(request);
@@ -494,7 +514,6 @@ public class StatusPageEndpointTest extends KeycloakTest {
         java.nio.file.Files.deleteIfExists(filePath);
 
     }
-
 
 
     private void createTestStatusPageDto(StatusPageRequestDto request) {

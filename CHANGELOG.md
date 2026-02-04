@@ -80,6 +80,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#70](https://github.com/ARGOeu/argo-mon-status-api/pull/70) ARGO-5324 Enforce tenant name immutability and validate contacts list
 - [#72](https://github.com/ARGOeu/argo-mon-status-api/pull/72) ARGO-5333 Prevent db_conf.database Override on Tenant Update & Consolidate Web API Update Call
 - [#75](https://github.com/ARGOeu/argo-mon-status-api/pull/75) ARGO-5337 Use voperson_id as username
+- [#73](https://github.com/ARGOeu/argo-mon-status-api/pull/70) ARGO-5336 Enable Trust-All TLS Configuration for argo-web-api REST Client in Dev Profile
 
 ### Removed
 

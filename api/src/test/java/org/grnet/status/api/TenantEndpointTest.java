@@ -3,6 +3,7 @@ package org.grnet.status.api;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.dtos.ams.PublishResponse;
@@ -16,7 +17,6 @@ import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
 import org.grnet.status.services.clients.AmsClient;
 import org.grnet.status.services.clients.AmsClientFactory;
 import org.grnet.status.services.clients.ArgoWebApiClient;
-import org.grnet.status.services.clients.ArgoWebApiClientFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,30 +35,27 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
-//@TestHTTPEndpoint(TenantEndpoint.class)
 public class TenantEndpointTest extends KeycloakTest {
 
     @InjectMock
-    ArgoWebApiClientFactory argoWebApiClientFactory;
-
+    @RestClient
+    ArgoWebApiClient argoWebApiClient;
     @InjectMock
     AmsClientFactory amsClientFactory;
     private String currentMockId;
 
     @BeforeEach
     public void mockArgoClient() throws Exception {
-        var mockClient = org.mockito.Mockito.mock(ArgoWebApiClient.class);
 
-        when(mockClient.createTenant(any(), any())).thenAnswer(invocation -> {
+        when(argoWebApiClient.createTenant(any(), any())).thenAnswer(invocation -> {
             // Use the currentMockId set by the test
             return loadMockTenantResponse(currentMockId);
         });
 
-        when(mockClient.getTenant(any(), any())).thenAnswer(invocation -> {
+        when(argoWebApiClient.getTenant(any(), any())).thenAnswer(invocation -> {
             // Use the currentMockId set by the test
             return loadMockTenantGetResponse(currentMockId);
         });
-        when(argoWebApiClientFactory.buildClient(anyString())).thenReturn(mockClient);
     }
 
     @BeforeEach

@@ -2,14 +2,13 @@ package org.grnet.status.services;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.rest.client.RestClientBuilder;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.encrypt.EncryptRequestDto;
 import org.grnet.status.dtos.encrypt.EncryptResponseDto;
 import org.grnet.status.dtos.report.ReportRequestDto;
 import org.grnet.status.dtos.report.ReportResponseDto;
 import org.grnet.status.mappers.GeneralMapper;
 import org.grnet.status.services.clients.ArgoWebApiClient;
-import org.grnet.status.services.clients.ArgoWebApiClientFactory;
 import org.grnet.status.services.utils.EncryptUtil;
 import org.grnet.status.services.utils.UriUtil;
 import org.jboss.logging.Logger;
@@ -26,10 +25,8 @@ public class ReportService {
     EncryptUtil encryptUtil;
 
     @Inject
-    UriUtil uriUtil;
-
-    @Inject
-    ArgoWebApiClientFactory argoClientFactory;
+    @RestClient
+    ArgoWebApiClient argoWebApiClient;
 
     /**
      * Fetches a list of reports from the ARGO Web API.
@@ -41,9 +38,8 @@ public class ReportService {
         var decryptedSecret = encryptUtil.decrypt(request.secret);
 
         LOG.info("Building ARGO Web API client...");
-        var client = argoClientFactory.buildClient(request.api);
 
-        var response = client.fetchReports(decryptedSecret);
+        var response = argoWebApiClient.fetchReports(decryptedSecret);
 
         var list = new ArrayList<ReportResponseDto>();
         if (response != null && response.data != null) {
@@ -68,9 +64,9 @@ public class ReportService {
      */
     public EncryptResponseDto encrypt(EncryptRequestDto request) {
 
-            var encrypted = encryptUtil.encrypt(request.secret);
+        var encrypted = encryptUtil.encrypt(request.secret);
 
-            return GeneralMapper.INSTANCE.toEncryptResponse(encrypted);
+        return GeneralMapper.INSTANCE.toEncryptResponse(encrypted);
     }
 
 }

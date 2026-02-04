@@ -4,6 +4,7 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.api.endpoints.AdminEndpoint;
 import org.grnet.status.authorizations.service.AuthGroupSetupService;
 import org.grnet.status.dtos.InformativeResponse;
@@ -25,7 +26,6 @@ import org.grnet.status.services.clients.*;
 import org.grnet.status.enums.EventStatus;
 import org.grnet.status.enums.TenantJobEvent;
 import org.grnet.status.services.clients.ArgoWebApiClient;
-import org.grnet.status.services.clients.ArgoWebApiClientFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -46,11 +46,12 @@ import static org.mockito.Mockito.*;
 public class AdminEndpointTest extends KeycloakTest {
 
     @InjectMock
-    ArgoWebApiClientFactory argoWebApiClientFactory;
-    @InjectMock
     AuthGroupSetupService authGroupSetupService;
     @InjectMock
     AmsClientFactory amsClientFactory;
+    @InjectMock
+    @RestClient
+    ArgoWebApiClient argoWebApiClient;
 
     private String currentMockId;
 
@@ -66,18 +67,16 @@ public class AdminEndpointTest extends KeycloakTest {
 
     @BeforeEach
     public void mockArgoClient() throws Exception {
-        var mockClient = org.mockito.Mockito.mock(ArgoWebApiClient.class);
 
-        when(mockClient.createTenant(any(), any())).thenAnswer(invocation -> {
+        when(argoWebApiClient.createTenant(any(), any())).thenAnswer(invocation -> {
             // Use the currentMockId set by the test
             return loadMockTenantResponse(currentMockId);
         });
 
-        when(mockClient.getTenant(any(), any())).thenAnswer(invocation -> {
+        when(argoWebApiClient.getTenant(any(), any())).thenAnswer(invocation -> {
             // Use the currentMockId set by the test
             return loadMockTenantGetResponse(currentMockId);
         });
-        when(argoWebApiClientFactory.buildClient(anyString())).thenReturn(mockClient);
     }
 
     @BeforeEach

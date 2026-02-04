@@ -4,6 +4,8 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.api.endpoints.ReportEndpoint;
 import org.grnet.status.dtos.argo.ArgoReportsResponse;
 import org.grnet.status.dtos.encrypt.EncryptRequestDto;
@@ -11,41 +13,41 @@ import org.grnet.status.dtos.encrypt.EncryptResponseDto;
 import org.grnet.status.dtos.report.ReportRequestDto;
 import org.grnet.status.dtos.report.ReportResponseDto;
 import org.grnet.status.services.clients.ArgoWebApiClient;
-import org.grnet.status.services.clients.ArgoWebApiClientFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.InputStream;
 
 import static io.restassured.RestAssured.given;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @TestHTTPEndpoint(ReportEndpoint.class)
-public class ReportEndpointTest extends KeycloakTest{
+public class ReportEndpointTest extends KeycloakTest {
 
     @InjectMock
-    ArgoWebApiClientFactory factory;
+    @RestClient
+    ArgoWebApiClient argoWebApiClient;
+    @ConfigProperty(name = "web.api.url")
+    String webapi;
+    @ConfigProperty(name = "web.api.access.token")
+    String webApiToken;
 
     @BeforeEach
     public void mockArgoClient() throws Exception {
 
-        var mockClient = org.mockito.Mockito.mock(ArgoWebApiClient.class);
         var mockResponse = loadMockReports();
-        when(mockClient.fetchReports(any())).thenReturn(mockResponse);
-        when(factory.buildClient(anyString())).thenReturn(mockClient);
+        when(argoWebApiClient.fetchReports(any())).thenReturn(mockResponse);
     }
 
     @Test
     public void fetchReports() {
 
         var encryptRequest = new EncryptRequestDto();
-        encryptRequest.secret = "access_token";
+        encryptRequest.secret = webApiToken;
 
         var encryptedKey = given()
                 .auth()
@@ -60,7 +62,7 @@ public class ReportEndpointTest extends KeycloakTest{
                 .as(EncryptResponseDto.class);
 
         var reportRequest = new ReportRequestDto();
-        reportRequest.api = "https://api.devel.mon.argo.grnet.gr";
+        reportRequest.api = webapi;
         reportRequest.secret = encryptedKey.secret;
 
         given()

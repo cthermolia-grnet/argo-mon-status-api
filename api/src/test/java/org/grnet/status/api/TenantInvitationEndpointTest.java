@@ -3,6 +3,7 @@ package org.grnet.status.api;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.tenant.ContactDto;
 import org.grnet.status.dtos.tenant.TenantInfoDto;
@@ -14,18 +15,14 @@ import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.enums.InvitationAction;
-import org.grnet.status.enums.InvitationStatus;
 import org.grnet.status.services.MailerService;
 import org.grnet.status.services.clients.ArgoWebApiClient;
-import org.grnet.status.services.clients.ArgoWebApiClientFactory;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
@@ -36,8 +33,8 @@ import static org.mockito.Mockito.*;
 public class TenantInvitationEndpointTest extends KeycloakTest {
 
     @InjectMock
-    ArgoWebApiClientFactory argoWebApiClientFactory;
-
+    @RestClient
+    ArgoWebApiClient argoWebApiClient;
     @InjectMock
     MailerService mailerService;
 
@@ -45,12 +42,8 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
 
     @BeforeEach
     public void mockArgoClient() throws Exception {
-        var mockClient = org.mockito.Mockito.mock(ArgoWebApiClient.class);
-
-        when(mockClient.createTenant(any(), any())).thenAnswer(invocation -> loadMockTenantResponse(currentMockId));
-        when(mockClient.getTenant(any(), any())).thenAnswer(invocation -> loadMockTenantGetResponse(currentMockId));
-
-        when(argoWebApiClientFactory.buildClient(anyString())).thenReturn(mockClient);
+        when(argoWebApiClient.createTenant(any(), any())).thenAnswer(invocation -> loadMockTenantResponse(currentMockId));
+        when(argoWebApiClient.getTenant(any(), any())).thenAnswer(invocation -> loadMockTenantGetResponse(currentMockId));
     }
 
     @BeforeEach

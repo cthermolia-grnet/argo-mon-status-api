@@ -3,12 +3,13 @@ package org.grnet.status.services;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.status.StatusGroupRequestDto;
 import org.grnet.status.dtos.status.StatusGroupResponseDto;
 import org.grnet.status.dtos.statuspage.StatusPageConfigDto;
 import org.grnet.status.mappers.StatusPageMapper;
 import org.grnet.status.repositories.StatusPageRepository;
-import org.grnet.status.services.clients.ArgoWebApiClientFactory;
+import org.grnet.status.services.clients.ArgoWebApiClient;
 import org.grnet.status.services.utils.EncryptUtil;
 
 import java.util.ArrayList;
@@ -19,10 +20,9 @@ public class StatusService {
 
     @Inject
     EncryptUtil encryptUtil;
-
     @Inject
-    ArgoWebApiClientFactory argoWebApiClientFactory;
-
+    @RestClient
+    ArgoWebApiClient argoWebApiClient;
     @Inject
     StatusPageRepository statusPageRepository;
 
@@ -30,9 +30,7 @@ public class StatusService {
 
         var decryptedSecret = encryptUtil.decrypt(request.secret);
 
-        var client = argoWebApiClientFactory.buildClient(request.api);
-
-        var argoResponse = client.fetchStatusGroups(decryptedSecret, request.report);
+        var argoResponse = argoWebApiClient.fetchStatusGroups(decryptedSecret, request.report);
 
         var list = new ArrayList<StatusGroupResponseDto>();
 

@@ -5,6 +5,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
@@ -21,8 +22,8 @@ public class WebApiService {
     @ConfigProperty(name = "web.api.url")
     String webapi;
     @Inject
-    ArgoWebApiClientFactory argoWebApiClientFactory;
-
+    @RestClient
+    ArgoWebApiClient argoWebApiClient;
     @Inject
     TenantRepository tenantRepository;
 
@@ -30,8 +31,8 @@ public class WebApiService {
         TenantWebApiGetResponse webApiResponse = null;
         try {
 
-            var client = produceClient();
-            return client.getTenant(accessToken, id);
+            //  var client = produceClient();
+            return argoWebApiClient.getTenant(accessToken, id);
 
         } catch (RuntimeException e) {
             int status = 500; // default fallback
@@ -46,8 +47,8 @@ public class WebApiService {
     public void deleteTenant(String tenantId) throws JsonProcessingException {
 
         try {
-            var client = produceClient();
-            client.deleteTenant(tenantId, accessToken);
+            //  var client = produceClient();
+            argoWebApiClient.deleteTenant(tenantId, accessToken);
         } catch (Exception rollbackEx) {
             // Log rollback failure, but do not mask original exception
             System.err.println("Rollback failed for tenant id " + tenantId + ": " + rollbackEx.getMessage());
@@ -56,8 +57,8 @@ public class WebApiService {
 
     public TenantWebApiCreateResponse createTenantInWebApi(TenantWebApiRequest webApiRequest) {
         try {
-            var client = produceClient();
-            return client.createTenant(accessToken, webApiRequest);
+            // var client = produceClient();
+            return argoWebApiClient.createTenant(accessToken, webApiRequest);
         } catch (WebApplicationException e) {
 
             WebApplicationException wae = (WebApplicationException) e;
@@ -74,17 +75,19 @@ public class WebApiService {
             throw new WebApplicationException(message, status);
         }
     }
-    private ArgoWebApiClient produceClient() {
-        return argoWebApiClientFactory.buildClient(webapi);
-    }
+//
+//    private ArgoWebApiClient produceClient() {
+//        return argoWebApiClientFactory.buildClient(webapi);
+//    }
+
     public TenantWebApiResponse updateTenantWebApi(TenantWebApiRequest webApiRequest, String id) {
         try {
 
-            var client = produceClient();
-//            client.updateTenantInfo(id,accessToken,webApiRequest);
-//            client.updateTenantTopology(id,accessToken,webApiRequest);
-//            return client.updateTenantDBConf(id,accessToken,webApiRequest);
-               return client.updateTenant(id,accessToken,webApiRequest);
+            // var client = produceClient();
+            //return client.updateTenant(id, accessToken, webApiRequest);
+            argoWebApiClient.updateTenantInfo(id, accessToken, webApiRequest);
+            argoWebApiClient.updateTenantTopology(id, accessToken, webApiRequest);
+            return argoWebApiClient.updateTenantDBConf(id, accessToken, webApiRequest);
         } catch (Exception e) {
             throw new WebApplicationException("Remote API update failed: " + e.getMessage(), 502);
         }

@@ -2,6 +2,7 @@ package org.grnet.status.services.clients;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.grnet.status.dtos.argo.ArgoReportsResponse;
 import org.grnet.status.dtos.argo.ArgoStatusGroupsResponse;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
@@ -10,6 +11,7 @@ import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiResponse;
 
+@RegisterRestClient(configKey = "argo-web-api")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface ArgoWebApiClient {

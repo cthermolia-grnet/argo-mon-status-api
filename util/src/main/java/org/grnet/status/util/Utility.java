@@ -42,9 +42,9 @@ public class Utility {
 
     public String getUsername() {
         try {
-            return tokenIntrospection.getJsonObject().getString("preferred_username");
+            return getUserUniqueIdentifier();
         } catch (Exception e) {
-            throw new BadRequestException("Missing 'preferred_username' in access token.");
+            throw new BadRequestException("Missing 'voperson_id' in access token.");
         }
     }
 

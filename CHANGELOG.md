@@ -82,7 +82,11 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#75](https://github.com/ARGOeu/argo-mon-status-api/pull/75) ARGO-5337 Use voperson_id as username
 - [#73](https://github.com/ARGOeu/argo-mon-status-api/pull/70) ARGO-5336 Enable Trust-All TLS Configuration for argo-web-api REST Client in Dev Profile
 - [#77](https://github.com/ARGOeu/argo-mon-status-api/pull/77) ARGO-5319: Make the web-api error better for users
+<<<<<<< HEAD
 - [#78](https://github.com/ARGOeu/argo-mon-status-api/pull/78) ARGO-5340 Improve invitation links and async group assignment on accept
+=======
+- [#79](https://github.com/ARGOeu/argo-mon-status-api/pull/79) ARGO-5348 Fix report id to fetch report
+>>>>>>> fix id report
 
 ### Removed
 

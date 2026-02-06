@@ -101,7 +101,7 @@ public class ReportService {
         }
 
         try {
-            return argoWebApiClient.fetchReportById(id, apiKey).data.get(0);
+            return argoWebApiClient.fetchReportById(reportId, apiKey).data.get(0);
         } catch (ClientWebApplicationException e) {
             throw new ClientWebApplicationException("Report not found in argo-web-api with id: " + reportId);
         }

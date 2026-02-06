@@ -1710,7 +1710,7 @@ public class AdminEndpoint {
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
             @Valid @NotNull(message = "The request body is empty.") MemberRequest request) {
 
-        tenantService.addMemberToGroup(id, request.username, request.role, request.email);
+        groupManagementService.addMemberToGroup(id, request.username, request.role, request.email);
 
         var response = new InformativeResponse();
         response.code = 200;

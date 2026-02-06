@@ -116,20 +116,24 @@ public class TenantInvitationService {
                                                         String userUniqueId,
                                                         String username) {
 
-        var result = respond(invitationId, request, userEmail, userUniqueId);
+        var invitation = tenantInvitationRepository.findById(invitationId);
 
-        if (result.status == InvitationStatus.ACCEPTED) {
+        if (request.action == InvitationAction.ACCEPT) {
             executor.runAsync(() -> {
                 try {
-                    groupManagementService.addUserToGroup(result.tenantName, username, result.role);
+                    Log.info("Adding user to tenant group.");
+                    groupManagementService.addUserToTenantGroup(invitation.tenant.name, username, invitation.role);
                 } catch (Exception e) {
                     Log.warn("Failed to add user to group member", e);
                 }
             });
         }
 
+        var result = respond(invitationId, request, userEmail, userUniqueId);
+
         executor.runAsync(() -> {
             try {
+                Log.info("Sending invitation notifications.");
                 sendInvitationNotifications(result);
             } catch (Exception e) {
                 Log.warn("Invitation notifications failed (async).", e);

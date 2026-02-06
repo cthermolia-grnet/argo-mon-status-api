@@ -13,9 +13,7 @@ import jakarta.ws.rs.ServiceUnavailableException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.grnet.status.authorizations.groups.AuthGroupManagement;
 import org.grnet.status.authorizations.groups.GroupManagement;
-import org.grnet.status.authorizations.resolvers.GroupIdResolver;
 import org.grnet.status.authorizations.service.AccessControlService;
 import org.grnet.status.authorizations.service.AuthGroupSetupService;
 import org.grnet.status.dtos.ams.PublishRequest;
@@ -81,11 +79,6 @@ public class TenantService {
     @Inject
     AmsService amsService;
 
-    @Inject
-    MailerService mailerService;
-
-    @ConfigProperty(name = "api.ui.url")
-    String uiBaseUrl;
 
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(2); // Adjust as needed
@@ -877,34 +870,5 @@ public class TenantService {
                 );
             }
         }
-    }
-
-    public void addMemberToGroup(String tenantId, String username, String role, String email){
-
-        var tenant = tenantRepository.findById(tenantId);
-
-        var parentPath = "/" + namespace + "/tenants/"+tenant.name;
-
-        groupManagement.addGroupMember(parentPath, username, role);
-
-        try {
-            mailerService.sendEmailToMemberAddedGroup(
-                    List.of(email),
-                    tenant.name,
-                    role,
-                    uiBaseUrl
-            );
-        } catch (Exception e) {
-            Log.warn("Added to group email failed: " + email, e);
-        }
-    }
-
-    public void deleteMemberFromGroup(String tenantId, String memberId){
-
-        var tenant = tenantRepository.findById(tenantId);
-
-        var parentPath = "/" + namespace + "/tenants/"+tenant.name;
-
-        groupManagement.removeMemberFromGroup(parentPath, memberId);
     }
 }

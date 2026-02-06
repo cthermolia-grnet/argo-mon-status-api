@@ -38,10 +38,7 @@ import org.grnet.status.dtos.tenant.invitations.TenantInvitationRequest;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
 import org.grnet.status.repositories.TenantInvitationRepository;
 import org.grnet.status.repositories.TenantRepository;
-import org.grnet.status.services.ReportService;
-import org.grnet.status.services.TenantInvitationService;
-import org.grnet.status.services.TenantProjectService;
-import org.grnet.status.services.TenantService;
+import org.grnet.status.services.*;
 import org.grnet.status.util.Utility;
 
 import java.io.IOException;
@@ -76,6 +73,9 @@ public class TenantEndpoint {
 
     @Inject
     ReportService reportService;
+
+    @Inject
+    GroupManagementService groupManagementService;
 
     @Operation(
             summary = "List Tenants Available to the User",
@@ -676,7 +676,7 @@ public class TenantEndpoint {
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("member_id") String memberId) {
 
-        tenantService.deleteMemberFromGroup(id, memberId);
+        groupManagementService.deleteMemberFromGroup(id, memberId);
 
         var response = new InformativeResponse();
         response.code = 200;

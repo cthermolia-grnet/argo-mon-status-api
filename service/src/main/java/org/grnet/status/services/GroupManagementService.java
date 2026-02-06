@@ -1,5 +1,6 @@
 package org.grnet.status.services;
 
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.UriInfo;
@@ -12,6 +13,7 @@ import org.grnet.status.authorizations.groups.GroupManagement;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.entities.Page;
 import org.grnet.status.entities.PageQueryImpl;
+import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.util.Utility;
 
 import java.util.ArrayList;
@@ -28,10 +30,22 @@ public class GroupManagementService {
     GroupManagement groupManagement;
 
     @Inject
+    TenantRepository tenantRepository;
+
+    @Inject
     Utility utility;
+
+    @Inject
+    MailerService mailerService;
 
     @ConfigProperty(name = "api.auth.entitlements.parent.group")
     String parentGroup;
+
+    @ConfigProperty(name = "api.ui.url")
+    String uiBaseUrl;
+
+    @ConfigProperty(name = "api.auth.entitlements.parent.group")
+    String namespace;
 
     public PageResource<GroupUser> getAllMembers(String groupName, String search, int page, int size, UriInfo uriInfo) {
 
@@ -101,9 +115,11 @@ public class GroupManagementService {
         groupManagement.addGroupMember(fullPath, username, "member");
     }
 
-    public void addUserToGroup(String id, String username, String role) {
+    public void addUserToTenantGroup(String tenantName, String username, String role) {
 
-        groupManagement.addMemberToGroupByGroupId(id, username, role);
+        var parentPath = "/" + namespace + "/tenants/" + tenantName;
+
+        groupManagement.addGroupMember(parentPath, username, role);
     }
 
     private static String normalizePath(String p) {
@@ -136,5 +152,34 @@ public class GroupManagementService {
         pageable.page = Page.of(page, size);
 
         return new PageResource<>(pageable, uriInfo);
+    }
+
+    public void addMemberToGroup(String tenantId, String username, String role, String email){
+
+        var tenant = tenantRepository.findById(tenantId);
+
+        var parentPath = "/" + namespace + "/tenants/"+tenant.name;
+
+        groupManagement.addGroupMember(parentPath, username, role);
+
+        try {
+            mailerService.sendEmailToMemberAddedGroup(
+                    List.of(email),
+                    tenant.name,
+                    role,
+                    uiBaseUrl
+            );
+        } catch (Exception e) {
+            Log.warn("Added to group email failed: " + email, e);
+        }
+    }
+
+    public void deleteMemberFromGroup(String tenantId, String memberId){
+
+        var tenant = tenantRepository.findById(tenantId);
+
+        var parentPath = "/" + namespace + "/tenants/"+tenant.name;
+
+        groupManagement.removeMemberFromGroup(parentPath, memberId);
     }
 }

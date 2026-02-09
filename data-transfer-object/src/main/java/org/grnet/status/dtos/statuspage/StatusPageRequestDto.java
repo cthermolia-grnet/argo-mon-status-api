@@ -32,32 +32,12 @@ public class  StatusPageRequestDto {
     @Schema(
             type = SchemaType.STRING,
             implementation = String.class,
-            description = "Base URL of the ARGO API",
-            example = "https://api.devel.mon.argo.grnet.gr"
+            description = "Report Identifier to display status groups for",
+            example = "a242ffb7-6e4d-4406-8b2d-0c665b75b21d"
     )
-    @JsonProperty("api")
-    @NotBlank(message = "api cannot be blank")
-    public String api;
-
-    @Schema(
-            type = SchemaType.STRING,
-            implementation = String.class,
-            description = "Encrypted secret key used for ARGO API authentication",
-            example = "U2FsdGVkX1+a+pJq..."
-    )
-    @JsonProperty("secret")
-    @NotBlank(message = "secret cannot be blank")
-    public String secret;
-
-    @Schema(
-            type = SchemaType.STRING,
-            implementation = String.class,
-            description = "Report name to display status groups for",
-            example = "Critical"
-    )
-    @JsonProperty("report")
+    @JsonProperty("report-id")
     @NotBlank(message = "report cannot be blank")
-    public String report;
+    public String reportId;
 
     @Schema(
             type = SchemaType.OBJECT,

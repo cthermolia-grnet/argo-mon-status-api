@@ -1,15 +1,12 @@
 package org.grnet.status.dtos.report;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.util.List;
 
 @Schema(description = "FullReportResponseDto returns the information about the Report object of a tenant")
-@Getter
-@Setter
+
 public class FullReportResponseDto {
 
     @Schema(type = SchemaType.STRING,

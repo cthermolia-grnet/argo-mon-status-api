@@ -6,7 +6,7 @@
   "data": [
     {
       "id": "8aa28cec-2940-4fcf-ad95-57fbdaf5bbad",
-      "tenant": "MOCK-TENANT",
+      "tenant": "LOCALTENANT",
       "disabled": false,
       "info": {
         "name": "CORE",

@@ -50,24 +50,6 @@ public class StatusPageResponseDto {
     @Schema(
             type = SchemaType.STRING,
             implementation = String.class,
-            description = "Base URL of the ARGO API",
-            example = "https://api.devel.mon.argo.grnet.gr"
-    )
-    @JsonProperty("api")
-    public String api;
-
-    @Schema(
-            type = SchemaType.STRING,
-            implementation = String.class,
-            description = "Encrypted secret key used for ARGO API authentication",
-            example = "U2FsdGVkX1+a+pJq..."
-    )
-    @JsonProperty("secret")
-    public String secret;
-
-    @Schema(
-            type = SchemaType.STRING,
-            implementation = String.class,
             description = "Report name to display status groups for",
             example = "Critical"
     )

@@ -36,6 +36,7 @@ public interface StatusPageMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "userId", ignore = true)
+    @Mapping(target = "report", ignore = true)
     @Mapping(target = "createdAt", expression = "java(Timestamp.from(Instant.now()))")
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "slug", source = "slug")
@@ -44,12 +45,10 @@ public interface StatusPageMapper {
 
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "api", ignore = true)
-    @Mapping(target = "secret", ignore = true)
     @Mapping(target = "userId", ignore = true)
+    @Mapping(target = "report", ignore = true)
     @Mapping(target = "name", expression = "java(StringUtils.isNotBlank(dto.name) ? dto.name : entity.getName())")
     @Mapping(target = "slug", expression = "java(StringUtils.isNotBlank(dto.slug) ? dto.slug : entity.getSlug())")
-    @Mapping(target = "report", expression = "java(StringUtils.isNotBlank(dto.report) ? dto.report : entity.getReport())")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", expression = "java(Timestamp.from(Instant.now()))")
     @Mapping(target = "config", expression = "java(configToJson(dto.config))")

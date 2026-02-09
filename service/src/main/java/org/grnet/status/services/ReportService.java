@@ -3,25 +3,26 @@ package org.grnet.status.services;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.WebApplicationException;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.encrypt.EncryptRequestDto;
 import org.grnet.status.dtos.encrypt.EncryptResponseDto;
-import org.grnet.status.dtos.report.ReportRequestDto;
-import org.grnet.status.dtos.report.ReportResponseDto;
+import org.grnet.status.dtos.report.PartialReportResponseDto;
 import org.grnet.status.dtos.report.FullReportResponseDto;
-import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.mappers.GeneralMapper;
+import org.grnet.status.mappers.ReportMapper;
 import org.grnet.status.services.clients.ArgoWebApiClient;
 import org.grnet.status.services.utils.EncryptUtil;
-import org.grnet.status.services.utils.TenantUtil;
+import org.grnet.status.util.Utility;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+
+import static io.netty.util.AsciiString.contains;
 
 @ApplicationScoped
 public class ReportService {
@@ -34,37 +35,45 @@ public class ReportService {
     EncryptUtil encryptUtil;
 
     @Inject
+    Utility utility;
+
+    @Inject
     @RestClient
     ArgoWebApiClient argoWebApiClient;
 
-    @Inject
-    TenantUtil tenantUtil;
 
     /**
      * Fetches a list of reports from the ARGO Web API.
      *
-     * @param request The report request containing the API URL and encrypted secret.
+     * @param tenantId The id of the Tenant to request containing the API URL and encrypted secret.
      * @return A list of report DTOs.
      */
-    public List<ReportResponseDto> fetchReports(ReportRequestDto request) {
-        var decryptedSecret = encryptUtil.decrypt(request.secret);
+    public List<PartialReportResponseDto> fetchReports(String tenantId, String search) {
 
-        LOG.info("Building ARGO Web API client...");
+        LOG.info("Fetching reports from ARGO Web API...");
+        var reports = argoWebApiClient.fetchReportsSuperAdmin(accessToken, tenantId);
 
-        var response = argoWebApiClient.fetchReports(decryptedSecret);
+        var partialReports = reports.data.stream()
+                .filter(r -> r != null && r.info != null)
+                .map(ReportMapper.INSTANCE::fullToPartialReport)
+                .toList();
 
-        var list = new ArrayList<ReportResponseDto>();
-        if (response != null && response.data != null) {
-            for (var item : response.data) {
-                if (item.info != null) {
-                    var dto = new ReportResponseDto();
-                    dto.name = item.info.name;
-                    dto.description = item.info.description;
-                    list.add(dto);
-                }
-            }
+        if (StringUtils.isNotBlank(search)) {
+            var lowerSearch = search.toLowerCase();
+
+            partialReports = partialReports.stream()
+                    .filter(r ->
+                            contains(r.id.toLowerCase(), lowerSearch) ||
+                                    contains(r.name.toLowerCase(), lowerSearch) ||
+                                    contains(r.description.toLowerCase(), lowerSearch) ||
+                                    contains(r.tenantName.toLowerCase(), lowerSearch)
+                    )
+                    .toList();
+
+            partialReports = new ArrayList<>(partialReports);
         }
-        return list;
+
+        return partialReports;
     }
 
 
@@ -89,12 +98,7 @@ public class ReportService {
      */
     public FullReportResponseDto fetchReportById(String id, String reportId) {
 
-        String apiKey = tenantUtil.getArgoEngineKey(accessToken, id);
-
-        if (apiKey == null) {
-            throw new NotFoundException("Not found argo-engine token for tenant with id: " + id);
-        }
-        var reports = argoWebApiClient.fetchReports(apiKey);
+        var reports = argoWebApiClient.fetchReportsSuperAdmin(accessToken, id);
         boolean found = reports.data.stream()
                 .anyMatch(r -> reportId.equals(r.id));
 
@@ -103,46 +107,9 @@ public class ReportService {
         }
 
         try {
-            return argoWebApiClient.fetchReportById(reportId, apiKey).data.get(0);
+            return argoWebApiClient.fetchReportByIdSuperAdmin(reportId, accessToken, id).data.get(0);
         } catch (ClientWebApplicationException e) {
             throw new ClientWebApplicationException("Report not found in argo-web-api with id: " + reportId);
         }
     }
-
-    /**
-     *
-     * @param id, Tenant's id
-     * @return a list of Reports
-     */
-    public List<ReportResponseDto> fetchTenantReports(String id) {
-        String apiKey = tenantUtil.getArgoEngineKey(accessToken, id);
-
-        if (apiKey == null) {
-            throw new NotFoundException("Not found argo-engine token for tenant with id: " + id);
-        }
-        var reports = argoWebApiClient.fetchReports(apiKey);
-
-        DateTimeFormatter formatter =
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-        var list = new ArrayList<ReportResponseDto>();
-        if (reports != null && reports.data != null) {
-            for (var item : reports.data) {
-                if (item.info != null) {
-                    var dto = new ReportResponseDto();
-                    dto.id=item.id;
-                    dto.name = item.info.name;
-                    dto.description = item.info.description;
-                    dto.tenantName=item.tenant;
-                    dto.disabled=String.valueOf(item.info.disabled);
-                    dto.createdAt=item.info.created.toString();
-                    dto.updatedAt=item.info.updated.toString();
-
-                    list.add(dto);
-                }
-            }
-        }
-        return list;
-    }
-
 }

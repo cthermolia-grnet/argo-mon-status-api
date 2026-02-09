@@ -4,16 +4,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.Status;
 import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.dtos.ams.PublishResponse;
-import org.grnet.status.dtos.argo.ArgoReportsResponse;
+import org.grnet.status.dtos.argo.ArgoStatusGroupsResponse;
+import org.grnet.status.dtos.general.ExistResponseDto;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.project.ProjectRequestDto;
 import org.grnet.status.dtos.project.ProjectResponseDto;
+import org.grnet.status.dtos.report.PartialReportResponseDto;
 import org.grnet.status.dtos.report.WebApiReportResponse;
+import org.grnet.status.dtos.status.StatusGroupResponseDto;
+import org.grnet.status.dtos.statuspage.*;
 import org.grnet.status.dtos.tenant.*;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
@@ -45,8 +50,10 @@ public class TenantEndpointTest extends KeycloakTest {
     @InjectMock
     @RestClient
     ArgoWebApiClient argoWebApiClient;
+
     @InjectMock
     AmsClientFactory amsClientFactory;
+
     private String currentMockId;
 
     @BeforeEach
@@ -62,9 +69,12 @@ public class TenantEndpointTest extends KeycloakTest {
             return loadMockTenantGetResponse(currentMockId);
         });
         var mockOneReportResponse = loadMockReport();
-        when(argoWebApiClient.fetchReportById(any(), any())).thenReturn(mockOneReportResponse);
+        when(argoWebApiClient.fetchReportByIdSuperAdmin(any(), any(), any())).thenReturn(mockOneReportResponse);
         var mockResponse = loadMockReports();
-        when(argoWebApiClient.fetchReports(any())).thenReturn(mockResponse);
+        when(argoWebApiClient.fetchReportsSuperAdmin(any(), any())).thenReturn(mockResponse);
+
+        when(argoWebApiClient.fetchStatusGroupsSuperAdmin(any(), any(), any())).thenReturn(loadMockStatusGroups());
+
     }
 
 
@@ -314,6 +324,210 @@ public class TenantEndpointTest extends KeycloakTest {
         assertEquals(1, result.getContent().size());
     }
 
+    @Test
+    public void fetchReports() {
+
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
+
+        var tenant = createTenant("LOCALTENANT");
+
+        var reports  = given()
+                .auth()
+                .oauth2(tenantViewer)
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/v1/tenants/{id}/reports", tenant.id)
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(PartialReportResponseDto[].class);
+
+        assertNotNull(reports);
+        assertTrue(reports.length > 0);
+    }
+
+    @Test
+    public void checkSlugNotExists() {
+
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
+        var tenant = createTenant("LOCALTENANT");
+
+        var existResponse = given()
+                .auth().oauth2(tenantViewer)
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/v1/tenants/{id}/pages/check-slug/{slug}", tenant.id, "check-this-slug")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(ExistResponseDto.class);
+
+        assertFalse(existResponse.exist);
+    }
+
+    @Test
+    public void createStatusPage() {
+
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
+        var tenant = createTenant("LOCALTENANT");
+
+        var request = buildValidStatusPageRequest("test-page-" + UUID.randomUUID());
+
+        var created = given()
+                .auth().oauth2(tenantViewer)
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post("/v1/tenants/{id}/pages", tenant.id)
+                .then()
+                .log().all()
+                .statusCode(201)
+                .extract()
+                .as(StatusPageResponseDto.class);
+
+        assertNotNull(created.id);
+        assertEquals(request.slug, created.slug);
+        assertEquals(request.name, created.name);
+        assertEquals(request.config.title, created.config.title);
+    }
+
+    @Test
+    public void getStatusPage() {
+
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
+        var tenant = createTenant("LOCALTENANT");
+
+        var request = buildValidStatusPageRequest("get-page-" + UUID.randomUUID());
+
+        var created = given()
+                .auth().oauth2(tenantViewer)
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post("/v1/tenants/{id}/pages", tenant.id)
+                .then()
+                .statusCode(201)
+                .extract()
+                .as(StatusPageResponseDto.class);
+
+        var fetched = given()
+                .auth().oauth2(tenantViewer)
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/v1/tenants/{id}/pages/{pageId}", tenant.id, created.id)
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(StatusPageResponseDto.class);
+
+        assertEquals(created.id, fetched.id);
+        assertEquals(created.slug, fetched.slug);
+    }
+
+    @Test
+    public void updateStatusPage() {
+
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
+        var tenant = createTenant("LOCALTENANT");
+
+        var request = buildValidStatusPageRequest("update-page-" + UUID.randomUUID());
+
+        var created = given()
+                .auth().oauth2(tenantViewer)
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post("/v1/tenants/{id}/pages", tenant.id)
+                .then()
+                .statusCode(201)
+                .extract()
+                .as(StatusPageResponseDto.class);
+
+        var update = buildValidStatusPageUpdateRequest(created.slug);
+        update.config.title = "Updated Config Title";
+        update.config.description = "Updated description text";
+        update.config.theming.color = "#00ff00";
+
+        var updated = given()
+                .auth().oauth2(tenantViewer)
+                .contentType(ContentType.JSON)
+                .body(update)
+                .when()
+                .put("/v1/tenants/{id}/pages/{pageId}", tenant.id, created.id)
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(StatusPageResponseDto.class);
+
+        assertEquals("Updated Page", updated.name);
+        assertEquals("Updated Config Title", updated.config.title);
+        assertEquals("Updated description text", updated.config.description);
+        assertEquals("#00ff00", updated.config.theming.color);
+    }
+
+    @Test
+    public void listStatusPages() {
+
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
+        var tenant = createTenant("LOCALTENANT");
+
+        var request = buildValidStatusPageRequest("list-page-" + UUID.randomUUID());
+
+        given()
+                .auth().oauth2(tenantViewer)
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post("/v1/tenants/{id}/pages", tenant.id)
+                .then()
+                .statusCode(201);
+
+        var list = given()
+                .auth().oauth2(tenantViewer)
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/v1/tenants/{id}/pages?page=1&size=10", tenant.id)
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(PageResource.class);
+
+        assertNotNull(list.getContent());
+        assertFalse(list.getContent().isEmpty());
+    }
+
+    @Test
+    public void deleteStatusPage() {
+
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
+        var tenant = createTenant("LOCALTENANT");
+
+        var request = buildValidStatusPageRequest("delete-page-" + UUID.randomUUID());
+
+        var created = given()
+                .auth().oauth2(tenantViewer)
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post("/v1/tenants/{id}/pages", tenant.id)
+                .then()
+                .statusCode(201)
+                .extract()
+                .as(StatusPageResponseDto.class);
+
+        var resp = given()
+                .auth().oauth2(tenantViewer)
+                .when()
+                .delete("/v1/tenants/{id}/pages/{pageId}", tenant.id, created.id)
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(InformativeResponse.class);
+
+        assertEquals(200, resp.code);
+        assertTrue(resp.message.toLowerCase().contains("deleted"));
+    }
+
     private TenantResponseDto createTenant(String tenantName) {
         var request = new TenantRequestDto();
         var tenantInfo = new TenantInfoDto();
@@ -356,6 +570,83 @@ public class TenantEndpointTest extends KeycloakTest {
 
         return dto;
     }
+
+    private StatusPageRequestDto buildValidStatusPageRequest(String slug) {
+        var req = new StatusPageRequestDto();
+        req.name = "Test Page";
+        req.slug = slug;
+        req.reportId = "8aa28cec-2940-4fcf-ad95-57fbdaf5bbad";
+
+        // groups must match mocks/status-groups.json names
+        var atland = new StatusGroupResponseDto();
+        atland.name = "ATLAND";
+        atland.status = "CRITICAL";
+
+        var arnes = new StatusGroupResponseDto();
+        arnes.name = "ARNES";
+        arnes.status = "OK";
+
+        var group1 = new StatusPageGroupDto();
+        group1.name = "group-1";
+        group1.alias = "Group A";
+        group1.list = List.of(atland, arnes);
+
+        var theming = new StatusPageThemingDto();
+        theming.logo = "";
+        theming.color = "#ffffff";
+        theming.status = new StatusPageThemingStatusDto();
+        theming.status.icon = "led";
+        theming.status.text = "badge";
+        theming.columns = "one";
+
+        var config = new StatusPageConfigDto();
+        config.title = "Test Title";
+        config.description = "Test description";
+        config.groups = List.of(group1);
+        config.theming = theming;
+
+        req.config = config;
+        return req;
+    }
+
+    private StatusPageUpdateRequestDto buildValidStatusPageUpdateRequest(String slug) {
+        var req = new StatusPageUpdateRequestDto();
+        req.name = "Updated Page";
+        req.slug = slug;
+        req.reportId = "8aa28cec-2940-4fcf-ad95-57fbdaf5bbad";
+
+        // same structure as create
+        var atland = new StatusGroupResponseDto();
+        atland.name = "ATLAND";
+        atland.status = "CRITICAL";
+
+        var group1 = new StatusPageGroupDto();
+        group1.name = "group-1";
+        group1.alias = "Group A";
+        group1.list = List.of(atland);
+
+        var theming = new StatusPageThemingDto();
+        theming.logo = "";
+        theming.color = "#00ff00";
+        theming.status = new StatusPageThemingStatusDto();
+        theming.status.icon = "led";
+        theming.status.text = "badge";
+        theming.columns = "one";
+
+        var config = new StatusPageConfigDto();
+        config.title = "Updated Title";
+        config.description = "Updated description";
+        config.groups = List.of(group1);
+        config.theming = theming;
+
+        req.config = config;
+        return req;
+    }
+
+
+
+
+
 //    @Test
 //    public void fetchReportById() {
 //        var request = createTenant("MOCK-TENANT");
@@ -376,18 +667,21 @@ public class TenantEndpointTest extends KeycloakTest {
 //    }
 
 
-
     private WebApiReportResponse loadMockReport() throws Exception {
         try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("mocks/mock-report.json")) {
             return new ObjectMapper().readValue(is, WebApiReportResponse.class);
         }
     }
 
-    private ArgoReportsResponse loadMockReports() throws Exception {
+    private WebApiReportResponse loadMockReports() throws Exception {
         try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("mocks/reports.json")) {
-            return new ObjectMapper().readValue(is, ArgoReportsResponse.class);
+            return new ObjectMapper().readValue(is, WebApiReportResponse.class);
         }
     }
 
-
+    private ArgoStatusGroupsResponse loadMockStatusGroups() throws Exception {
+        try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("mocks/status-groups.json")) {
+            return new ObjectMapper().readValue(is, ArgoStatusGroupsResponse.class);
+        }
+    }
 }

@@ -35,12 +35,12 @@ public class StatusPageUpdateRequestDto {
     @Schema(
             type = SchemaType.STRING,
             implementation = String.class,
-            description = "Report name to retrieve groups from",
+            description = "Report Identifier to retrieve groups from",
             example = "Critical"
     )
-    @JsonProperty("report")
+    @JsonProperty("report-id")
     @NotBlank(message = "report cannot be blank")
-    public String report;
+    public String reportId;
 
     @Schema(
             type = SchemaType.OBJECT,

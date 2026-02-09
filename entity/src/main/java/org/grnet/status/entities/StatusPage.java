@@ -33,16 +33,13 @@ public class StatusPage {
     @Column(name = "user_id")
     private String userId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
     @NotNull
-    @Column(name = "api")
-    private String api;
+    @JoinColumn(name = "tenant_id")
+    private Tenant tenant;
 
     @NotNull
-    @Column(name = "secret")
-    private String secret;
-
-    @NotNull
-    @Column
+    @Column(name = "report")
     private String report;
 
     @Column(name = "config", columnDefinition = "jsonb")

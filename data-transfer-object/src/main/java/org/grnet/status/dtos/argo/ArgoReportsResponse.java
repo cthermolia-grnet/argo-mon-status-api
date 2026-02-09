@@ -1,9 +1,6 @@
 package org.grnet.status.dtos.argo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 
 import java.util.List;
@@ -35,10 +32,10 @@ public class ArgoReportsResponse {
 
 
         @JsonProperty("created")
-        public String created;
+        public Instant created;
 
         @JsonProperty("updated")
-        public String updated;
+        public Instant updated;
 
         @JsonProperty("disabled")
         public boolean disabled;

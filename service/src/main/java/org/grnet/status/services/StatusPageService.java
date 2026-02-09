@@ -17,6 +17,7 @@ import org.grnet.status.enums.ArgoItemStatusEnum;
 import org.grnet.status.mappers.GeneralMapper;
 import org.grnet.status.mappers.StatusPageMapper;
 import org.grnet.status.repositories.StatusPageRepository;
+import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.services.clients.ArgoWebApiClient;
 import org.grnet.status.services.utils.EncryptUtil;
 import org.grnet.status.services.utils.ImageUploadUtil;
@@ -29,17 +30,18 @@ public class StatusPageService {
 
     @Inject
     StatusPageRepository statusPageRepository;
+
     @Inject
-    @RestClient
-    ArgoWebApiClient argoWebApiClient;
-    @Inject
-    EncryptUtil encryptUtil;
+    TenantRepository tenantRepository;
 
     @Inject
     StatusService statusService;
 
     @Inject
     ImageUploadUtil imageUploadUtil;
+
+    @Inject
+    ReportService reportService;
 
 
     @Inject
@@ -56,14 +58,18 @@ public class StatusPageService {
      * Create a new status statuspage.
      */
     @Transactional
-    public StatusPageResponseDto createStatusPage(StatusPageRequestDto request, String userId) {
-        validateArgoConnection(request.api, request.secret);
-        validateGroupsExist(request.api, request.secret, request.report, request.config.groups);
+    public StatusPageResponseDto createStatusPage(String tenantId, StatusPageRequestDto request, String userId) {
+
+        validateGroupsExist(tenantId, request.reportId, request.config.groups);
         validateTheming(request.config);
         checkIfExistSlug(request.slug, null);
 
+        var report = reportService.fetchReportById(tenantId, request.reportId);
+
         var entity = StatusPageMapper.INSTANCE.dtoToEntity(request);
+        entity.setTenant(tenantRepository.findById(tenantId));
         entity.setUserId(userId);
+        entity.setReport(report.info.name);
         statusPageRepository.persist(entity);
 
         apiServerUrl = apiServerUrl.replaceAll("/+$", "");
@@ -85,20 +91,19 @@ public class StatusPageService {
      * Update an existing status statuspage.
      */
     @Transactional
-    public StatusPageResponseDto updateStatusPage(String id, StatusPageUpdateRequestDto request) {
+    public StatusPageResponseDto updateStatusPage(String tenantId, String statusPageId, StatusPageUpdateRequestDto request) {
 
-        var entity = statusPageRepository.searchByIdOptional(id)
-                .orElseThrow(() -> new IllegalArgumentException("StatusPage not found with id " + id));
+        var entity = statusPageRepository.searchByIdOptional(statusPageId)
+                .orElseThrow(() -> new IllegalArgumentException("StatusPage not found with id " + statusPageId));
 
-        // ensure new slug is unique (except for same id)
-        checkIfExistSlug(request.slug, id);
-
-        // validate data before applying changes
-        validateGroupsExist(entity.getApi(), entity.getSecret(), request.report, request.config.groups);
+        checkIfExistSlug(request.slug, statusPageId);
+        validateGroupsExist(tenantId, request.reportId, request.config.groups);
         validateTheming(request.config);
 
-        // --- Apply updates for name, slug, report, config ---
         StatusPageMapper.INSTANCE.updateToEntity(request, entity);
+
+        var report = reportService.fetchReportById(tenantId, request.reportId);
+        entity.setReport(report.info.name);
 
         apiServerUrl = apiServerUrl.replaceAll("/+$", "");
 
@@ -108,7 +113,7 @@ public class StatusPageService {
 
         if (logo != null && logo.startsWith("data:image/")) {
             imageUploadUtil.validateBase64Image(logo);
-            imageUploadUtil.deleteImageIfExists(baseUploadLogoDir, id);
+            imageUploadUtil.deleteImageIfExists(baseUploadLogoDir, statusPageId);
             var savedPath = imageUploadUtil.saveBase64Image(baseUploadLogoDir, logo, entity.getId(), "/logos/");
             var fullUrl = apiServerUrl + savedPath;
             entity.setConfig(updateLogo(entity.getConfig(), fullUrl));
@@ -214,29 +219,12 @@ public class StatusPageService {
         }
     }
 
-    public void validateArgoConnection(String api, String encryptedSecret) {
-        try {
-            var secret = encryptUtil.decrypt(encryptedSecret);
-            // var client = argoWebApiClientFactory.buildClient(api);
+    public void validateGroupsExist(String tenantId, String reportId, List<StatusPageGroupDto> groups) {
 
-            argoWebApiClient.fetchReports(secret);
-
-        } catch (Exception ex) {
-            throw new BadRequestException("Invalid ARGO API or Secret");
-        }
-    }
-
-    public void validateGroupsExist(String api, String secret, String report, List<StatusPageGroupDto> groups) {
-
-        var request = new StatusGroupRequestDto();
-        request.api = api;
-        request.secret = secret;
-        request.report = report;
-
-        var argoGroups = statusService.getStatusGroups(request);
+        var argoGroups = statusService.getStatusGroups(tenantId, reportId);
 
         if (argoGroups == null || argoGroups.isEmpty()) {
-            throw new IllegalArgumentException("Unable to retrieve groups from ARGO for report '" + report + "'");
+            throw new IllegalArgumentException("Unable to retrieve groups from ARGO for this report.");
         }
 
         // Extract all valid endpoint names from ARGO
@@ -249,7 +237,7 @@ public class StatusPageService {
             for (var item : group.list) {
                 if (!validNames.contains(item.name)) {
                     throw new IllegalArgumentException(
-                            "Service '" + item.name + "' is not a valid ARGO item for report '" + report + "'"
+                            "Service '" + item.name + "' is not a valid ARGO item for this report."
                     );
                 }
 

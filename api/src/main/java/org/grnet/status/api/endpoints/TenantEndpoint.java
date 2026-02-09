@@ -30,6 +30,8 @@ import org.grnet.status.authorizations.interceptors.CheckEntitlements;
 import org.grnet.status.authorizations.interceptors.Resolver;
 import org.grnet.status.constraints.NotFoundEntity;
 import org.grnet.status.dtos.InformativeResponse;
+import org.grnet.status.dtos.general.ExistResponseDto;
+import org.grnet.status.dtos.general.ExistResponseDto;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.profile.aggregation.AggregationProfileResponse;
 import org.grnet.status.dtos.profile.metric.MetricProfileResponse;
@@ -37,11 +39,23 @@ import org.grnet.status.dtos.profile.operation.OperationProfileResponse;
 import org.grnet.status.dtos.project.ProjectResponseDto;
 import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
 import org.grnet.status.dtos.report.FullReportResponseDto;
+import org.grnet.status.dtos.report.PartialReportResponseDto;
+import org.grnet.status.dtos.status.StatusGroupResponseDto;
+import org.grnet.status.dtos.statuspage.StatusPageRequestDto;
+import org.grnet.status.dtos.statuspage.StatusPageResponseDto;
+import org.grnet.status.dtos.statuspage.StatusPageUpdateRequestDto;
 import org.grnet.status.dtos.report.ReportResponseDto;
+import org.grnet.status.dtos.report.PartialReportResponseDto;
+import org.grnet.status.dtos.status.StatusGroupResponseDto;
+import org.grnet.status.dtos.statuspage.StatusPageRequestDto;
+import org.grnet.status.dtos.statuspage.StatusPageResponseDto;
+import org.grnet.status.dtos.statuspage.StatusPageUpdateRequestDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationRequest;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
+import org.grnet.status.repositories.StatusPageRepository;
+import org.grnet.status.repositories.StatusPageRepository;
 import org.grnet.status.repositories.TenantInvitationRepository;
 import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.services.*;
@@ -79,6 +93,12 @@ public class TenantEndpoint {
 
     @Inject
     ReportService reportService;
+
+    @Inject
+    StatusService statusService;
+
+    @Inject
+    StatusPageService statusPageService;
 
     @Inject
     GroupManagementService groupManagementService;
@@ -619,7 +639,7 @@ public class TenantEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public Response revoke(
             @PathParam("id")
-            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Invitation with the following id: ")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
             String id,
             @PathParam("invitation_id")
             @Valid @NotFoundEntity(repository = TenantInvitationRepository.class, message = "There is no Invitation with the following invitation_id: ")
@@ -694,7 +714,7 @@ public class TenantEndpoint {
         return Response.ok().entity(response).build();
     }
 
-    @Tag(name = "Aggregation Profiles")
+    @Tag(name = "Profiles")
     @Operation(
             summary = "Get a specific aggregation profile.",
             description = "List one specific operations profile targeted by it's unique id.")
@@ -756,7 +776,7 @@ public class TenantEndpoint {
         return Response.ok().entity(response).build();
     }
 
-    @Tag(name = "Aggregation Profiles")
+    @Tag(name = "Profiles")
     @Operation(
             summary = "List all aggregation profiles.",
             description = "List all aggregation profiles.")
@@ -813,7 +833,7 @@ public class TenantEndpoint {
         return Response.ok().entity(response).build();
     }
 
-    @Tag(name = "Metric Profiles")
+    @Tag(name = "Profiles")
     @Operation(
             summary = "Get a specific metric profile.",
             description = "List one specific metric profile targeted by it's unique id.")
@@ -875,7 +895,7 @@ public class TenantEndpoint {
         return Response.ok().entity(response).build();
     }
 
-    @Tag(name = "Metric Profiles")
+    @Tag(name = "Profiles")
     @Operation(
             summary = "List all metric profiles.",
             description = "List all metric profiles.")
@@ -932,7 +952,7 @@ public class TenantEndpoint {
         return Response.ok().entity(response).build();
     }
 
-    @Tag(name = "Operations Profiles")
+    @Tag(name = "Profiles")
     @Operation(
             summary = "Get a specific operations profile.",
             description = "List one specific operations profile targeted by it's unique id.")
@@ -994,7 +1014,7 @@ public class TenantEndpoint {
         return Response.ok().entity(response).build();
     }
 
-    @Tag(name = "Operations Profiles")
+    @Tag(name = "Profiles")
     @Operation(
             summary = "List all operations profiles.",
             description = "List all operations profiles.")
@@ -1051,9 +1071,77 @@ public class TenantEndpoint {
         return Response.ok().entity(response).build();
     }
 
+    @Tag(name = "Reports")
+    @Operation(summary = "Fetch ARGO reports",
+            description = "Decrypts the provided secret key and retrieves reports from the ARGO Web API.")
+    @APIResponse(
+            responseCode = "200",
+            description = "List of available reports",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.ARRAY,
+                    implementation = PartialReportResponseDto.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "409",
+            description = "Assessment already exists.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "501",
+            description = "Not Implemented.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "502",
+            description = "Connection error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/{id}/reports")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"viewer","admin"}, resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response fetchReports(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+            @Parameter(name = "search", in = QUERY,
+                    description = "Search report by name.")
+            @QueryParam("search") String search) {
 
+        var reports = reportService.fetchReports(id, search);
 
-    @Tag(name = "Tenant")
+        return Response.ok(reports).build();
+    }
+
+    @Tag(name = "Reports")
     @Operation(summary = "Fetch Tenant' s report By Report ID",
             description = "Retrieves the reportwith the specific Report ID, for a tenant with specific Tenant ID,  from the ARGO Web API.")
     @APIResponse(
@@ -1097,72 +1185,435 @@ public class TenantEndpoint {
     @Path("/{id}/reports/{report-id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-
     @CheckEntitlements(roles = {"admin"}, resolvers = {
             @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
     })
-    public Response fetchReportByID(@Parameter(
-            description = "The ID of the tenant to retrieve report.",
-            required = true,
-            example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
-            schema = @Schema(type = SchemaType.STRING)) @PathParam("id")
-                                    @Valid  @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,@Parameter(
-            description = "The ID of the report to retrieve.",
-            required = true,
-            example = "b442e43f-9869-4fb0-b881-631bc5746ec0",
-            schema = @Schema(type = SchemaType.STRING)) @PathParam("report-id")
-                                    @Valid  String reportId) {
+    public Response fetchReportByID(
+            @Parameter(description = "The ID of the tenant to retrieve report.",
+                    required = true,
+                    example = "3ad67405-010f-4488-a4bb-eb56d4a0f8a0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+            @Parameter(description = "The ID of the report to retrieve.",
+                    required = true,
+                    example = "a242ffb7-6e4d-4406-8b2d-0c665b75b21d",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("report-id")
+            @Valid  String reportId) {
 
         var reports = reportService.fetchReportById(id,reportId);
 
         return Response.ok(reports).build();
     }
-    public static class PageableTenants extends PageResource<TenantResponseDto> {
 
-        private List<TenantResponseDto> content;
+    @Tag(name = "Reports")
+    @Operation(summary = "Fetch status groups for a report",
+            description = "Decrypts the provided secret key and retrieves report  groups from the ARGO Web API.")
+    @APIResponse(
+            responseCode = "200",
+            description = "List of available reports",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.ARRAY,
+                    implementation = StatusGroupResponseDto.class))
+    )
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @GET
+    @Path("/{id}/reports/{report-id}/groups")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"viewer","admin"}, resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response fetchStatusGroups(
+            @Parameter(
+                    description = "The ID of the tenant to retrieve report.",
+                    required = true,
+                    example = "3ad67405-010f-4488-a4bb-eb56d4a0f8a0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id") @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+            @Parameter(
+                    description = "The ID of the report to retrieve.",
+                    required = true,
+                    example = "a242ffb7-6e4d-4406-8b2d-0c665b75b21d",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("report-id") @Valid String reportId) {
 
-        @Override
-        public List<TenantResponseDto> getContent() {
-            return content;
-        }
+        var reports = statusService.getStatusGroups(id, reportId);
 
-        @Override
-        public void setContent(List<TenantResponseDto> content) {
-            this.content = content;
-        }
+        return Response.ok(reports).build();
     }
 
-    public static class PageableTenantMembers extends PageResource<GroupUserResponse> {
+    @Tag(name = "Status Pages")
+    @Operation(
+            summary = "Create a new status page.",
+            description = "This endpoint allows an authenticated user to create a new ARGO Status Page."
+    )
+    @APIResponse(
+            responseCode = "201",
+            description = "Status Page created successfully.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = StatusPageResponseDto.class))
+    )
+    @APIResponse(
+            responseCode = "400",
+            description = "Invalid request payload.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @APIResponse(
+            responseCode = "409",
+            description = "Slug already exists.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @POST
+    @Path("/{id}/pages")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"viewer","admin"}, resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response createStatusPage(
+            @Parameter(
+                    description = "The ID of the tenant to create pages under.",
+                    required = true,
+                    example = "3ad67405-010f-4488-a4bb-eb56d4a0f8a0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id") @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+            @Valid @NotNull(message = "The request body is empty.")
+            StatusPageRequestDto request,
+            @Context UriInfo uriInfo) {
 
-        private List<GroupUserResponse> content;
+        var response = statusPageService.createStatusPage(id, request, utility.getUserUniqueIdentifier());
 
-        @Override
-        public List<GroupUserResponse> getContent() {
-            return content;
-        }
-
-        @Override
-        public void setContent(List<GroupUserResponse> content) {
-            this.content = content;
-        }
+        return Response.created(uriInfo.getAbsolutePathBuilder().path(response.id).build()).entity(response).build();
     }
 
-    public static class PageableTenantInvitations extends PageResource<TenantInvitationResponse> {
+    @Tag(name = "Status Pages")
+    @Operation(
+            summary = "Get a status page by ID.",
+            description = "Returns a specific status page."
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "The corresponding status page.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = StatusPageResponseDto.class))
+    )
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @APIResponse(
+            responseCode = "404",
+            description = "Page not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @GET
+    @Path("/{id}/pages/{page-id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"viewer","admin"}, resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response getStatusPage(
+            @Parameter(
+                    description = "The ID of the tenant to retrieve report.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id") @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+            @Parameter(
+                    description = "The ID of the status page to retrieve.",
+                    required = true,
+                    example = "e7ab046c-8544-47e6-bd8f-e8aa8b83acb0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("page-id")
+            @Valid @NotFoundEntity(repository = StatusPageRepository.class, message = "There is no Status Page with the following id:")
+            String pageId) {
 
-        private List<TenantInvitationResponse> content;
-
-        @Override
-        public List<TenantInvitationResponse> getContent() {
-            return content;
-        }
-
-        @Override
-        public void setContent(List<TenantInvitationResponse> content) {
-            this.content = content;
-        }
+        var page = statusPageService.getStatusPageById(pageId);
+        return Response.ok().entity(page).build();
     }
 
+    @Tag(name = "Status Pages")
+    @Operation(
+            summary = "List status pages with pagination.",
+            description = "Returns paginated list of status pages for the authenticated user."
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "List of status pages.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = PageableStatusPages.class))
+    )
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @GET
+    @Path("/{id}/pages")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"viewer","admin"}, resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response listStatusPages(
+            @Parameter(
+                    description = "The ID of the tenant to retrieve pages.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id") @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+            @Parameter(name = "page", in = QUERY,
+                    description = "Indicates the page number. Page number must be >= 1.")
+            @DefaultValue("1") @Min(value = 1, message = "Page number must be >= 1.") @QueryParam("page") int page,
+            @Parameter(name = "size", in = QUERY,
+                    description = "The page size.")
+            @DefaultValue("10") @Min(value = 1, message = "Page size must be between 1 and 100.")
+            @Max(value = 100, message = "Page size must be between 1 and 100.") @QueryParam("size") int size,
+            @Context UriInfo uriInfo) {
 
+        var pages = statusPageService.getStatusPageByUserAndPage(page - 1, size, uriInfo, utility.getUserUniqueIdentifier());
+
+        return Response.ok().entity(pages).build();
+    }
+
+    @Tag(name = "Status Pages")
+    @Operation(
+            summary = "Update a status page.",
+            description = "Updates a specific status page."
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "Page updated successfully.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = StatusPageResponseDto.class))
+    )
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @APIResponse(
+            responseCode = "404",
+            description = "Page not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @APIResponse(
+            responseCode = "409",
+            description = "Slug already exists.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @PUT
+    @Path("/{id}/pages/{page-id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"viewer","admin"}, resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response updateStatusPage(
+            @Parameter(
+                    description = "The ID of the tenant to retrieve report.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+            @Parameter(description = "The ID of the status page to update.",
+                    required = true,
+                    example = "e7ab046c-8544-47e6-bd8f-e8aa8b83acb0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("page-id") String pageId,
+            @Valid @NotNull(message = "The request body is empty.")
+            StatusPageUpdateRequestDto request) {
+
+        var updated = statusPageService.updateStatusPage(id, pageId, request);
+        return Response.ok().entity(updated).build();
+    }
+
+    @Tag(name = "Status Pages")
+    @Operation(
+            summary = "Delete a status page.",
+            description = "Deletes a specific status page."
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "Deletion completed.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @APIResponse(
+            responseCode = "404",
+            description = "Page not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @DELETE
+    @Path("/{id}/pages/{page-id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"viewer","admin"}, resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response deleteStatusPage(
+            @Parameter(
+                    description = "The ID of the tenant to retrieve report.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id") String id,
+            @Parameter(
+                    description = "The ID of the status page to delete.",
+                    required = true,
+                    example = "e7ab046c-8544-47e6-bd8f-e8aa8b83acb0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("page-id") String pageId) {
+
+        statusPageService.deleteStatusPage(pageId);
+
+        var informativeResponse = new InformativeResponse();
+        informativeResponse.code = 200;
+        informativeResponse.message = "Status Page has been successfully deleted.";
+
+        return Response.ok().entity(informativeResponse).build();
+    }
+
+    @Tag(name = "Status Pages")
+    @Operation(summary = "Check if a status page slug exists",
+            description = "Returns true if a status page with the given slug exists.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Slug existence response",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = ExistResponseDto.class))
+    )
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class))
+    )
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/{id}/pages/check-slug/{slug}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"viewer","admin"}, resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response checkSlugExists(
+            @Parameter(
+                    description = "The ID of the tenant to retrieve report.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id") String id,
+            @PathParam("slug") String slug) {
+
+        var exists = statusPageService.slugExists(slug);
+
+        return Response.ok(exists).build();
+    }
 
     @Tag(name = "Tenant")
     @Operation(
@@ -1211,72 +1662,67 @@ public class TenantEndpoint {
 
         return Response.ok(response).build();
     }
-    // -------------------------------------------------------------
-    // REPORTS ENDPOINT
-    // -------------------------------------------------------------
-    @Tag(name = "Tenant")
-    @Operation(summary = "Fetch Tenant's reports",
-            description = "Returns the tenant's report list.")
-    @APIResponse(
-            responseCode = "200",
-            description = "List of available reports",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.ARRAY,
-                    implementation = ReportResponseDto.class)))
-    @APIResponse(
-            responseCode = "401",
-            description = "User has not been authenticated.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @APIResponse(
-            responseCode = "403",
-            description = "Not permitted.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @APIResponse(
-            responseCode = "409",
-            description = "Assessment already exists.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @APIResponse(
-            responseCode = "500",
-            description = "Internal Server Error.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @APIResponse(
-            responseCode = "501",
-            description = "Not Implemented.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @APIResponse(
-            responseCode = "502",
-            description = "Connection error.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @SecurityRequirement(name = "Authentication")
-    @GET
-    @Path("/{id}/reports")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(roles = {"admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
-    })
-    public Response fetchReports(  @Parameter(
-            description = "The ID of the tenant to get reports.",
-            required = true,
-            example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
-            schema = @Schema(type = SchemaType.STRING))
-                                       @PathParam("id")
-                                       String id) {
 
-        var reports = reportService.fetchTenantReports(id);
 
-        return Response.ok(reports).build();
+    public static class PageableTenants extends PageResource<TenantResponseDto> {
+
+        private List<TenantResponseDto> content;
+
+        @Override
+        public List<TenantResponseDto> getContent() {
+            return content;
+        }
+
+        @Override
+        public void setContent(List<TenantResponseDto> content) {
+            this.content = content;
+        }
     }
+
+    public static class PageableTenantMembers extends PageResource<GroupUserResponse> {
+
+        private List<GroupUserResponse> content;
+
+        @Override
+        public List<GroupUserResponse> getContent() {
+            return content;
+        }
+
+        @Override
+        public void setContent(List<GroupUserResponse> content) {
+            this.content = content;
+        }
+    }
+
+    public static class PageableTenantInvitations extends PageResource<TenantInvitationResponse> {
+
+        private List<TenantInvitationResponse> content;
+
+        @Override
+        public List<TenantInvitationResponse> getContent() {
+            return content;
+        }
+
+        @Override
+        public void setContent(List<TenantInvitationResponse> content) {
+            this.content = content;
+        }
+    }
+
+    public static class PageableStatusPages extends PageResource<StatusPageResponseDto> {
+
+        private List<StatusPageResponseDto> content;
+
+        @Override
+        public List<StatusPageResponseDto> getContent() {
+            return content;
+        }
+
+        @Override
+        public void setContent(List<StatusPageResponseDto> content) {
+            this.content = content;
+        }
+    }
+
+
 }

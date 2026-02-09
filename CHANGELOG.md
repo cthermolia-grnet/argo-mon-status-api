@@ -44,7 +44,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#40](https://github.com/ARGOeu/argo-mon-status-api/pull/40) ARGO-5218 ARGO-5219 Add Tenant Status Field to Store Background Job Execution State/Implement PUT /v1/tenant/{tenantId}/status Endpoint for Updating Tenant Status #40
 - [#42](https://github.com/ARGOeu/argo-mon-status-api/pull/42/) ARGO-5223: Implement tenants list endpoint with role-based filtering for admin and viewer roles
 - [#44](https://github.com/ARGOeu/argo-mon-status-api/pull/44) ARGO-5229 Expose user group memberships and roles in user profile
-- [#46](https://github.com/ARGOeu/argo-mon-status-api/pull/46) Design & Implement Group Membership Endpoints Using AGM
+- [#46](https://github.com/ARGOeu/argo-mon-status-api/pull/46) ARGO-5243 Design & Implement Group Membership Endpoints Using AGM
 - [#48](https://github.com/ARGOeu/argo-mon-status-api/pull/48) ARGO-5245 Add Admin Endpoint to Create Tenant Group and Expose Group Status
 - [#49](https://github.com/ARGOeu/argo-mon-status-api/pull/49) ARGO-5248 Protect automation endpoints
 - [#50](https://github.com/ARGOeu/argo-mon-status-api/pull/50) ARGO-5263 Add execution mode for tenant jobs
@@ -53,11 +53,12 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#57](https://github.com/ARGOeu/argo-mon-status-api/pull/57) ARGO-5281 Tenant Invitation Management
 - [#58](https://github.com/ARGOeu/argo-mon-status-api/pull/58) ARGO-5298 Include User Tenants in Users Response
 - [#59](https://github.com/ARGOeu/argo-mon-status-api/pull/59) ARGO-5300 Initialize manual jobs in events for jobs in tenant's status 
-- [#61](https://github.com/ARGOeu/argo-mon-status-api/pull/1)  ARGO-5304 Add init_compute_engine as a job in the status of tenant
+- [#61](https://github.com/ARGOeu/argo-mon-status-api/pull/61) ARGO-5304 Add init_compute_engine as a job in the status of tenant
 - [#63](https://github.com/ARGOeu/argo-mon-status-api/pull/63) ARGO-5302 Add search and pagination support to admin members endpoint
 - [#65](https://github.com/ARGOeu/argo-mon-status-api/pull/65) ARGO-5308 Allow super admin and admin to revoke invitations
 - [#69](https://github.com/ARGOeu/argo-mon-status-api/pull/69) ARGO-5301 Mock WebApi in Dev profile
 - [#81](https://github.com/ARGOeu/argo-mon-status-api/pull/81) ARGO-5342 Create GET endpoints for Profiles
+- [#82](https://github.com/ARGOeu/argo-mon-status-api/pull/82) ARGO-5344 Status-api support the ability to create status pages by tenant name
 - [#83](https://github.com/ARGOeu/argo-mon-status-api/pull/83) ARGO-5351 Support Multiple Roles in Authorization Entitlement Checks
 - [#84](https://github.com/ARGOeu/argo-mon-status-api/pull/84) ARGO-5336 check tenant readiness - quarkus api
 - [#86](https://github.com/ARGOeu/argo-mon-status-api/pull/86) ARGO-5365 Add conversion from page/size parameters to first/max for pagination

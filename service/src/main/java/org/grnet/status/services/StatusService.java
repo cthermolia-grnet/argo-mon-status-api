@@ -3,6 +3,7 @@ package org.grnet.status.services;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.status.StatusGroupRequestDto;
 import org.grnet.status.dtos.status.StatusGroupResponseDto;
@@ -10,7 +11,6 @@ import org.grnet.status.dtos.statuspage.StatusPageConfigDto;
 import org.grnet.status.mappers.StatusPageMapper;
 import org.grnet.status.repositories.StatusPageRepository;
 import org.grnet.status.services.clients.ArgoWebApiClient;
-import org.grnet.status.services.utils.EncryptUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,28 +19,31 @@ import java.util.List;
 public class StatusService {
 
     @Inject
-    EncryptUtil encryptUtil;
+    ReportService reportService;
+
     @Inject
     @RestClient
     ArgoWebApiClient argoWebApiClient;
+
     @Inject
     StatusPageRepository statusPageRepository;
 
-    public List<StatusGroupResponseDto> getStatusGroups(StatusGroupRequestDto request) {
+    @ConfigProperty(name = "web.api.access.token")
+    String accessToken;
 
-        var decryptedSecret = encryptUtil.decrypt(request.secret);
+    public List<StatusGroupResponseDto> getStatusGroups(String tenantId, String reportId) {
 
-        var argoResponse = argoWebApiClient.fetchStatusGroups(decryptedSecret, request.report);
+        var report = reportService.fetchReportById(tenantId, reportId);
+        var argoGroups = argoWebApiClient.fetchStatusGroupsSuperAdmin(accessToken, tenantId, report.info.name);
 
         var list = new ArrayList<StatusGroupResponseDto>();
 
-        if (argoResponse != null && argoResponse.groups != null) {
-            for (var group : argoResponse.groups) {
+        if (argoGroups != null && argoGroups.groups != null) {
+            for (var group : argoGroups.groups) {
                 var dto = new StatusGroupResponseDto();
                 dto.name = group.name;
 
                 if (group.statuses != null && !group.statuses.isEmpty()) {
-                    // take the latest status
                     dto.status = group.statuses.get(group.statuses.size() - 1).value;
                 }
                 list.add(dto);
@@ -61,22 +64,29 @@ public class StatusService {
         var statusPageDto = StatusPageMapper.INSTANCE.entityToDto(statusPage);
         var config = statusPageDto.config;
 
-        // Prepare ARGO request
-        var request = new StatusGroupRequestDto();
-        request.api = statusPageDto.api;
-        request.secret = statusPageDto.secret;
-        request.report = statusPageDto.report;
-
         // Fetch live groups
-        var allGroups = getStatusGroups(request);
+        var argoGroups = argoWebApiClient.fetchStatusGroupsSuperAdmin(accessToken, statusPage.getTenant().id,statusPage.getReport());
 
         // Update config group statuses in memory
-        config.groups.forEach(group -> group.list.forEach(item ->
-                allGroups.stream()
-                        .filter(live -> live.name.equals(item.name))
+        for (var group : config.groups) {
+            if (group == null || group.list == null) continue;
+
+            for (var item : group.list) {
+                if (item == null || item.name == null) continue;
+
+                argoGroups.groups.stream()
+                        .filter(live -> live != null && item.name.equals(live.name))
                         .findFirst()
-                        .ifPresent(live -> item.status = live.status)
-        ));
+                        .ifPresent(live -> {
+                            if (live.statuses != null && !live.statuses.isEmpty()) {
+                                var last = live.statuses.get(live.statuses.size() - 1);
+                                if (last != null && last.value != null) {
+                                    item.status = last.value;
+                                }
+                            }
+                        });
+            }
+        }
 
         return config;
     }

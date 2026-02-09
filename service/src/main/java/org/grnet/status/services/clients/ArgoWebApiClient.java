@@ -4,12 +4,10 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.grnet.status.dtos.Status;
-import org.grnet.status.dtos.argo.ArgoReportsResponse;
 import org.grnet.status.dtos.argo.ArgoStatusGroupsResponse;
 import org.grnet.status.dtos.profile.aggregation.AggregationProfileResponse;
 import org.grnet.status.dtos.profile.metric.MetricProfileResponse;
 import org.grnet.status.dtos.profile.operation.OperationProfileResponse;
-import org.grnet.status.dtos.readiness.TenantReadiness;
 import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
 import org.grnet.status.dtos.report.WebApiReportResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
@@ -23,7 +21,31 @@ public interface ArgoWebApiClient {
 
     @GET
     @Path("/api/v2/reports")
-    ArgoReportsResponse fetchReports(@HeaderParam("x-api-key") String apiKey) throws WebApplicationException, ProcessingException;
+    WebApiReportResponse fetchReports(
+            @HeaderParam("x-api-key") String apiKey
+    ) throws WebApplicationException, ProcessingException;
+
+    @GET
+    @Path("/api/v2/reports")
+    WebApiReportResponse fetchReportsSuperAdmin(
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId
+    ) throws WebApplicationException, ProcessingException;
+
+    @GET
+    @Path("/api/v2/reports/{id}")
+    WebApiReportResponse fetchReportById(
+            @PathParam("id") String id,
+            @HeaderParam("x-api-key") String apiKey
+    ) throws WebApplicationException, ProcessingException;
+
+    @GET
+    @Path("/api/v2/reports/{id}")
+    WebApiReportResponse fetchReportByIdSuperAdmin(
+            @PathParam("id") String id,
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId
+    ) throws WebApplicationException, ProcessingException;
 
     @GET
     @Path("/api/v3/status/{report}")
@@ -31,6 +53,15 @@ public interface ArgoWebApiClient {
             @HeaderParam("x-api-key") String apiKey,
             @PathParam("report") String report
     ) throws WebApplicationException, ProcessingException;
+
+    @GET
+    @Path("/api/v3/status/{report}")
+    ArgoStatusGroupsResponse fetchStatusGroupsSuperAdmin(
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId,
+            @PathParam("report") String report
+    ) throws WebApplicationException, ProcessingException;
+
 
     @POST
     @Path("/api/v2/admin/tenants")
@@ -48,79 +79,151 @@ public interface ArgoWebApiClient {
 
     @PUT
     @Path("/api/v2/admin/tenants/{id}")
-    Status updateTenant(  @PathParam("id") String id,
-                                      @HeaderParam("x-api-key") String apiKey,
-                                      TenantWebApiRequest request
+    Status updateTenant(@PathParam("id") String id,
+                        @HeaderParam("x-api-key") String apiKey,
+                        TenantWebApiRequest request
     ) throws WebApplicationException, ProcessingException;
 
     @DELETE
     @Path("/api/v2/admin/tenants/{id}")
     Status deleteTenant(
-            @PathParam("id") String id, @HeaderParam("x-api-key") String apiKey) throws WebApplicationException, ProcessingException;
+            @PathParam("id") String id,
+            @HeaderParam("x-api-key") String apiKey
+    ) throws WebApplicationException, ProcessingException;
 
     @GET
     @Path("/api/v2/admin/tenants")
     TenantWebApiGetResponse getTenants(
-            @HeaderParam("x-api-key") String apiKey) throws WebApplicationException, ProcessingException;
+            @HeaderParam("x-api-key") String apiKey
+    ) throws WebApplicationException, ProcessingException;
 
 
     @PUT
     @Path("/api/v2/admin/tenants/{id}/info")
-    Status updateTenantInfo( @PathParam("id") String id,
-                                          @HeaderParam("x-api-key") String apiKey,
-                                          TenantWebApiRequest request
+    Status updateTenantInfo(
+            @PathParam("id") String id,
+            @HeaderParam("x-api-key") String apiKey,
+            TenantWebApiRequest request
     ) throws WebApplicationException, ProcessingException;
 
 
     @PUT
     @Path("/api/v2/admin/tenants/{id}/topology")
-    Status updateTenantTopology( @PathParam("id") String id,
-                                              @HeaderParam("x-api-key") String apiKey,
-                                              TenantWebApiRequest request
+    Status updateTenantTopology(
+            @PathParam("id") String id,
+            @HeaderParam("x-api-key") String apiKey,
+            TenantWebApiRequest request
     ) throws WebApplicationException, ProcessingException;
 
     @PUT
     @Path("/api/v2/admin/tenants/{id}/db-conf")
-    Status updateTenantDBConf(@PathParam("id") String id,
-                              @HeaderParam("x-api-key") String apiKey, TenantWebApiRequest request) throws WebApplicationException, ProcessingException;
+    Status updateTenantDBConf(
+            @PathParam("id") String id,
+            @HeaderParam("x-api-key") String apiKey, TenantWebApiRequest request) throws WebApplicationException, ProcessingException;
 
     @GET
     @Path("/api/v2/operations_profiles/{id}")
-    OperationProfileResponse listSpecificOperationsProfiles(@PathParam("id") String id, @QueryParam("date") String date,
-                                                            @HeaderParam("x-api-key") String apiKey) throws WebApplicationException, ProcessingException;
+    OperationProfileResponse listSpecificOperationsProfiles(
+            @PathParam("id") String id,
+            @QueryParam("date") String date,
+            @HeaderParam("x-api-key") String apiKey
+    ) throws WebApplicationException, ProcessingException;
 
     @GET
-    @Path("/api/v2/reports/{id}")
-    WebApiReportResponse fetchReportById(@PathParam("id") String id, @HeaderParam("x-api-key") String apiKey) throws WebApplicationException, ProcessingException;
+    @Path("/api/v2/operations_profiles/{id}")
+    OperationProfileResponse listSpecificOperationsProfilesSuperAdmin(
+            @PathParam("id") String id,
+            @QueryParam("date") String date,
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId
+    ) throws WebApplicationException, ProcessingException;
+
 
     @GET
     @Path("/api/v2/operations_profiles")
-    OperationProfileResponse listAllOperationsProfiles(@QueryParam("date") String date,
-                                                            @HeaderParam("x-api-key") String apiKey) throws WebApplicationException, ProcessingException;
+    OperationProfileResponse listAllOperationsProfiles(
+            @QueryParam("date") String date,
+            @HeaderParam("x-api-key") String apiKey
+    ) throws WebApplicationException, ProcessingException;
+
+    @GET
+    @Path("/api/v2/operations_profiles")
+    OperationProfileResponse listAllOperationsProfilesSuperAdmin(
+            @QueryParam("date") String date,
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId
+    ) throws WebApplicationException, ProcessingException;
+
 
     @GET
     @Path("/api/v2/aggregation_profiles/{id}")
-    AggregationProfileResponse listSpecificAggregationProfiles(@PathParam("id") String id, @QueryParam("date") String date,
-                                                               @HeaderParam("x-api-key") String apiKey) throws WebApplicationException, ProcessingException;
+    AggregationProfileResponse listSpecificAggregationProfiles(
+            @PathParam("id") String id,
+            @QueryParam("date") String date,
+            @HeaderParam("x-api-key") String apiKey
+    ) throws WebApplicationException, ProcessingException;
+
+    @GET
+    @Path("/api/v2/aggregation_profiles/{id}")
+    AggregationProfileResponse listSpecificAggregationProfilesSuperAdmin(
+            @PathParam("id") String id,
+            @QueryParam("date") String date,
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId
+    ) throws WebApplicationException, ProcessingException;
 
     @GET
     @Path("/api/v2/aggregation_profiles")
-    AggregationProfileResponse listAllAggregationProfiles(@QueryParam("date") String date,
-                                                       @HeaderParam("x-api-key") String apiKey) throws WebApplicationException, ProcessingException;
+    AggregationProfileResponse listAllAggregationProfiles(
+            @QueryParam("date") String date,
+            @HeaderParam("x-api-key") String apiKey
+    ) throws WebApplicationException, ProcessingException;
+
+    @GET
+    @Path("/api/v2/aggregation_profiles")
+    AggregationProfileResponse listAllAggregationProfilesSuperAdmin(
+            @QueryParam("date") String date,
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId
+    ) throws WebApplicationException, ProcessingException;
 
     @GET
     @Path("/api/v2/metric_profiles/{id}")
-    MetricProfileResponse listSpecificMetricProfiles(@PathParam("id") String id, @QueryParam("date") String date,
-                                                     @HeaderParam("x-api-key") String apiKey) throws WebApplicationException, ProcessingException;
+    MetricProfileResponse listSpecificMetricProfiles(
+            @PathParam("id") String id,
+            @QueryParam("date") String date,
+            @HeaderParam("x-api-key") String apiKey
+    ) throws WebApplicationException, ProcessingException;
+
+    @GET
+    @Path("/api/v2/metric_profiles/{id}")
+    MetricProfileResponse listSpecificMetricProfilesSuperAdmin(
+            @PathParam("id") String id,
+            @QueryParam("date") String date,
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId
+    ) throws WebApplicationException, ProcessingException;
+
 
     @GET
     @Path("/api/v2/metric_profiles")
-    MetricProfileResponse listAllMetricProfiles(@QueryParam("date") String date,
-                                                          @HeaderParam("x-api-key") String apiKey) throws WebApplicationException, ProcessingException;
+    MetricProfileResponse listAllMetricProfiles(
+            @QueryParam("date") String date,
+            @HeaderParam("x-api-key") String apiKey
+    ) throws WebApplicationException, ProcessingException;
 
+    @GET
+    @Path("/api/v2/metric_profiles")
+    MetricProfileResponse listAllMetricProfilesSuperAdmin(
+            @QueryParam("date") String date,
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId
+    ) throws WebApplicationException, ProcessingException;
 
     @GET
     @Path("/api/v2/admin/tenants/{id}/ready")
-    WebApiTenantReadiness getTenantReadiness(@PathParam("id") String id,
-                                             @HeaderParam("x-api-key") String apiKey) throws WebApplicationException, ProcessingException;
+    WebApiTenantReadiness getTenantReadiness(
+            @PathParam("id") String id,
+            @HeaderParam("x-api-key") String apiKey
+    ) throws WebApplicationException, ProcessingException;
 }

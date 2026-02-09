@@ -23,6 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.grnet.status.api.resolvers.CheckDateFormat;
 import org.grnet.status.api.resolvers.TenantNameResolver;
 import org.grnet.status.authorizations.dtos.GroupUser;
 import org.grnet.status.authorizations.interceptors.CheckEntitlements;
@@ -30,6 +31,9 @@ import org.grnet.status.authorizations.interceptors.Resolver;
 import org.grnet.status.constraints.NotFoundEntity;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.pagination.PageResource;
+import org.grnet.status.dtos.profile.aggregation.AggregationProfileResponse;
+import org.grnet.status.dtos.profile.metric.MetricProfileResponse;
+import org.grnet.status.dtos.profile.operation.OperationProfileResponse;
 import org.grnet.status.dtos.project.ProjectResponseDto;
 import org.grnet.status.dtos.report.FullReportResponseDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
@@ -38,6 +42,7 @@ import org.grnet.status.dtos.tenant.invitations.TenantInvitationRequest;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
 import org.grnet.status.repositories.TenantInvitationRepository;
 import org.grnet.status.repositories.TenantRepository;
+import org.grnet.status.services.ProfileService;
 import org.grnet.status.services.*;
 import org.grnet.status.util.Utility;
 
@@ -76,6 +81,9 @@ public class TenantEndpoint {
 
     @Inject
     GroupManagementService groupManagementService;
+
+    @Inject
+    ProfileService profileService;
 
     @Operation(
             summary = "List Tenants Available to the User",
@@ -681,6 +689,363 @@ public class TenantEndpoint {
         var response = new InformativeResponse();
         response.code = 200;
         response.message = "Member deleted successfully from group.";
+
+        return Response.ok().entity(response).build();
+    }
+
+    @Tag(name = "Aggregation Profiles")
+    @Operation(
+            summary = "Get a specific aggregation profile.",
+            description = "List one specific operations profile targeted by it's unique id.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Aggregation profile found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = AggregationProfileResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Aggregation profile not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/{id}/aggregation-profiles/{profile_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(role = "admin", resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    @Authenticated
+    public Response listSpecificAggregationProfiles(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
+            @Parameter(description = "The aggregation profile id.",
+                    required = true,
+                    example = "profile-id",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("profile_id") String profileId,
+            @Parameter(name = "date", in = QUERY, description = "Target date to retrieve a historic version of the profile.") @QueryParam("date")
+            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date) {
+
+        var response = profileService.listSpecificAggregationProfiles(id, profileId, date);
+
+        return Response.ok().entity(response).build();
+    }
+
+    @Tag(name = "Aggregation Profiles")
+    @Operation(
+            summary = "List all aggregation profiles.",
+            description = "List all aggregation profiles.")
+    @APIResponse(
+            responseCode = "200",
+            description = "List of aggregation profiles.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = AggregationProfileResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Tenant not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/{id}/aggregation-profiles")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(role = "admin", resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    @Authenticated
+    public Response listAllAggregationProfiles(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
+            @Parameter(name = "date", in = QUERY, description = "Target date to retrieve a historic version of the profile.") @QueryParam("date")
+            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date) {
+
+        var response = profileService.listAllAggregationProfiles(id, date);
+
+        return Response.ok().entity(response).build();
+    }
+
+    @Tag(name = "Metric Profiles")
+    @Operation(
+            summary = "Get a specific metric profile.",
+            description = "List one specific metric profile targeted by it's unique id.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Metric profile found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = MetricProfileResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Metric profile not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/{id}/metric-profiles/{profile_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(role = "admin", resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    @Authenticated
+    public Response listSpecificMetricProfiles(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
+            @Parameter(description = "The metric profile id.",
+                    required = true,
+                    example = "profile-id",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("profile_id") String profileId,
+            @Parameter(name = "date", in = QUERY, description = "Target date to retrieve a historic version of the profile.") @QueryParam("date")
+            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date) {
+
+        var response = profileService.listSpecificMetricProfiles(id, profileId, date);
+
+        return Response.ok().entity(response).build();
+    }
+
+    @Tag(name = "Metric Profiles")
+    @Operation(
+            summary = "List all metric profiles.",
+            description = "List all metric profiles.")
+    @APIResponse(
+            responseCode = "200",
+            description = "List of metric profiles.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = MetricProfileResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Tenant not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/{id}/metric-profiles")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(role = "admin", resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    @Authenticated
+    public Response listAllMetricProfiles(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
+            @Parameter(name = "date", in = QUERY, description = "Target date to retrieve a historic version of the profile.") @QueryParam("date")
+            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date) {
+
+        var response = profileService.listAllMetricProfiles(id, date);
+
+        return Response.ok().entity(response).build();
+    }
+
+    @Tag(name = "Operations Profiles")
+    @Operation(
+            summary = "Get a specific operations profile.",
+            description = "List one specific operations profile targeted by it's unique id.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Operations profile found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = OperationProfileResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Operations profile not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/{id}/operations-profiles/{profile_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(role = "admin", resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    @Authenticated
+    public Response listSpecificOperationsProfiles(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
+            @Parameter(description = "The operations profile id.",
+                    required = true,
+                    example = "profile-id",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("profile_id") String profileId,
+            @Parameter(name = "date", in = QUERY, description = "Target date to retrieve a historic version of the profile.") @QueryParam("date")
+            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date) {
+
+        var response = profileService.listSpecificOperationsProfiles(id, profileId, date);
+
+        return Response.ok().entity(response).build();
+    }
+
+    @Tag(name = "Operations Profiles")
+    @Operation(
+            summary = "List all operations profiles.",
+            description = "List all operations profiles.")
+    @APIResponse(
+            responseCode = "200",
+            description = "List of operations profiles.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = OperationProfileResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Tenant not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/{id}/operations-profiles")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(role = "admin", resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    @Authenticated
+    public Response listAllOperationsProfiles(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
+            @Parameter(name = "date", in = QUERY, description = "Target date to retrieve a historic version of the profile.") @QueryParam("date")
+            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date) {
+
+        var response = profileService.listAllOperationsProfiles(id, date);
 
         return Response.ok().entity(response).build();
     }

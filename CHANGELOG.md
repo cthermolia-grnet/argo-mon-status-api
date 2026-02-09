@@ -56,7 +56,8 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#61](https://github.com/ARGOeu/argo-mon-status-api/pull/1)  ARGO-5304 Add init_compute_engine as a job in the status of tenant
 - [#63](https://github.com/ARGOeu/argo-mon-status-api/pull/63) ARGO-5302 Add search and pagination support to admin members endpoint
 - [#65](https://github.com/ARGOeu/argo-mon-status-api/pull/65) ARGO-5308 Allow super admin and admin to revoke invitations
-- [#69](https://github.com/ARGOeu/argo-mon-status-api/pull/69) ARGO-5301 Mock WebApi in Dev profile #69
+- [#69](https://github.com/ARGOeu/argo-mon-status-api/pull/69) ARGO-5301 Mock WebApi in Dev profile
+- [#81](https://github.com/ARGOeu/argo-mon-status-api/pull/81) ARGO-5342 Create GET endpoints for Profiles
 
 ### Fix
 

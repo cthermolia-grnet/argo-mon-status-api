@@ -199,7 +199,7 @@ public class TenantEndpoint {
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "viewer", resolvers = {
+    @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
             @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response getTenant(
@@ -258,7 +258,7 @@ public class TenantEndpoint {
     @PUT
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "admin", resolvers = {
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
             @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response updateTenant(
@@ -310,7 +310,7 @@ public class TenantEndpoint {
     @SecurityRequirement(name = "Authentication")
     @GET
     @Path("/{id}/projects")
-    @CheckEntitlements(role = "admin", resolvers = {
+    @CheckEntitlements(roles = {"admin", "viewer"}, resolvers = {
             @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Produces(MediaType.APPLICATION_JSON)
@@ -392,7 +392,7 @@ public class TenantEndpoint {
     @SecurityRequirement(name = "Authentication")
     @GET
     @Path("/{id}/members")
-    @CheckEntitlements(role = "admin", resolvers = {
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
             @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Produces(MediaType.APPLICATION_JSON)
@@ -457,7 +457,7 @@ public class TenantEndpoint {
     @Path("/{id}/invitation")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "admin", resolvers = {
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
             @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response notifyAms(
@@ -513,7 +513,7 @@ public class TenantEndpoint {
     @GET
     @Path("/{id}/invitations")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "admin", resolvers = {
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
             @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response getInvitations(
@@ -611,7 +611,7 @@ public class TenantEndpoint {
     @SecurityRequirement(name = "Authentication")
     @PATCH
     @Path("/{id}/invitations/{invitation_id}")
-    @CheckEntitlements(role = "admin", resolvers = {
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
             @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Consumes(MediaType.APPLICATION_JSON)
@@ -667,7 +667,7 @@ public class TenantEndpoint {
     @DELETE
     @Path("/{id}/members/{member_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "admin", resolvers = {
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
             @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Authenticated
@@ -731,7 +731,7 @@ public class TenantEndpoint {
     @GET
     @Path("/{id}/aggregation-profiles/{profile_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "admin", resolvers = {
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
             @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Authenticated
@@ -793,7 +793,7 @@ public class TenantEndpoint {
     @GET
     @Path("/{id}/aggregation-profiles")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "admin", resolvers = {
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
             @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Authenticated
@@ -850,7 +850,7 @@ public class TenantEndpoint {
     @GET
     @Path("/{id}/metric-profiles/{profile_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "admin", resolvers = {
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
             @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Authenticated
@@ -912,7 +912,7 @@ public class TenantEndpoint {
     @GET
     @Path("/{id}/metric-profiles")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "admin", resolvers = {
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
             @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Authenticated
@@ -969,7 +969,7 @@ public class TenantEndpoint {
     @GET
     @Path("/{id}/operations-profiles/{profile_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "admin", resolvers = {
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
             @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Authenticated
@@ -1031,7 +1031,7 @@ public class TenantEndpoint {
     @GET
     @Path("/{id}/operations-profiles")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "admin", resolvers = {
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
             @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Authenticated
@@ -1097,7 +1097,7 @@ public class TenantEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
 
-    @CheckEntitlements(role = "admin", resolvers = {
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
             @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response fetchReportByID(@Parameter(

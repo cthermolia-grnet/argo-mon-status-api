@@ -95,7 +95,7 @@ public class ReportEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/encrypt")
-    @CheckEntitlements(role = "member")
+    @CheckEntitlements(roles = {"member"})
     public Response encrypt(EncryptRequestDto request) {
 
         var response = reportService.encrypt(request);
@@ -156,7 +156,7 @@ public class ReportEndpoint {
     @Path("/reports")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "member")
+    @CheckEntitlements(roles = {"member"})
     public Response fetchReports(@Valid ReportRequestDto request) {
 
             var reports = reportService.fetchReports(request);

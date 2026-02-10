@@ -76,7 +76,7 @@ public class AutomationEndpoint {
                     implementation = InformativeResponse.class)))
     @PATCH
     @Path("/tenants/{id}/status")
-    @CheckEntitlements(role = "admin")
+    @CheckEntitlements(roles = {"admin"})
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateStatus(@PathParam("id")
                                  @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
@@ -123,7 +123,7 @@ public class AutomationEndpoint {
 
     @GET
     @Path("/tenants/{id}/status")
-    @CheckEntitlements(role = "admin")
+    @CheckEntitlements(roles = {"admin"})
     @Produces(MediaType.APPLICATION_JSON)
     public Response getTenantStatus(@Parameter(
             description = "The ID of the tenant to retrieve status.",

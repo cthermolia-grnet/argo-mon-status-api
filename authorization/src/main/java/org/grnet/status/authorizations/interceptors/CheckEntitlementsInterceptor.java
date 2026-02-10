@@ -51,9 +51,7 @@ public class CheckEntitlementsInterceptor {
                 ? classAnn.group()
                 : "";
 
-        var role = (methodAnn != null && !methodAnn.role().isBlank())
-                ? methodAnn.role()
-                : "";
+        var roles = methodAnn != null ? methodAnn.roles() : new String[0];
 
         var isSuperAdmin = accessControlService.isSuperAdmin();
 
@@ -88,12 +86,14 @@ public class CheckEntitlementsInterceptor {
             }
         }
 
-        var allowed = accessControlService.hasAccess(role, groups.stream().filter(s -> s != null && !s.isBlank()).collect(Collectors.toList()), group);
+        for(String role:roles){
 
-        if (!allowed) {
-            throw new ForbiddenException("Access denied.");
+            if(accessControlService.hasAccess(role, groups.stream().filter(s -> s != null && !s.isBlank()).collect(Collectors.toList()), group)){
+
+                return ctx.proceed();
+            }
         }
 
-        return ctx.proceed();
+        throw new ForbiddenException("Access denied.");
     }
 }

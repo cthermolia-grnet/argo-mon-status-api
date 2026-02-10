@@ -17,8 +17,7 @@ public @interface CheckEntitlements {
     @Nonbinding
     String group() default "";
 
-    @Nonbinding
-    String role() default "";
+    @Nonbinding String[] roles() default {};
 
     @Nonbinding
     Resolver[] resolvers() default {};

@@ -93,7 +93,7 @@ public class TenantInvitationEndpoint {
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "member")
+    @CheckEntitlements(roles = {"member"})
     public Response getInvitationById(
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantInvitationRepository.class, message = "There is no Invitation with the following id: ")
@@ -149,7 +149,7 @@ public class TenantInvitationEndpoint {
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "member")
+    @CheckEntitlements(roles = {"member"})
     public Response respond(
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantInvitationRepository.class, message = "There is no Invitation with the following id: ") String id,
@@ -197,7 +197,7 @@ public class TenantInvitationEndpoint {
     @SecurityRequirement(name = "Authentication")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(role = "member")
+    @CheckEntitlements(roles = {"member"})
     public Response getInvite(
             @Parameter(name = "page", in = QUERY,
                     description = "Page number. Must be >= 1.")

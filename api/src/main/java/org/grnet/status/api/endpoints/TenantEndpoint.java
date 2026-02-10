@@ -35,6 +35,8 @@ import org.grnet.status.dtos.profile.aggregation.AggregationProfileResponse;
 import org.grnet.status.dtos.profile.metric.MetricProfileResponse;
 import org.grnet.status.dtos.profile.operation.OperationProfileResponse;
 import org.grnet.status.dtos.project.ProjectResponseDto;
+import org.grnet.status.dtos.readiness.TenantReadiness;
+import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
 import org.grnet.status.dtos.report.FullReportResponseDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
@@ -42,7 +44,6 @@ import org.grnet.status.dtos.tenant.invitations.TenantInvitationRequest;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
 import org.grnet.status.repositories.TenantInvitationRepository;
 import org.grnet.status.repositories.TenantRepository;
-import org.grnet.status.services.ProfileService;
 import org.grnet.status.services.*;
 import org.grnet.status.util.Utility;
 
@@ -1160,4 +1161,55 @@ public class TenantEndpoint {
             this.content = content;
         }
     }
+
+
+
+    @Tag(name = "Tenant")
+    @Operation(
+            summary = "Check tenant's readiness.",
+            description = "Returns true if tenant is ready or false if it is not. "
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "Tenant's readiness details.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = WebApiTenantReadiness.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Tenant's Readiness not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                     implementation = InformativeResponse.class)))
+    @GET
+    @Path("/{id}/check-readiness")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response checkReadiness(
+            @Parameter(
+                    description = "The ID of the tenant to check readiness.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            String id) {
+        var response = tenantService.checkReadiness(id);
+
+        return Response.ok(response).build();
+    }
+
 }

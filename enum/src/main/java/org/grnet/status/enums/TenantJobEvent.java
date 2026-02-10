@@ -15,6 +15,8 @@ public enum TenantJobEvent {
     INIT_MONGO("init_mongo", EventMode.AUTO, Set.of(TenantJobProperty.TENANT_ID, TenantJobProperty.TENANT_NAME)),
     INIT_COMPUTE_ENGINE("init_compute_engine", EventMode.AUTO, Set.of(TenantJobProperty.TENANT_ID, TenantJobProperty.TENANT_NAME)),
 
+    CHECK_READINESS("check_readiness", EventMode.AUTO, Set.of(TenantJobProperty.TENANT_ID, TenantJobProperty.TENANT_NAME)),
+
     // Manual jobs (completed by admin actions)
 
     CREATE_DOMAIN_NAMES("create_domain_names", EventMode.MANUAL, Set.of()), // no properties for now

@@ -6,10 +6,11 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.grnet.status.dtos.Status;
+import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
-import org.grnet.status.dtos.tenant.webapi.TenantWebApiResponse;
 import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.services.utils.EncryptUtil;
 
@@ -80,7 +81,7 @@ public class WebApiService {
 //        return argoWebApiClientFactory.buildClient(webapi);
 //    }
 
-    public TenantWebApiResponse updateTenantWebApi(TenantWebApiRequest webApiRequest, String id) {
+    public Status updateTenantWebApi(TenantWebApiRequest webApiRequest, String id) {
         try {
 
             // var client = produceClient();
@@ -92,4 +93,22 @@ public class WebApiService {
             throw new WebApplicationException("Remote API update failed: " + e.getMessage(), 502);
         }
     }
+
+
+    public WebApiTenantReadiness retrieveTenantReadinessWebApi(String id) throws JsonProcessingException {
+        try {
+
+            //  var client = produceClient();
+            return argoWebApiClient.getTenantReadiness(id,accessToken);
+
+        } catch (RuntimeException e) {
+            int status = 500; // default fallback
+            if (e instanceof WebApplicationException) {
+                status = ((WebApplicationException) e).getResponse().getStatus();
+            }
+            var message = e.getMessage();
+            throw new WebApplicationException("tenant with id " + id + "failed in api " + message, status);
+        }
+    }
+
 }

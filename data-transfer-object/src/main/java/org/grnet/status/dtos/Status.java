@@ -1,4 +1,4 @@
-package org.grnet.status.dtos.profile.operation;
+package org.grnet.status.dtos;
 
 public class Status {
 

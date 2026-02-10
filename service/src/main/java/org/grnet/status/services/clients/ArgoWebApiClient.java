@@ -3,16 +3,18 @@ package org.grnet.status.services.clients;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
+import org.grnet.status.dtos.Status;
 import org.grnet.status.dtos.argo.ArgoReportsResponse;
 import org.grnet.status.dtos.argo.ArgoStatusGroupsResponse;
 import org.grnet.status.dtos.profile.aggregation.AggregationProfileResponse;
 import org.grnet.status.dtos.profile.metric.MetricProfileResponse;
 import org.grnet.status.dtos.profile.operation.OperationProfileResponse;
+import org.grnet.status.dtos.readiness.TenantReadiness;
+import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
 import org.grnet.status.dtos.report.WebApiReportResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
-import org.grnet.status.dtos.tenant.webapi.TenantWebApiResponse;
 
 @RegisterRestClient(configKey = "argo-web-api")
 @Produces(MediaType.APPLICATION_JSON)
@@ -46,14 +48,14 @@ public interface ArgoWebApiClient {
 
     @PUT
     @Path("/api/v2/admin/tenants/{id}")
-    TenantWebApiResponse updateTenant(  @PathParam("id") String id,
+    Status updateTenant(  @PathParam("id") String id,
                                       @HeaderParam("x-api-key") String apiKey,
                                       TenantWebApiRequest request
     ) throws WebApplicationException, ProcessingException;
 
     @DELETE
     @Path("/api/v2/admin/tenants/{id}")
-    TenantWebApiResponse deleteTenant(
+    Status deleteTenant(
             @PathParam("id") String id, @HeaderParam("x-api-key") String apiKey) throws WebApplicationException, ProcessingException;
 
     @GET
@@ -64,7 +66,7 @@ public interface ArgoWebApiClient {
 
     @PUT
     @Path("/api/v2/admin/tenants/{id}/info")
-    TenantWebApiResponse updateTenantInfo( @PathParam("id") String id,
+    Status updateTenantInfo( @PathParam("id") String id,
                                           @HeaderParam("x-api-key") String apiKey,
                                           TenantWebApiRequest request
     ) throws WebApplicationException, ProcessingException;
@@ -72,15 +74,15 @@ public interface ArgoWebApiClient {
 
     @PUT
     @Path("/api/v2/admin/tenants/{id}/topology")
-    TenantWebApiResponse updateTenantTopology( @PathParam("id") String id,
+    Status updateTenantTopology( @PathParam("id") String id,
                                               @HeaderParam("x-api-key") String apiKey,
                                               TenantWebApiRequest request
     ) throws WebApplicationException, ProcessingException;
 
     @PUT
     @Path("/api/v2/admin/tenants/{id}/db-conf")
-    TenantWebApiResponse updateTenantDBConf( @PathParam("id") String id,
-                                              @HeaderParam("x-api-key") String apiKey, TenantWebApiRequest request) throws WebApplicationException, ProcessingException;
+    Status updateTenantDBConf(@PathParam("id") String id,
+                              @HeaderParam("x-api-key") String apiKey, TenantWebApiRequest request) throws WebApplicationException, ProcessingException;
 
     @GET
     @Path("/api/v2/operations_profiles/{id}")
@@ -115,4 +117,10 @@ public interface ArgoWebApiClient {
     @Path("/api/v2/metric_profiles")
     MetricProfileResponse listAllMetricProfiles(@QueryParam("date") String date,
                                                           @HeaderParam("x-api-key") String apiKey) throws WebApplicationException, ProcessingException;
+
+
+    @GET
+    @Path("/api/v2/admin/tenants/{id}/ready")
+    WebApiTenantReadiness getTenantReadiness(@PathParam("id") String id,
+                                             @HeaderParam("x-api-key") String apiKey) throws WebApplicationException, ProcessingException;
 }

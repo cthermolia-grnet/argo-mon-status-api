@@ -18,6 +18,8 @@ import org.grnet.status.authorizations.service.AccessControlService;
 import org.grnet.status.authorizations.service.AuthGroupSetupService;
 import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.dtos.pagination.PageResource;
+import org.grnet.status.dtos.readiness.TenantReadiness;
+import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
 import org.grnet.status.dtos.tenant.ContactDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
@@ -80,7 +82,6 @@ public class TenantService {
     AmsService amsService;
 
 
-
     private final ExecutorService executorService = Executors.newFixedThreadPool(2); // Adjust as needed
 
     public TenantResponseDto create(TenantRequestDto request, String userId) throws IOException {
@@ -115,7 +116,7 @@ public class TenantService {
 
         var existTenantOpt = tenantRepository.fetchTenantByName(request.info.name);
         if (existTenantOpt.isPresent()) {
-            var message = "Tenant: "+existTenantOpt.get().name+" already exists in ARGO Mon Status API with id: "+existTenantOpt.get().id;
+            var message = "Tenant: " + existTenantOpt.get().name + " already exists in ARGO Mon Status API with id: " + existTenantOpt.get().id;
             throw new CustomRuntimeException(409, message, new HashSet<>());
         }
         handleImage(request);
@@ -298,9 +299,9 @@ public class TenantService {
         // ------------------------------
 
         // create an initial webApiRequest with the existing web api data for the tenant
-        var webApiRequest=TenantMapper.INSTANCE.dataToTenantWebApiRequest(previousWebApiTenant.getData().get(0));
+        var webApiRequest = TenantMapper.INSTANCE.dataToTenantWebApiRequest(previousWebApiTenant.getData().get(0));
         //update the initial webApiRequest with the new data for info and topology while keeping users and dbConf as it is
-        TenantMapper.INSTANCE.updateExistingWebApiRequest(request,webApiRequest);
+        TenantMapper.INSTANCE.updateExistingWebApiRequest(request, webApiRequest);
 
         //updates the tenant in the webApi
         webApiService.updateTenantWebApi(webApiRequest, id);
@@ -538,9 +539,9 @@ public class TenantService {
     public TenantStatusDto updateTenantAlerts(String id, @Valid TenantStatusDto request) throws IOException {
 
         var tenant = tenantRepository.findById(id);
-       if (tenant==null){
-           return null;
-       }
+        if (tenant == null) {
+            return null;
+        }
         var existingStatus = TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
         request.jobs = mergeJobs(existingStatus.jobs, request.jobs);
 
@@ -594,7 +595,7 @@ public class TenantService {
                     newJob.properties = oldJob.properties;
                 }
             }
-                map.put(newJob.name, newJob);
+            map.put(newJob.name, newJob);
 
 
         }
@@ -662,7 +663,7 @@ public class TenantService {
 
         validateAlertProperties(alert.name, alert.properties);
 
-        alert.getProperties().put("tenant_id",id);
+        alert.getProperties().put("tenant_id", id);
         alert.setCreatedAt(String.valueOf(now));
         send(id, alert);
 
@@ -673,6 +674,7 @@ public class TenantService {
         }
         return null;
     }
+
     // send notifications to AMS to initialize ams and mongo
     private void sendNotifications(Tenant tenant) {
 
@@ -702,7 +704,7 @@ public class TenantService {
             var json = objectMapper.writeValueAsString(alert);
 
             Log.infof("Sending to Messaging Service | project=%s | topic=%s notification for: tenantId=%s | event=%s | properties=%s | created_at=%s",
-                    amsService.getProject(), amsService.getTopic(), id, alert.name, alert.properties, alert.createdAt);
+                    amsService.getProject(), amsService.getTopic(), id, alert.name.toUpperCase(), alert.properties, alert.createdAt);
 
             var encodedData = Base64.getEncoder().encodeToString(json.getBytes());
 
@@ -714,8 +716,7 @@ public class TenantService {
 
             // 1. Immediately update status to INITIALISING before async publish
             updateTenantAlerts(id, setAlert(alert.name, EventStatus.INITIALISING,
-                    "Event notification:"+alert.name+" is sent to Messaging Service for publishing", now, alert.properties));
-
+                    "Event notification:" + alert.name + " is sent to Messaging Service for publishing", now, alert.properties));
             // 2. fire-and-forget async publish
             CompletableFuture
                     .runAsync(() -> {
@@ -725,7 +726,7 @@ public class TenantService {
                         // Update status to INITIALISED after publishMessage returns
                         try {
                             updateTenantAlerts(id, setAlert(alert.name, EventStatus.INITIALISED,
-                                    "Event notification: "+alert.name+"is initialising to Messaging Service", now, alert.properties));
+                                    "Event notification: " + alert.name + "is initialising to Messaging Service", now, alert.properties));
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -735,14 +736,14 @@ public class TenantService {
                             if (throwable == null) {
                                 // Update status to PUBLISHED on successful completion
                                 updateTenantAlerts(id, setAlert(alert.name, EventStatus.INITIALISED,
-                                        "Event notification: "+ alert.name+" initialised successfully to Messaging Service", now, alert.properties));
+                                        "Event notification: " + alert.name + " initialised successfully to Messaging Service", now, alert.properties));
                                 Log.debugf("Messaging Service publish succeeded for tenantId=%s, alert=%s", id, alert.name);
 
                             } else {
                                 // Failure case
                                 Log.errorf(throwable, "Messaging Service publish failed for tenantId=%s, alert=%s", id, alert.name);
                                 updateTenantAlerts(id, setAlert(alert.name, EventStatus.FAILED_INITIALISATION,
-                                        "Event notification: "+ alert.name+" failed to be initialised to Messaging Service", now, alert.properties));
+                                        "Event notification: " + alert.name + " failed to be initialised to Messaging Service", now, alert.properties));
                             }
                         } catch (Exception e) {
                             Log.error("Failed to update tenant status", e);
@@ -753,7 +754,7 @@ public class TenantService {
             Log.error("Failed to send alert to Messaging Service", e);
             Log.errorf(e, "Failed to send event notification for  tenantId=%s, alert=%s to Messaging Service", id, alert.name);
 
-            throw new RuntimeException("Failed to send event notification: "+alert.name+" to Messaging Service", e);
+            throw new RuntimeException("Failed to send event notification: " + alert.name + " to Messaging Service", e);
         }
     }
 
@@ -871,4 +872,19 @@ public class TenantService {
             }
         }
     }
+
+    /**
+     * Check the readiness of a tenant by Id.
+     */
+    @Transactional
+    public WebApiTenantReadiness checkReadiness(String id) {
+        try {
+            var tenant = tenantRepository.findById(id);
+            return webApiService.retrieveTenantReadinessWebApi(tenant.id);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
 }

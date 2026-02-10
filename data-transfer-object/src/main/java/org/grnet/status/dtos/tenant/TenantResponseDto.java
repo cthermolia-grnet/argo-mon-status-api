@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.grnet.status.dtos.readiness.TenantReadiness;
 import org.grnet.status.dtos.tenant.metadata.TenantMetadata;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.enums.TenantGroupStatus;
@@ -60,7 +61,6 @@ public class TenantResponseDto {
     @JsonProperty("status")
     @Valid
     public TenantStatusDto status;
-
 
     @Schema(
             description = "Indicates whether the tenant group exists in the IAM system",

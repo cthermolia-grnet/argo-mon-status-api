@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.grnet.status.dtos.readiness.TenantReadiness;
 
 @Schema(name = "TenantStatusFullResponse", description = "Represents the response of a tenant's status with name info.")
 public class TenantStatusFullResponse {
@@ -24,5 +25,15 @@ public class TenantStatusFullResponse {
     @JsonProperty("status")
     @Valid
     public TenantStatusDto status;
+
+
+    @Schema(
+            type = SchemaType.OBJECT,
+            implementation = TenantReadiness.class,
+            description = "Tenant Readiness "
+    )
+    @JsonProperty("readiness")
+    @Valid
+    public TenantReadiness readiness;
 
 }

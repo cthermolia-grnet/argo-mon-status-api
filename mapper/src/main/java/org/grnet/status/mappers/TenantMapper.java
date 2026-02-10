@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.inject.Inject;
+import org.grnet.status.dtos.readiness.TenantReadiness;
 import org.grnet.status.dtos.tenant.*;
 import org.grnet.status.dtos.tenant.metadata.TenantMetadata;
 import org.grnet.status.dtos.tenant.metadata.TenantTopologyDto;
@@ -319,6 +320,18 @@ public interface TenantMapper {
         }
     }
 
+    // Map TenantReadiness → String JSON
+    default String mapReadinessToString(TenantReadiness readiness)  {
+        if (readiness == null) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(readiness);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize readiness JSON", e);
+        }
+    }
+
     // Map TenantMetadata → String JSON
     default String mapStatusToString(TenantStatusDto status)  {
         if (status == null) {
@@ -351,6 +364,16 @@ public interface TenantMapper {
             return objectMapper.readValue(json, TenantStatusDto.class);
         } catch (Exception e) {
             throw new RuntimeException("Failed to deserialize status JSON", e);
+        }
+    }
+    default TenantReadiness mapReadinessFromString(String json) {
+        if (json == null || json.isBlank()) {
+            return new TenantReadiness();
+        }
+        try {
+            return objectMapper.readValue(json, TenantReadiness.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to deserialize readiness JSON", e);
         }
     }
 //    default TenantStatusDto mapAlertsFromString(String json) {

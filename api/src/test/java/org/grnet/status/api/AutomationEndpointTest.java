@@ -4,6 +4,7 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.grnet.status.dtos.Status;
 import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.dtos.ams.PublishResponse;
 import org.grnet.status.dtos.tenant.ContactDto;
@@ -131,7 +132,7 @@ public class AutomationEndpointTest extends KeycloakTest {
                 .extract()
                 .as(TenantStatusFullResponse.class);
 
-        assertEquals(7, updated.status.jobs.size());
+        assertEquals(8, updated.status.jobs.size());
         assertEquals(EventName.INIT_AMS.name(), updated.status.jobs.get(0).name);
         assertEquals(EventStatus.COMPLETED.name(), updated.status.jobs.get(0).status);
     }
@@ -142,7 +143,7 @@ public class AutomationEndpointTest extends KeycloakTest {
         var tenantWebApiResponse = new TenantWebApiCreateResponse();
         var data = new TenantWebApiCreateResponse.Data();
         var link = new TenantWebApiCreateResponse.Links();
-        var status = new TenantWebApiCreateResponse.Status();
+        var status = new Status();
         status.setCode("200");
         status.setMessage("Τenant was succesfully created");
         link.setSelf("https://https://test.api.grnet.gr/api/v2/admin/tenants/e1ab046c-8544-47e6-bd8f-e8aa8b83acb3");
@@ -158,7 +159,7 @@ public class AutomationEndpointTest extends KeycloakTest {
         var tenantWebApiResponse = new TenantWebApiCreateResponse();
         var data = new TenantWebApiCreateResponse.Data();
         var link = new TenantWebApiCreateResponse.Links();
-        var status = new TenantWebApiCreateResponse.Status();
+        var status = new Status();
         status.setCode("200");
         status.setMessage("Τenant was succesfully created");
         link.setSelf("https://https://test.api.grnet.gr/api/v2/admin/tenants/e1ab046c-8544-47e6-bd8f-e8aa8b83acb3");

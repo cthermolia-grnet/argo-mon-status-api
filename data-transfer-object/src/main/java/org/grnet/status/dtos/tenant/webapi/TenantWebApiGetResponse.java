@@ -1,6 +1,7 @@
 package org.grnet.status.dtos.tenant.webapi;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.grnet.status.dtos.Status;
 
 import java.util.List;
 
@@ -26,27 +27,6 @@ public class TenantWebApiGetResponse {
         this.data = data;
     }
 
-    // Nested classes
-    public static class Status {
-        private String message;
-        private String code;
-
-        public String getMessage() {
-            return message;
-        }
-
-        public void setMessage(String message) {
-            this.message = message;
-        }
-
-        public String getCode() {
-            return code;
-        }
-
-        public void setCode(String code) {
-            this.code = code;
-        }
-    }
 
     public static class Data {
         private String id;

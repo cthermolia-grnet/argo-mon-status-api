@@ -1,6 +1,6 @@
 package org.grnet.status.dtos.profile.metric;
 
-import org.grnet.status.dtos.profile.operation.Status;
+import org.grnet.status.dtos.Status;
 
 import java.util.List;
 

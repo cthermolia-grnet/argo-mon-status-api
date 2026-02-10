@@ -23,10 +23,12 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.grnet.status.api.resolvers.TenantNameResolver;
 import org.grnet.status.authorizations.dtos.GroupUserResponse;
 import org.grnet.status.authorizations.dtos.MemberRequest;
 import org.grnet.status.authorizations.dtos.PartialGroup;
 import org.grnet.status.authorizations.interceptors.CheckEntitlements;
+import org.grnet.status.authorizations.interceptors.Resolver;
 import org.grnet.status.constraints.NotFoundEntity;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.pagination.PageResource;
@@ -1298,7 +1300,7 @@ public class AdminEndpoint {
     @Path("/groups")
     @Produces(MediaType.APPLICATION_JSON)
     public Response fetchGroups(@Parameter(name = "page", in = QUERY,
-            description = "Indicates the page number. Page number must be >= 1.")
+                                        description = "Indicates the page number. Page number must be >= 1.")
                                 @DefaultValue("1") @Min(value = 1, message = "Page number must be >= 1.")
                                 @QueryParam("page")
                                 int page,
@@ -1370,7 +1372,7 @@ public class AdminEndpoint {
 
             @Context UriInfo uriInfo) {
 
-        var project = groupManagementService.getAllMembers("members", search, page -1, size, uriInfo);
+        var project = groupManagementService.getAllMembers("members", search, page - 1, size, uriInfo);
 
         return Response.ok().entity(project).build();
     }
@@ -1808,4 +1810,5 @@ public class AdminEndpoint {
             this.content = content;
         }
     }
+
 }

@@ -1,6 +1,7 @@
 package org.grnet.status.dtos.tenant.webapi;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.grnet.status.dtos.Status;
 
 @Schema(name = "TenantWebApiResponse", description = "Represents the response of a tenant.")
 public class TenantWebApiCreateResponse {
@@ -23,28 +24,6 @@ public class TenantWebApiCreateResponse {
 
         public void setData(Data data) {
             this.data = data;
-        }
-
-        // Nested classes for structure
-        public static class Status {
-            private String message;
-            private String code;
-
-            public String getMessage() {
-                return message;
-            }
-
-            public void setMessage(String message) {
-                this.message = message;
-            }
-
-            public String getCode() {
-                return code;
-            }
-
-            public void setCode(String code) {
-                this.code = code;
-            }
         }
 
         public static class Data {

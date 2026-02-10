@@ -6,25 +6,23 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.InformativeResponse;
+import org.grnet.status.dtos.Status;
 import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.dtos.ams.PublishResponse;
 import org.grnet.status.dtos.argo.ArgoReportsResponse;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.project.ProjectRequestDto;
 import org.grnet.status.dtos.project.ProjectResponseDto;
-import org.grnet.status.dtos.report.FullReportResponseDto;
 import org.grnet.status.dtos.report.WebApiReportResponse;
 import org.grnet.status.dtos.tenant.*;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
-import org.grnet.status.dtos.tenant.webapi.TenantWebApiResponse;
 import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
 import org.grnet.status.services.clients.AmsClient;
 import org.grnet.status.services.clients.AmsClientFactory;
 import org.grnet.status.services.clients.ArgoWebApiClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mapstruct.ap.internal.gem.TargetTypeGem;
 
 import java.io.InputStream;
 import java.sql.Timestamp;
@@ -99,7 +97,7 @@ public class TenantEndpointTest extends KeycloakTest {
         var tenantWebApiResponse = new TenantWebApiCreateResponse();
         var data = new TenantWebApiCreateResponse.Data();
         var link = new TenantWebApiCreateResponse.Links();
-        var status = new TenantWebApiCreateResponse.Status();
+        var status = new Status();
         status.setCode("200");
         status.setMessage("Τenant was succesfully created");
         link.setSelf("https://https://test.api.grnet.gr/api/v2/admin/tenants/e1ab046c-8544-47e6-bd8f-e8aa8b83acb3");
@@ -139,7 +137,7 @@ public class TenantEndpointTest extends KeycloakTest {
 
         tenantWebApiResponse.getData().add(data);
         data.setInfo(info);
-        var status = new TenantWebApiGetResponse.Status();
+        var status = new Status();
         status.setCode("200");
         status.setMessage("Τenant was succesfully created");
         tenantWebApiResponse.setStatus(status);

@@ -1,16 +1,13 @@
-package org.grnet.status.dtos.profile.operation;
+package org.grnet.status.dtos.readiness;
 
 import org.grnet.status.dtos.Status;
 
 import java.util.List;
 
-public class OperationProfileResponse {
-
+public class WebApiTenantReadiness {
     private Status status;
+    private TenantReadiness data;
 
-    private List<OperationProfile> data;
-
-    // getters & setters
     public Status getStatus() {
         return status;
     }
@@ -19,11 +16,12 @@ public class OperationProfileResponse {
         this.status = status;
     }
 
-    public List<OperationProfile> getData() {
+    public TenantReadiness getData() {
         return data;
     }
 
-    public void setData(List<OperationProfile> data) {
+    public void setData(TenantReadiness data) {
         this.data = data;
     }
 }
+

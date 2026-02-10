@@ -8,6 +8,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.api.endpoints.AdminEndpoint;
 import org.grnet.status.authorizations.service.AuthGroupSetupService;
 import org.grnet.status.dtos.InformativeResponse;
+import org.grnet.status.dtos.Status;
 import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.dtos.ams.PublishResponse;
 import org.grnet.status.dtos.pagination.PageResource;
@@ -137,7 +138,7 @@ public class AdminEndpointTest extends KeycloakTest {
         var tenantWebApiResponse = new TenantWebApiCreateResponse();
         var data = new TenantWebApiCreateResponse.Data();
         var link = new TenantWebApiCreateResponse.Links();
-        var status = new TenantWebApiCreateResponse.Status();
+        var status = new Status();
         status.setCode("200");
         status.setMessage("Τenant was succesfully created");
         link.setSelf("https://https://test.api.grnet.gr/api/v2/admin/tenants/e1ab046c-8544-47e6-bd8f-e8aa8b83acb3");
@@ -165,7 +166,7 @@ public class AdminEndpointTest extends KeycloakTest {
         data.setInfo(info);
         tenantWebApiResponse.getData().add(data);
         data.setInfo(info);
-        var status = new TenantWebApiGetResponse.Status();
+        var status = new Status();
         status.setCode("200");
         status.setMessage("Τenant was succesfully created");
         tenantWebApiResponse.setStatus(status);
@@ -652,9 +653,9 @@ public class AdminEndpointTest extends KeycloakTest {
                 .extract()
                 .as(TenantStatusFullResponse.class);
 
-        assertEquals(7, updated.status.jobs.size());
-        assertEquals(job.name, updated.status.jobs.get(1).name);
-        assertEquals(job.status, updated.status.jobs.get(1).status);
+        assertEquals(8, updated.status.jobs.size());
+        assertEquals(job.name, updated.status.jobs.get(2).name);
+        assertEquals(job.status, updated.status.jobs.get(2).status);
     }
 
     @Test

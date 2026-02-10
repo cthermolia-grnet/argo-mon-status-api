@@ -4,6 +4,7 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.grnet.status.dtos.Status;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.tenant.ContactDto;
 import org.grnet.status.dtos.tenant.TenantInfoDto;
@@ -386,7 +387,7 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
         var tenantWebApiResponse = new TenantWebApiCreateResponse();
         var data = new TenantWebApiCreateResponse.Data();
         var link = new TenantWebApiCreateResponse.Links();
-        var status = new TenantWebApiCreateResponse.Status();
+        var status = new Status();
         status.setCode("200");
         status.setMessage("Τenant was succesfully created");
         link.setSelf("https://https://test.api.grnet.gr/api/v2/admin/tenants/" + id);
@@ -412,7 +413,7 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
         info.setUpdated("2025-01-02 00:00:00");
         data.setInfo(info);
         tenantWebApiResponse.getData().add(data);
-        var status = new TenantWebApiGetResponse.Status();
+        var status = new Status();
         status.setCode("200");
         status.setMessage("Τenant was succesfully created");
         tenantWebApiResponse.setStatus(status);

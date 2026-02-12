@@ -90,8 +90,9 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#77](https://github.com/ARGOeu/argo-mon-status-api/pull/77) ARGO-5319: Make the web-api error better for users
 - [#78](https://github.com/ARGOeu/argo-mon-status-api/pull/78) ARGO-5340 Improve invitation links and async group assignment on accept
 - [#79](https://github.com/ARGOeu/argo-mon-status-api/pull/79) ARGO-5348 Fix report id to fetch report
--[#80](https://github.com/ARGOeu/argo-mon-status-api/pull/80) ARGO-5349: Fix add user to tenant group via invitation
--[#87](https://github.com/ARGOeu/argo-mon-status-api/pull/87) ARGO-5366 Fix @POST to @GET to fetch reports
+- [#80](https://github.com/ARGOeu/argo-mon-status-api/pull/80) ARGO-5349: Fix add user to tenant group via invitation
+- [#87](https://github.com/ARGOeu/argo-mon-status-api/pull/87) ARGO-5366 Fix @POST to @GET to fetch reports
+- [#90](https://github.com/ARGOeu/argo-mon-status-api/pull/90) ARGO-5368 Fix Filter Tags to tenant's report
 
 
 ### Removed

@@ -146,22 +146,13 @@ public class AuthGroupManagement implements GroupManagement {
         return map;
     }
 
-
     @Override
-    public List<GroupUser> fetchGroupMembers(String fullPath) {
+    public GroupMembersResponse fetchGroupMembers(String fullPath, int first, int max) {
 
         var groupId = getGroupIdByPath(fullPath);
-        var response = groupClient.getGroupMembers(groupId);
 
-        if (response == null || response.results == null) {
-            return List.of();
-        }
-
-        return response.results.stream()
-                .map(entry -> entry.user)
-                .toList();
+        return groupClient.getGroupMembers(groupId, first, max, "");
     }
-
 
     @Override
     public List<GroupUser> fetchGroupMembersByRole(String fullPath, String role) {
@@ -187,13 +178,9 @@ public class AuthGroupManagement implements GroupManagement {
 
         var groupId = getGroupIdByPath(fullPath);
 
-        var members = groupClient.getGroupMembers(groupId);
-        var results = (members == null || members.results == null) ? List.<GroupMemberEntry>of() : members.results;
+        var response = groupClient.getGroupMembers(groupId, 0, 10, username);
 
-        var alreadyMember = results.stream()
-                .anyMatch(m -> m != null && m.user != null && username.equalsIgnoreCase(m.user.username));
-
-        if (alreadyMember) {
+        if(response.count>0){
             return;
         }
 
@@ -203,13 +190,9 @@ public class AuthGroupManagement implements GroupManagement {
     @Override
     public void addMemberToGroupByGroupId(String id, String username, String role) {
 
-        var members = groupClient.getGroupMembers(id);
-        var results = (members == null || members.results == null) ? List.<GroupMemberEntry>of() : members.results;
+        var response = groupClient.getGroupMembers(id, 0, 10, username);
 
-        var alreadyMember = results.stream()
-                .anyMatch(m -> m != null && m.user != null && username.equalsIgnoreCase(m.user.username));
-
-        if (alreadyMember) {
+        if (response.count>0) {
             return;
         }
 

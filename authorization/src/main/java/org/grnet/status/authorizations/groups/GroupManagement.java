@@ -23,8 +23,7 @@ public interface GroupManagement {
     void deleteGroup(String fullGroupPath);
 
     /** Fetch members of a group. */
-    List<GroupUser> fetchGroupMembers(String groupPath);
-
+    GroupMembersResponse fetchGroupMembers(String groupPath, int first, int max);
 
     /** Assign one role to an existing group. */
     void addRole(String groupId, String role);

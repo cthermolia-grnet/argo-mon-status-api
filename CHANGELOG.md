@@ -58,10 +58,9 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#65](https://github.com/ARGOeu/argo-mon-status-api/pull/65) ARGO-5308 Allow super admin and admin to revoke invitations
 - [#69](https://github.com/ARGOeu/argo-mon-status-api/pull/69) ARGO-5301 Mock WebApi in Dev profile
 - [#81](https://github.com/ARGOeu/argo-mon-status-api/pull/81) ARGO-5342 Create GET endpoints for Profiles
-<<<<<<< HEAD
 - [#83](https://github.com/ARGOeu/argo-mon-status-api/pull/83) ARGO-5351 Support Multiple Roles in Authorization Entitlement Checks
-=======
 - [#84](https://github.com/ARGOeu/argo-mon-status-api/pull/84) ARGO-5336 check tenant readiness - quarkus api
+- [#86](https://github.com/ARGOeu/argo-mon-status-api/pull/86) ARGO-5365 Add conversion from page/size parameters to first/max for pagination
 
 >>>>>>> check readiness
 

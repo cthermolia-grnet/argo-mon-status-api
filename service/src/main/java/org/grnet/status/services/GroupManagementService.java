@@ -10,6 +10,7 @@ import org.grnet.status.authorizations.dtos.GroupUser;
 import org.grnet.status.authorizations.dtos.GroupUserResponse;
 import org.grnet.status.authorizations.dtos.PartialGroup;
 import org.grnet.status.authorizations.groups.GroupManagement;
+import org.grnet.status.authorizations.groups.GroupMembersResponse;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.entities.Page;
 import org.grnet.status.entities.PageQueryImpl;
@@ -49,7 +50,23 @@ public class GroupManagementService {
 
     public PageResource<GroupUser> getAllMembers(String groupName, String search, int page, int size, UriInfo uriInfo) {
 
-        var members = getMembers(groupName);
+        var response = getMembers(groupName, page*size, size);
+
+        var members = response
+                .results
+                .stream()
+                .map(g->g.user)
+                .map(gu -> {
+                    var user = new GroupUserResponse();
+                    user.id = gu.id;
+                    user.email = gu.email;
+                    user.username = gu.username;
+                    user.firstName = gu.firstName;
+                    user.lastName = gu.lastName;
+                    user.tenants = gu.getTenants();
+                    return user;
+                })
+                .collect(Collectors.toList());
 
         // search
         if (StringUtils.isNotBlank(search)) {
@@ -75,30 +92,17 @@ public class GroupManagementService {
         pageable.list = pageableMembers;
         pageable.index = page;
         pageable.size = size;
-        pageable.count = members.size();
+        pageable.count = response.count;
         pageable.page = Page.of(page, size);
 
         return new PageResource<>(pageable, uriInfo);
     }
 
-    public List<GroupUserResponse> getMembers(String groupName) {
+    public GroupMembersResponse getMembers(String groupName, int first, int max) {
 
         var fullPath = normalizePath(parentGroup) + "/" + groupName;
 
-        return groupManagement
-                .fetchGroupMembers(fullPath)
-                .stream()
-                .map(gu -> {
-                    var user = new GroupUserResponse();
-                    user.id = gu.id;
-                    user.email = gu.email;
-                    user.username = gu.username;
-                    user.firstName = gu.firstName;
-                    user.lastName = gu.lastName;
-                    user.tenants = gu.getTenants();
-                    return user;
-                })
-                .collect(Collectors.toList());
+        return groupManagement.fetchGroupMembers(fullPath, first, max);
     }
 
     public List<GroupUser> getTenantMembersByRole(String groupName, String role) {

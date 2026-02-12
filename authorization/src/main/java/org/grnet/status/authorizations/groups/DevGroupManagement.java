@@ -31,7 +31,7 @@ public class DevGroupManagement implements GroupManagement {
     }
 
     @Override
-    public List<GroupUser> fetchGroupMembers(String fullPath) {
+    public GroupMembersResponse fetchGroupMembers(String fullPath, int first, int max) {
 
         LOG.debugf("DEV: fetchGroupMembers returns empty (%s)", fullPath);
 
@@ -443,13 +443,9 @@ public class DevGroupManagement implements GroupManagement {
         """;
 
         try {
-            var mocks =  objectMapper.readValue(mockJson, GroupMembersResponse.class);
-            return mocks.results.stream()
-                    .map(entry -> entry.user)
-                    .toList();
-
+            return objectMapper.readValue(mockJson, GroupMembersResponse.class);
         } catch (Exception e) {
-           return  List.of();
+           return new GroupMembersResponse();
         }
     }
 

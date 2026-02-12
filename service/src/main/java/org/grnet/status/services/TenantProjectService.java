@@ -7,6 +7,7 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
 import org.grnet.status.authorizations.dtos.GroupUser;
+import org.grnet.status.authorizations.dtos.GroupUserResponse;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.project.ProjectResponseDto;
@@ -30,6 +31,7 @@ import org.grnet.status.util.Utility;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class TenantProjectService {
@@ -143,7 +145,24 @@ public class TenantProjectService {
 
         var tenant = tenantRepository.findById(tenantId);
 
-        var members = groupManagementService.getMembers("tenants/"+tenant.name);
+        var response = groupManagementService.getMembers("tenants/"+tenant.name, page * size, size);
+
+        var members = response
+                .results
+                .stream()
+                .map(g->g.user)
+                .map(gu -> {
+                    var user = new GroupUserResponse();
+                    user.id = gu.id;
+                    user.email = gu.email;
+                    user.username = gu.username;
+                    user.firstName = gu.firstName;
+                    user.lastName = gu.lastName;
+                    user.tenants = gu.getTenants();
+                    return user;
+                })
+                .collect(Collectors.toList());
+
 
         var partition = utility.partition(new ArrayList<>(members), size);
 
@@ -154,7 +173,7 @@ public class TenantProjectService {
         pageable.list = pageableMembers;
         pageable.index = page;
         pageable.size = size;
-        pageable.count = members.size();
+        pageable.count = response.count;
         pageable.page = Page.of(page, size);
 
         return new PageResource<>(pageable, uriInfo);

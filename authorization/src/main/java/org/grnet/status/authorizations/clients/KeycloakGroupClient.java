@@ -7,6 +7,7 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.grnet.status.authorizations.dtos.*;
 import org.grnet.status.authorizations.exceptions.KeycloakExceptionMapper;
 import org.grnet.status.authorizations.filters.BearerTokenRequestFilter;
+import org.grnet.status.authorizations.groups.GroupMembersResponse;
 
 @RegisterRestClient(configKey = "keycloak-group-client")
 @Path("/agm/account")
@@ -65,7 +66,7 @@ public interface KeycloakGroupClient {
     @GET
     @Path("/group-admin/group/{groupId}/members")
     @Produces(MediaType.APPLICATION_JSON)
-    GroupMembersResponse getGroupMembers(@PathParam("groupId") String groupId);
+    GroupMembersResponse getGroupMembers(@PathParam("groupId") String groupId, @QueryParam("first") int first, @QueryParam("max") int max, @QueryParam("search") String search);
 
     @GET
     @Path("/group-admin/group/{groupId}/members")

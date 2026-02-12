@@ -31,7 +31,7 @@ public class DevGroupManagement implements GroupManagement {
     }
 
     @Override
-    public GroupMembersResponse fetchGroupMembers(String fullPath, int first, int max) {
+    public GroupMembersResponse fetchGroupMembers(String fullPath, int first, int max, String search) {
 
         LOG.debugf("DEV: fetchGroupMembers returns empty (%s)", fullPath);
 

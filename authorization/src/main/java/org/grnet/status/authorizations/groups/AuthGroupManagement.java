@@ -147,11 +147,11 @@ public class AuthGroupManagement implements GroupManagement {
     }
 
     @Override
-    public GroupMembersResponse fetchGroupMembers(String fullPath, int first, int max) {
+    public GroupMembersResponse fetchGroupMembers(String fullPath, int first, int max, String search) {
 
         var groupId = getGroupIdByPath(fullPath);
 
-        return groupClient.getGroupMembers(groupId, first, max, "");
+        return groupClient.getGroupMembers(groupId, first, max, search);
     }
 
     @Override

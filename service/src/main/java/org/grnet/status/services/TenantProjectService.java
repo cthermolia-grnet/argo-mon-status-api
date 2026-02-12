@@ -6,7 +6,6 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
-import org.grnet.status.authorizations.dtos.GroupUser;
 import org.grnet.status.authorizations.dtos.GroupUserResponse;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.pagination.PageResource;
@@ -28,8 +27,6 @@ import org.grnet.status.repositories.TenantProjectJunctionRepository;
 import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.util.Utility;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -141,11 +138,11 @@ public class TenantProjectService {
         return new PageResource<>(dto, ProjectMapper.INSTANCE.projectsToDtos(dto.list()), uriInfo);
     }
 
-    public PageResource<GroupUser> getMembersByTenant(String tenantId, int page, int size, UriInfo uriInfo) {
+    public PageResource<GroupUserResponse> getMembersByTenant(String tenantId, int page, int size, UriInfo uriInfo) {
 
         var tenant = tenantRepository.findById(tenantId);
 
-        var response = groupManagementService.getMembers("tenants/"+tenant.name, page * size, size);
+        var response = groupManagementService.getMembers("tenants/"+tenant.name, page * size, size, "");
 
         var members = response
                 .results
@@ -163,14 +160,9 @@ public class TenantProjectService {
                 })
                 .collect(Collectors.toList());
 
+        var pageable = new PageQueryImpl<GroupUserResponse>();
 
-        var partition = utility.partition(new ArrayList<>(members), size);
-
-        var pageableMembers = partition.get(page) == null ? Collections.EMPTY_LIST : partition.get(page);
-
-        var pageable = new PageQueryImpl<GroupUser>();
-
-        pageable.list = pageableMembers;
+        pageable.list = members;
         pageable.index = page;
         pageable.size = size;
         pageable.count = response.count;

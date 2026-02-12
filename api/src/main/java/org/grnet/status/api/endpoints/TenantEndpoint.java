@@ -25,7 +25,7 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.grnet.status.api.resolvers.CheckDateFormat;
 import org.grnet.status.api.resolvers.TenantNameResolver;
-import org.grnet.status.authorizations.dtos.GroupUser;
+import org.grnet.status.authorizations.dtos.GroupUserResponse;
 import org.grnet.status.authorizations.interceptors.CheckEntitlements;
 import org.grnet.status.authorizations.interceptors.Resolver;
 import org.grnet.status.constraints.NotFoundEntity;
@@ -35,10 +35,8 @@ import org.grnet.status.dtos.profile.aggregation.AggregationProfileResponse;
 import org.grnet.status.dtos.profile.metric.MetricProfileResponse;
 import org.grnet.status.dtos.profile.operation.OperationProfileResponse;
 import org.grnet.status.dtos.project.ProjectResponseDto;
-import org.grnet.status.dtos.readiness.TenantReadiness;
 import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
 import org.grnet.status.dtos.report.FullReportResponseDto;
-import org.grnet.status.dtos.report.ReportRequestDto;
 import org.grnet.status.dtos.report.ReportResponseDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
@@ -1134,17 +1132,17 @@ public class TenantEndpoint {
         }
     }
 
-    public static class PageableTenantMembers extends PageResource<GroupUser> {
+    public static class PageableTenantMembers extends PageResource<GroupUserResponse> {
 
-        private List<GroupUser> content;
+        private List<GroupUserResponse> content;
 
         @Override
-        public List<GroupUser> getContent() {
+        public List<GroupUserResponse> getContent() {
             return content;
         }
 
         @Override
-        public void setContent(List<GroupUser> content) {
+        public void setContent(List<GroupUserResponse> content) {
             this.content = content;
         }
     }

@@ -4,7 +4,6 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.UriInfo;
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.grnet.status.authorizations.dtos.GroupUser;
 import org.grnet.status.authorizations.dtos.GroupUserResponse;
@@ -20,9 +19,6 @@ import org.grnet.status.util.Utility;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import static io.netty.util.AsciiString.contains;
 
 @ApplicationScoped
 public class GroupManagementService {
@@ -48,9 +44,9 @@ public class GroupManagementService {
     @ConfigProperty(name = "api.auth.entitlements.parent.group")
     String namespace;
 
-    public PageResource<GroupUser> getAllMembers(String groupName, String search, int page, int size, UriInfo uriInfo) {
+    public PageResource<GroupUserResponse> getAllMembers(String groupName, String search, int page, int size, UriInfo uriInfo) {
 
-        var response = getMembers(groupName, page*size, size);
+        var response = getMembers(groupName, page*size, size, search);
 
         var members = response
                 .results
@@ -66,30 +62,11 @@ public class GroupManagementService {
                     user.tenants = gu.getTenants();
                     return user;
                 })
-                .collect(Collectors.toList());
+                .toList();
 
-        // search
-        if (StringUtils.isNotBlank(search)) {
+        var pageable = new PageQueryImpl<GroupUserResponse>();
 
-            var lowerSearch = search.toLowerCase();
-            members = members.stream()
-                    .filter(u ->    contains(u.id, lowerSearch) ||
-                                    contains(u.username, lowerSearch) ||
-                                    contains(u.email, lowerSearch) ||
-                                    contains(u.firstName, lowerSearch) ||
-                                    contains(u.lastName, lowerSearch))
-                    .toList();
-
-            members = new ArrayList<>(members);
-        }
-
-        var partition = utility.partition(new ArrayList<>(members), size);
-
-        var pageableMembers = partition.get(page) == null ? Collections.EMPTY_LIST : partition.get(page);
-
-        var pageable = new PageQueryImpl<GroupUser>();
-
-        pageable.list = pageableMembers;
+        pageable.list = members;
         pageable.index = page;
         pageable.size = size;
         pageable.count = response.count;
@@ -98,11 +75,11 @@ public class GroupManagementService {
         return new PageResource<>(pageable, uriInfo);
     }
 
-    public GroupMembersResponse getMembers(String groupName, int first, int max) {
+    public GroupMembersResponse getMembers(String groupName, int first, int max, String search) {
 
         var fullPath = normalizePath(parentGroup) + "/" + groupName;
 
-        return groupManagement.fetchGroupMembers(fullPath, first, max);
+        return groupManagement.fetchGroupMembers(fullPath, first, max, search);
     }
 
     public List<GroupUser> getTenantMembersByRole(String groupName, String role) {

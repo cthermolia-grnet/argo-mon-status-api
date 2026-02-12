@@ -20,6 +20,9 @@ public class TenantUtil {
         if (tenant == null) {
             throw new NotFoundException("Tenant with id: " + id + " not found");
         }
+        if(tenant.getData().get(0).getUsers()==null){
+            throw new NotFoundException("Tenant with id: "+id+" has no api key defined");
+        }
         String apiKey = tenant.getData().get(0).getUsers().stream()
                 .filter(u -> u.getName() != null && u.getName().contains("argo_engine"))
                 .map(TenantWebApiGetResponse.User::getApi_key)

@@ -19,6 +19,7 @@ import org.grnet.status.services.utils.TenantUtil;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,6 +68,7 @@ public class ReportService {
     }
 
 
+
     /**
      * Encrypts a plain-text secret.
      *
@@ -105,6 +107,42 @@ public class ReportService {
         } catch (ClientWebApplicationException e) {
             throw new ClientWebApplicationException("Report not found in argo-web-api with id: " + reportId);
         }
+    }
+
+    /**
+     *
+     * @param id, Tenant's id
+     * @return a list of Reports
+     */
+    public List<ReportResponseDto> fetchTenantReports(String id) {
+        String apiKey = tenantUtil.getArgoEngineKey(accessToken, id);
+
+        if (apiKey == null) {
+            throw new NotFoundException("Not found argo-engine token for tenant with id: " + id);
+        }
+        var reports = argoWebApiClient.fetchReports(apiKey);
+
+        DateTimeFormatter formatter =
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        var list = new ArrayList<ReportResponseDto>();
+        if (reports != null && reports.data != null) {
+            for (var item : reports.data) {
+                if (item.info != null) {
+                    var dto = new ReportResponseDto();
+                    dto.id=item.id;
+                    dto.name = item.info.name;
+                    dto.description = item.info.description;
+                    dto.tenantName=item.tenant;
+                    dto.disabled=String.valueOf(item.info.disabled);
+                    dto.createdAt=item.info.created.toString();
+                    dto.updatedAt=item.info.updated.toString();
+
+                    list.add(dto);
+                }
+            }
+        }
+        return list;
     }
 
 }

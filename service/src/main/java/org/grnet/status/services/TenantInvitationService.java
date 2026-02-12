@@ -13,6 +13,7 @@ import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationActionResponse;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationRequest;
+import org.grnet.status.entities.TenantInvitation;
 import org.grnet.status.enums.InvitationAction;
 import org.grnet.status.enums.InvitationStatus;
 import org.grnet.status.mappers.TenantInvitationMapper;
@@ -48,22 +49,33 @@ public class TenantInvitationService {
     @Transactional
     public TenantInvitationResponse createInvitation(String tenantId, TenantInvitationRequest request, String createdBy) {
 
-        tenantInvitationRepository.findPendingInvitationsByTenantAndEmail(tenantId, request.email)
-                .ifPresent(existing -> {
-                    throw new WebApplicationException("A pending invitations already exist for this email", 409);
-                });
+        var existingInvitation = tenantInvitationRepository.findPendingInvitationsByTenantAndEmail(tenantId, request.email);
+        var tenant = tenantRepository.findById(tenantId);
+
+        if (existingInvitation.isPresent()) {
+
+            var existing = existingInvitation.get();
+            var invitationUrl = uiBaseUrl + "/invitation/" + existing.id;
+
+            mailerService.sendTenantInvitationEmail(
+                    List.of(existing.email),
+                    tenant.name,
+                    existing.role,
+                    invitationUrl
+            );
+
+            return TenantInvitationMapper.INSTANCE.tenantInvitationToDto(existing);
+        }
 
         var invitation = TenantInvitationMapper.INSTANCE.tenantInvitationToEntity(request);
 
-        invitation.tenant = tenantRepository.findById(tenantId);
+        invitation.tenant = tenant;
         invitation.status = InvitationStatus.PENDING;
         invitation.createdBy = createdBy;
 
         tenantInvitationRepository.persist(invitation);
 
         var invitationUrl = uiBaseUrl + "/invitation/" + invitation.id;
-
-        var tenant = tenantRepository.findById(tenantId);
 
         mailerService.sendTenantInvitationEmail(
                 List.of(invitation.email),
@@ -110,6 +122,7 @@ public class TenantInvitationService {
         return new PageResource<>(tenantInvitations, TenantInvitationMapper.INSTANCE.listToDtos(tenantInvitations.list()), uriInfo);
     }
 
+    @Transactional
     public TenantInvitationResponse respondToInvitation(String invitationId,
                                                         TenantInvitationActionResponse request,
                                                         String userEmail,
@@ -118,18 +131,23 @@ public class TenantInvitationService {
 
         var invitation = tenantInvitationRepository.findById(invitationId);
 
+        enforceInviteOwnership(invitation.email, userEmail);
+        enforcePending(invitation.status);
+
         if (request.action == InvitationAction.ACCEPT) {
-            executor.runAsync(() -> {
-                try {
-                    Log.info("Adding user to tenant group.");
-                    groupManagementService.addUserToTenantGroup(invitation.tenant.name, username, invitation.role);
-                } catch (Exception e) {
-                    Log.warn("Failed to add user to group member", e);
-                }
-            });
+            try {
+                Log.info("Adding user to tenant group.");
+                groupManagementService.addUserToTenantGroup(invitation.tenant.name, username, invitation.role);
+            } catch (Exception e) {
+                Log.warn("Failed to add user to tenant group.", e);
+                // invitation stays PENDING
+                throw new WebApplicationException(
+                        "The user could not be added to the tenant group at the moment.", 503
+                );
+            }
         }
 
-        var result = respond(invitationId, request, userEmail, userUniqueId);
+        var result = respond(invitation, request, userEmail, userUniqueId);
 
         executor.runAsync(() -> {
             try {
@@ -154,15 +172,10 @@ public class TenantInvitationService {
      * On ACCEPT we add user to the tenant role group and send confirmation emails.
      */
     @Transactional
-    public TenantInvitationResponse respond(String invitationId,
-                                                    TenantInvitationActionResponse request,
-                                                    String userEmail,
-                                                    String userUniqueId) {
-
-        var invitation = tenantInvitationRepository.findById(invitationId);
-
-        enforceInviteOwnership(invitation.email, userEmail);
-        enforcePending(invitation.status);
+    public TenantInvitationResponse respond(TenantInvitation invitation,
+                                            TenantInvitationActionResponse request,
+                                            String userEmail,
+                                            String userUniqueId) {
 
         var newStatus = mapToStatus(request.action);
 
@@ -264,9 +277,23 @@ public class TenantInvitationService {
     }
 
     private void enforcePending(InvitationStatus status) {
-        if (status != InvitationStatus.PENDING) {
-            throw new WebApplicationException("Invitation already responded.", 409);
+
+        if (status == null) {
+            throw new WebApplicationException("Invitation status is missing.", 409);
         }
+
+        if (status == InvitationStatus.PENDING) {
+            return;
+        }
+
+        var message = switch (status) {
+            case ACCEPTED -> "Invitation already accepted.";
+            case REJECTED -> "Invitation already rejected.";
+            case REVOKED  -> "Invitation has been revoked.";
+            default       -> "Invitation already responded.";
+        };
+
+        throw new WebApplicationException(message, 409);
     }
 
     private InvitationStatus mapToStatus(InvitationAction action) {

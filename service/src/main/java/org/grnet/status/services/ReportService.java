@@ -20,7 +20,9 @@ import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static io.netty.util.AsciiString.contains;
 
@@ -73,7 +75,10 @@ public class ReportService {
             partialReports = new ArrayList<>(partialReports);
         }
 
-        return partialReports;
+        return    partialReports.stream()
+                        .sorted(Comparator.comparing(r -> Boolean.parseBoolean(r.disabled)))
+                        .collect(Collectors.toList());
+
     }
 
 

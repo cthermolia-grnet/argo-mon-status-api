@@ -63,6 +63,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#84](https://github.com/ARGOeu/argo-mon-status-api/pull/84) ARGO-5336 check tenant readiness - quarkus api
 - [#86](https://github.com/ARGOeu/argo-mon-status-api/pull/86) ARGO-5365 Add conversion from page/size parameters to first/max for pagination
 - [#85](https://github.com/ARGOeu/argo-mon-status-api/pull/85) ARGO-5361 Fetch Tenant's Reports
+- [#91](https://github.com/ARGOeu/argo-mon-status-api/pull/91) ARGO-5369 Exclude CHECK_READINESS from jobs list in status
 
 
 ### Fix

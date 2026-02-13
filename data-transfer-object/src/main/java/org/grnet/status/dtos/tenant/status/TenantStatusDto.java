@@ -44,4 +44,16 @@ public class TenantStatusDto {
         // @NotNull(message = "instance can not be null")
         public List<@Valid EventStatusDto> jobs;
 
+        @JsonProperty("jobs")
+        public void setJobs(List<EventStatusDto> jobs) {
+                if (jobs == null) {
+                        this.jobs = null;
+                        return;
+                }
+
+                // Filter out CHECK_READINESS
+                this.jobs = jobs.stream()
+                        .filter(job -> !"CHECK_READINESS".equalsIgnoreCase(job.getName()))
+                        .toList();
+        }
 }

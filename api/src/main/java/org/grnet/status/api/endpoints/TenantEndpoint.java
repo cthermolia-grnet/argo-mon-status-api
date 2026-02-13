@@ -481,7 +481,7 @@ public class TenantEndpoint {
     @CheckEntitlements(roles = {"admin"}, resolvers = {
             @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
     })
-    public Response notifyAms(
+    public Response createInvitation(
             @Parameter(
                     description = "The ID of the tenant to create an invitation.",
                     required = true,

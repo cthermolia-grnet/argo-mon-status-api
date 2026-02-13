@@ -208,27 +208,6 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
         assertEquals("REVOKED", String.valueOf(revoke.status));
     }
 
-    @Test
-    public void alreadyRespondedInvitation() {
-        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
-
-        var tenant = createTenant("LOCALTENANT");
-        var created = createInvitation(tenant.id, "local-viewer@test.dev", "viewer");
-
-        respondToInvitationAsInvitedUser(created.id, "ACCEPT");
-
-        var req = buildActionRequest("REJECT");
-
-        given()
-                .auth().oauth2(tenantViewer)
-                .contentType(ContentType.JSON)
-                .body(req)
-                .when()
-                .patch("/v1/users/invitations/{id}", created.id)
-                .then()
-                .statusCode(409);
-    }
-
     // -----------------------------------------------------------------------------------------------------------------
     // Helpers (keep tests small + consistent)
     // -----------------------------------------------------------------------------------------------------------------

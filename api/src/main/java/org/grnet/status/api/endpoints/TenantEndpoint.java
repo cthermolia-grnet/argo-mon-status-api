@@ -1330,7 +1330,7 @@ public class TenantEndpoint {
 
     @Tag(name = "Status Pages")
     @Operation(
-            summary = "Get a status page by ID.",
+            summary = "Get status page by page id.",
             description = "Returns a specific status page."
     )
     @APIResponse(
@@ -1389,7 +1389,7 @@ public class TenantEndpoint {
 
     @Tag(name = "Status Pages")
     @Operation(
-            summary = "List status pages with pagination.",
+            summary = "List status pages per tenant with pagination.",
             description = "Returns paginated list of status pages for the authenticated user."
     )
     @APIResponse(
@@ -1436,7 +1436,7 @@ public class TenantEndpoint {
             @Max(value = 100, message = "Page size must be between 1 and 100.") @QueryParam("size") int size,
             @Context UriInfo uriInfo) {
 
-        var pages = statusPageService.getStatusPageByUserAndPage(page - 1, size, uriInfo, utility.getUserUniqueIdentifier());
+        var pages = statusPageService.getStatusPageByUserAndPage(page - 1, size, uriInfo, id, utility.getUserUniqueIdentifier());
 
         return Response.ok().entity(pages).build();
     }

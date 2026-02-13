@@ -14,7 +14,7 @@ public class TenantInvitation {
     @GeneratedValue(strategy = GenerationType.UUID)
     public String id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @NotNull
     @JoinColumn(name = "tenant_id")
     public Tenant tenant;

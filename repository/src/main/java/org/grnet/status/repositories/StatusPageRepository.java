@@ -11,9 +11,25 @@ import org.grnet.status.entities.StatusPage;
 @ApplicationScoped
 public class StatusPageRepository implements Repository<StatusPage, String> {
 
-    public PageQuery<StatusPage> fetchStatusPageByUserAndPage(int page, int size, String userID){
+    public PageQuery<StatusPage> fetchStatusPageByTenantAndAndUserAndPage(int page, int size, String tenantId, String userId){
 
-        var panache = find("from StatusPage sp where sp.userId = ?1", Sort.by("createdAt", Sort.Direction.Descending), userID).page(page, size);
+
+        var panache = find("from StatusPage sp where sp.tenant.id = ?1 and sp.userId = ?2", Sort.by("userId", Sort.Direction.Descending), tenantId, userId).page(page, size);
+
+        var pageable = new PageQueryImpl<StatusPage>();
+        pageable.list = panache.list();
+        pageable.index = page;
+        pageable.size = size;
+        pageable.count = panache.count();
+        pageable.page = Page.of(page, size);
+
+        return pageable;
+    }
+
+    public PageQuery<StatusPage> fetchStatusPagesByTenant(int page, int size, String tenantId) {
+
+        var panache = find(
+                "from StatusPage sp where sp.tenant.id = ?1", Sort.by("createdAt", Sort.Direction.Descending), tenantId).page(page, size);
 
         var pageable = new PageQueryImpl<StatusPage>();
         pageable.list = panache.list();

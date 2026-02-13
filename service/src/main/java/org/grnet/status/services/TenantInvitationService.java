@@ -122,7 +122,6 @@ public class TenantInvitationService {
         return new PageResource<>(tenantInvitations, TenantInvitationMapper.INSTANCE.listToDtos(tenantInvitations.list()), uriInfo);
     }
 
-    @Transactional
     public TenantInvitationResponse respondToInvitation(String invitationId,
                                                         TenantInvitationActionResponse request,
                                                         String userEmail,
@@ -149,14 +148,12 @@ public class TenantInvitationService {
 
         var result = respond(invitation, request, userEmail, userUniqueId);
 
-        executor.runAsync(() -> {
-            try {
-                Log.info("Sending invitation notifications.");
-                sendInvitationNotifications(result);
-            } catch (Exception e) {
-                Log.warn("Invitation notifications failed (async).", e);
-            }
-        });
+        try {
+            Log.info("Sending invitation notifications.");
+            sendInvitationNotifications(result);
+        } catch (Exception e) {
+            Log.warn("Invitation notifications failed.", e);
+        }
 
         return result;
     }

@@ -95,6 +95,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#80](https://github.com/ARGOeu/argo-mon-status-api/pull/80) ARGO-5349: Fix add user to tenant group via invitation
 - [#87](https://github.com/ARGOeu/argo-mon-status-api/pull/87) ARGO-5366 Fix @POST to @GET to fetch reports
 - [#90](https://github.com/ARGOeu/argo-mon-status-api/pull/90) ARGO-5368 Fix Filter Tags to tenant's report
+- [#92](https://github.com/ARGOeu/argo-mon-status-api/pull/92) ARGO-5372: List tenant status pages based on tenant role
 
 
 ### Removed

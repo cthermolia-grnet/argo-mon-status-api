@@ -13,6 +13,7 @@ import org.grnet.status.dtos.general.ExistResponseDto;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.status.StatusGroupRequestDto;
 import org.grnet.status.dtos.statuspage.*;
+import org.grnet.status.dtos.user.UserProfileDto;
 import org.grnet.status.enums.ArgoItemStatusEnum;
 import org.grnet.status.mappers.GeneralMapper;
 import org.grnet.status.mappers.StatusPageMapper;
@@ -42,6 +43,9 @@ public class StatusPageService {
 
     @Inject
     ReportService reportService;
+
+    @Inject
+    UserService userService;
 
 
     @Inject
@@ -147,12 +151,17 @@ public class StatusPageService {
      * @param page    The index of the page to retrieve (starting from 0).
      * @param size    The maximum number of Subjects to include in a page.
      * @param uriInfo The Uri Info.
-     * @param userID  The ID of the user.
+     * @param tenantId  The ID of the user.
      * @return A list of SubjectResponse objects representing the submitted Subjects in the requested page.
      */
-    public PageResource<StatusPageResponseDto> getStatusPageByUserAndPage(int page, int size, UriInfo uriInfo, String userID) {
+    public PageResource<StatusPageResponseDto> getStatusPageByUserAndPage(int page, int size, UriInfo uriInfo, String tenantId, String userId) {
 
-        var statusPages = statusPageRepository.fetchStatusPageByUserAndPage(page, size, userID);
+        var tenant = tenantRepository.findById(tenantId);
+        var isViewer = isViewerForTenantFromProfile(tenant.name, userId);
+
+        var statusPages = isViewer
+                ? statusPageRepository.fetchStatusPageByTenantAndAndUserAndPage(page, size, tenantId, userId)
+                : statusPageRepository.fetchStatusPagesByTenant(page, size, tenantId);
 
         return new PageResource<>(statusPages, StatusPageMapper.INSTANCE.entitiesToDtos(statusPages.list()), uriInfo);
     }
@@ -326,5 +335,23 @@ public class StatusPageService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private boolean isViewerForTenantFromProfile(String tenantName, String userId) {
+
+        var user = userService.getUserProfile(userId);
+
+        var role = user.groups.stream()
+                .filter(g -> g != null && g.name != null)
+                .filter(g -> g.name.equalsIgnoreCase(tenantName))
+                .map(g -> g.role == null ? null : g.role.trim())
+                .findFirst()
+                .orElse(null);
+
+        if (role == null || role.isBlank()) {
+            return true;
+        }
+
+        return "viewer".equalsIgnoreCase(role);
     }
 }

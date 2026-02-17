@@ -52,8 +52,10 @@ import org.grnet.status.dtos.statuspage.StatusPageResponseDto;
 import org.grnet.status.dtos.statuspage.StatusPageUpdateRequestDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
+import org.grnet.status.dtos.tenant.alerts.AlertDefinitionRequest;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationRequest;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
+import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.repositories.StatusPageRepository;
 import org.grnet.status.repositories.StatusPageRepository;
 import org.grnet.status.repositories.TenantInvitationRepository;
@@ -1725,4 +1727,59 @@ public class TenantEndpoint {
     }
 
 
+    @Tag(name = "Tenant")
+    @Operation(summary = "Notify AMS to initialize the automation process of check readiness for a tenant",
+            description = "Notify AMS to initialize automation process of check readiness.")
+    @APIResponse(
+            responseCode = "201",
+            description = "Process initialized",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = TenantStatusDto.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "409",
+            description = "Project already exists.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @POST
+    @Path("/{id}/notify-ams-check-readiness")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+
+    public Response notifyAms(
+            @Parameter(
+                    description = "The ID of the tenant to start automation process.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING)) @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
+            @Valid @NotNull(message = "The request body is empty.")
+            AlertDefinitionRequest request) {
+
+        var status = tenantService.notifyAmsCheckReadiness(id, request);
+        return Response.ok().entity(status).build();
+    }
 }

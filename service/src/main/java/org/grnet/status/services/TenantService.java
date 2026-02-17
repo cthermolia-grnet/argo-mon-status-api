@@ -675,6 +675,35 @@ public class TenantService {
         return null;
     }
 
+    /**
+     * Notify ams that tenant is created and should initialize the corresponding event process
+     *
+     * @param id,    the tenant's id
+     * @param alert, the alert to be sent to AMS
+     * @return TenantStatusDto
+     */
+    public TenantStatusDto notifyAmsCheckReadiness(String id, AlertDefinitionRequest alert) {
+        var now = Instant.now();
+        var tenant = tenantRepository.findById(id);
+
+        if (alert.properties.containsKey("tenant_name") && !alert.properties.get("tenant_name").equals(tenant.name)) {
+            throw new BadRequestException("Value of property 'name' differs from tenant's name: " + tenant.name);
+        }
+
+        validateAlertProperties(alert.name, alert.properties);
+
+        alert.getProperties().put("tenant_id", id);
+        alert.setCreatedAt(String.valueOf(now));
+        send(id, alert);
+
+
+        var statusOpt = tenantRepository.fetchTenantStatus(id);
+        if (!statusOpt.isEmpty()) {
+            return TenantMapper.INSTANCE.mapStatusObjectCheckReadiness(statusOpt.get());
+        }
+        return null;
+    }
+
     // send notifications to AMS to initialize ams and mongo
     private void sendNotifications(Tenant tenant) {
 

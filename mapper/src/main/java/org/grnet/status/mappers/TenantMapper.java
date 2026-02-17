@@ -9,6 +9,7 @@ import org.grnet.status.dtos.readiness.TenantReadiness;
 import org.grnet.status.dtos.tenant.*;
 import org.grnet.status.dtos.tenant.metadata.TenantMetadata;
 import org.grnet.status.dtos.tenant.metadata.TenantTopologyDto;
+import org.grnet.status.dtos.tenant.status.EventStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
@@ -308,13 +309,30 @@ public interface TenantMapper {
             throw new RuntimeException("Failed to serialize metadata JSON", e);
         }
     }
-
     default TenantStatusDto mapStatusObject(String statusJson) {
-        if (statusJson == null || statusJson.isEmpty()) {
+
+        if (statusJson == null || statusJson.isBlank()) {
             return null;
         }
+
         try {
-            return objectMapper.readValue(statusJson, TenantStatusDto.class);
+            TenantStatusDto dto =
+                    objectMapper.readValue(statusJson, TenantStatusDto.class);
+
+            if (dto.jobs != null) {
+
+                List<EventStatusDto> filtered =
+                        dto.jobs.stream()
+                                .filter(job ->
+                                        !"CHECK_READINESS".equalsIgnoreCase(job.getName())
+                                )
+                                .collect(Collectors.toList());
+
+                dto.jobs=filtered;
+            }
+
+            return dto;
+
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to deserialize status JSON", e);
         }
@@ -406,5 +424,32 @@ public interface TenantMapper {
 //        return mapStatusToString(status);
 //    }
 
+    default TenantStatusDto mapStatusObjectCheckReadiness(String statusJson) {
+
+        if (statusJson == null || statusJson.isBlank()) {
+            return null;
+        }
+
+        try {
+            TenantStatusDto dto =
+                    objectMapper.readValue(statusJson, TenantStatusDto.class);
+
+            if (dto.jobs != null) {
+                List<EventStatusDto> onlyCheckReadiness =
+                        dto.jobs.stream()
+                                .filter(job ->
+                                        "CHECK_READINESS".equalsIgnoreCase(job.getName())
+                                )
+                                .collect(Collectors.toList());
+
+                dto.jobs=onlyCheckReadiness;
+            }
+
+            return dto;
+
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to deserialize status JSON", e);
+        }
+    }
 
 }

@@ -146,7 +146,7 @@ public class TenantInvitationService {
             }
         }
 
-        var result = respond(invitation, request, userEmail, userUniqueId);
+        var result = respond(invitationId, request, userEmail, userUniqueId);
 
         try {
             Log.info("Sending invitation notifications.");
@@ -169,10 +169,12 @@ public class TenantInvitationService {
      * On ACCEPT we add user to the tenant role group and send confirmation emails.
      */
     @Transactional
-    public TenantInvitationResponse respond(TenantInvitation invitation,
+    public TenantInvitationResponse respond(String invitationId,
                                             TenantInvitationActionResponse request,
                                             String userEmail,
                                             String userUniqueId) {
+
+        var invitation = tenantInvitationRepository.findById(invitationId);
 
         var newStatus = mapToStatus(request.action);
 

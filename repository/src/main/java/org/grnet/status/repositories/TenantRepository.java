@@ -151,4 +151,11 @@ public class TenantRepository implements Repository<Tenant, String> {
         return find("select t.status from Tenant t where t.id = ?1", id).project(String.class)
                 .firstResultOptional();
     }
+
+    public Optional<Tenant> findTenantByNameOptional(String name) {
+        if (name == null || name.isBlank()) {
+            return Optional.empty();
+        }
+        return find("lower(name) = lower(?1)", name.trim()).firstResultOptional();
+    }
 }

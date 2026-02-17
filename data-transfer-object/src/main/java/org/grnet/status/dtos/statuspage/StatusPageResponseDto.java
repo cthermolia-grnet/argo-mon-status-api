@@ -80,4 +80,24 @@ public class StatusPageResponseDto {
     )
     @JsonProperty("updated_at")
     public Instant updatedAt;
+
+    @Schema(
+            type = SchemaType.STRING,
+            implementation = String.class,
+            description = "Tenant's Identifier",
+            example = "9e2c9890-56c7-432a-bd6e-32e1da6eaa84-5"
+    )
+    @JsonProperty("tenant_id")
+    public String tenantId;
+
+    @Schema(
+            type = SchemaType.STRING,
+            implementation = String.class,
+            description = "Tenant's Name",
+            example = "GRNET"
+    )
+    @JsonProperty("tenant_name")
+    public String tenantName;
+
+
 }

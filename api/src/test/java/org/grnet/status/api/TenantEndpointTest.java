@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.Status;
@@ -422,6 +421,91 @@ public class TenantEndpointTest extends KeycloakTest {
 
         assertEquals(created.id, fetched.id);
         assertEquals(created.slug, fetched.slug);
+    }
+
+    @Test
+    public void getStatusPageForUserAndRole() {
+
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
+        var tenant = createTenant("LOCALTENANT");
+
+        var viewerPage = buildValidStatusPageRequest("viewer-page" + UUID.randomUUID());
+
+        given()
+                .auth().oauth2(tenantViewer)
+                .contentType(ContentType.JSON)
+                .body(viewerPage)
+                .when()
+                .post("/v1/tenants/{id}/pages", tenant.id)
+                .then()
+                .statusCode(201)
+                .extract()
+                .as(StatusPageResponseDto.class);
+
+        var adminPage = buildValidStatusPageRequest("admin-page" + UUID.randomUUID());
+
+        given()
+                .auth().oauth2(tenantAdmin)
+                .contentType(ContentType.JSON)
+                .body(adminPage)
+                .when()
+                .post("/v1/tenants/{id}/pages", tenant.id)
+                .then()
+                .statusCode(201)
+                .extract()
+                .as(StatusPageResponseDto.class);
+
+        var adminPage1 = buildValidStatusPageRequest("admin-page1" + UUID.randomUUID());
+
+        given()
+                .auth().oauth2(tenantAdmin)
+                .contentType(ContentType.JSON)
+                .body(adminPage1)
+                .when()
+                .post("/v1/tenants/{id}/pages", tenant.id)
+                .then()
+                .statusCode(201)
+                .extract()
+                .as(StatusPageResponseDto.class);
+
+        var viewerResp = given()
+                .auth().oauth2(tenantViewer)
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/v1/users/pages?page=1&size=10")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(PageResource.class);
+
+        assertNotNull(viewerResp.getContent());
+        assertEquals(1, viewerResp.getContent().size());
+
+        var adminResp = given()
+                .auth().oauth2(tenantAdmin)
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/v1/users/pages?page=1&size=10")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(PageResource.class);
+
+        assertNotNull(adminResp.getContent());
+        assertEquals(3, adminResp.getContent().size());
+
+        var superAdminResp = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/v1/users/pages?page=1&size=10")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(PageResource.class);
+
+        assertNotNull(superAdminResp.getContent());
+        assertEquals(3, superAdminResp.getContent().size());
     }
 
     @Test

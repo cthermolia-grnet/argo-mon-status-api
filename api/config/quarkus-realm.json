@@ -2756,6 +2756,7 @@
 
         "entitlements": [
           "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenants:LOCALTENANT:role=admin",
+          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenants:TESTTENANT:role=admin",
           "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:members:role=member"
         ]
       },
@@ -2787,6 +2788,7 @@
 
         "entitlements": [
           "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenants:LOCALTENANT:role=viewer",
+          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenants:TESTTENANT:role=viewer",
           "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:members:role=member"
 
         ]

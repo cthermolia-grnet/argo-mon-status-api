@@ -4,6 +4,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.keycloak.client.KeycloakTestClient;
 import io.restassured.RestAssured;
 import jakarta.inject.Inject;
+import org.grnet.status.services.StatusPageService;
 import org.grnet.status.services.TenantInvitationService;
 import org.grnet.status.services.TenantService;
 import org.junit.jupiter.api.BeforeAll;
@@ -22,6 +23,9 @@ public class KeycloakTest {
 
     @Inject
     TenantInvitationService tenantInvitationService;
+
+    @Inject
+    StatusPageService statusPageService;
 
     @TestHTTPResource
     URI baseUri;
@@ -46,6 +50,7 @@ public class KeycloakTest {
         automationToken = getAccessToken("automation");
         tenantInvitationService.deleteAll();
         tenantService.deleteAll();
+        statusPageService.deleteAll();
     }
 
     protected String getAccessToken(String username) {

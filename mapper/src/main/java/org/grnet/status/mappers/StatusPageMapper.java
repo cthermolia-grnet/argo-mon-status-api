@@ -29,6 +29,8 @@ public interface StatusPageMapper {
 
     @Named("mapEntity")
     @Mapping(target = "config", expression = "java(jsonToConfig(entity.getConfig()))")
+    @Mapping(target = "tenantId", source = "tenant.id")
+    @Mapping(target = "tenantName", source = "tenant.name")
     StatusPageResponseDto entityToDto(StatusPage entity);
 
 

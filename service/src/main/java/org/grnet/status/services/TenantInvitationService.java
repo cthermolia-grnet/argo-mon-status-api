@@ -13,9 +13,9 @@ import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationActionResponse;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationRequest;
-import org.grnet.status.entities.TenantInvitation;
 import org.grnet.status.enums.InvitationAction;
 import org.grnet.status.enums.InvitationStatus;
+import org.grnet.status.exceptions.BadRequestException;
 import org.grnet.status.mappers.TenantInvitationMapper;
 import org.grnet.status.repositories.TenantInvitationRepository;
 import org.grnet.status.repositories.TenantRepository;
@@ -270,8 +270,17 @@ public class TenantInvitationService {
     }
 
     private void enforceInviteOwnership(String invitationEmail, String userEmail) {
-        if (invitationEmail == null || userEmail == null || !invitationEmail.equalsIgnoreCase(userEmail)) {
-            throw new ForbiddenException("Access denied.");
+
+        if (userEmail == null || userEmail.isBlank()) {
+            throw new BadRequestException("Authenticated user email is missing.");
+        }
+
+        if (invitationEmail == null || invitationEmail.isBlank()) {
+            throw new WebApplicationException("Invitation has no associated email.", 500);
+        }
+
+        if (!invitationEmail.equalsIgnoreCase(userEmail)) {
+            throw new ForbiddenException("This invitation does not belong to the authenticated user.");
         }
     }
 

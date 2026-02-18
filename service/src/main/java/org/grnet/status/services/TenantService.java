@@ -8,7 +8,6 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.ServiceUnavailableException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
@@ -18,7 +17,6 @@ import org.grnet.status.authorizations.service.AccessControlService;
 import org.grnet.status.authorizations.service.AuthGroupSetupService;
 import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.dtos.pagination.PageResource;
-import org.grnet.status.dtos.readiness.TenantReadiness;
 import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
 import org.grnet.status.dtos.tenant.ContactDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
@@ -630,7 +628,7 @@ public class TenantService {
             return TenantGroupStatus.EXISTS;
 
         } catch (Exception e) {
-            throw new ServiceUnavailableException("Client unavailable");
+            throw new ServiceUnavailableException("Group management service is unavailable.");
         }
     }
 

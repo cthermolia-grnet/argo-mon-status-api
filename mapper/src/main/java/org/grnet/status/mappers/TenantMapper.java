@@ -38,7 +38,7 @@ public interface TenantMapper {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.of("UTC"));
 
 
-   // @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    // @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "info", source = "info")
     @Mapping(target = "topology", source = "metadata.instance.topology")
     @Mapping(target = "users", ignore = true)
@@ -51,14 +51,14 @@ public interface TenantMapper {
     @Mapping(source = "topology", target = "topology")
     @Mapping(source = "db_conf", target = "db_conf")
     @Mapping(source = "users", target = "users")
-
     TenantWebApiRequest dataToTenantWebApiRequest(TenantWebApiGetResponse.Data data);
 
     //updates existing TenantWebApiRequest with the fields of the TenantRequestDto
     @Mapping(target = "info", source = "info")
     @Mapping(target = "topology", source = "metadata.instance.topology")
     @Mapping(target = "users", ignore = true)   // keep existing
-    @Mapping(target = "db_conf", ignore = true)  // keep existing
+    @Mapping(target = "db_conf", ignore = true)
+    // keep existing
     void updateExistingWebApiRequest(TenantRequestDto dto, @MappingTarget TenantWebApiRequest existing);
 
 
@@ -74,8 +74,6 @@ public interface TenantMapper {
     UserDto userToDto(TenantWebApiGetResponse.User user);
 
     List<UserDto> userListToDto(List<TenantWebApiGetResponse.User> users);
-
-
 
 
     default List<TenantResponseDto> webApiTenantsToDtos(
@@ -309,6 +307,7 @@ public interface TenantMapper {
             throw new RuntimeException("Failed to serialize metadata JSON", e);
         }
     }
+
     default TenantStatusDto mapStatusObject(String statusJson) {
 
         if (statusJson == null || statusJson.isBlank()) {
@@ -316,30 +315,14 @@ public interface TenantMapper {
         }
 
         try {
-            TenantStatusDto dto =
-                    objectMapper.readValue(statusJson, TenantStatusDto.class);
-
-            if (dto.jobs != null) {
-
-                List<EventStatusDto> filtered =
-                        dto.jobs.stream()
-                                .filter(job ->
-                                        !"CHECK_READINESS".equalsIgnoreCase(job.getName())
-                                )
-                                .collect(Collectors.toList());
-
-                dto.jobs=filtered;
-            }
-
-            return dto;
-
+            return objectMapper.readValue(statusJson, TenantStatusDto.class);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to deserialize status JSON", e);
         }
     }
 
     // Map TenantReadiness → String JSON
-    default String mapReadinessToString(TenantReadiness readiness)  {
+    default String mapReadinessToString(TenantReadiness readiness) {
         if (readiness == null) {
             return null;
         }
@@ -351,7 +334,7 @@ public interface TenantMapper {
     }
 
     // Map TenantMetadata → String JSON
-    default String mapStatusToString(TenantStatusDto status)  {
+    default String mapStatusToString(TenantStatusDto status) {
         if (status == null) {
             return null;
         }
@@ -384,6 +367,7 @@ public interface TenantMapper {
             throw new RuntimeException("Failed to deserialize status JSON", e);
         }
     }
+
     default TenantReadiness mapReadinessFromString(String json) {
         if (json == null || json.isBlank()) {
             return new TenantReadiness();
@@ -405,7 +389,7 @@ public interface TenantMapper {
 //        }
 //    }
 
-    default String mergeJobsIntoStatus(String existingStatusJson,TenantStatusDto processStatus) {
+    default String mergeJobsIntoStatus(String existingStatusJson, TenantStatusDto processStatus) {
         TenantStatusDto status = mapStatusFromString(existingStatusJson);
 
         if (processStatus != null && processStatus.jobs != null) {
@@ -424,32 +408,32 @@ public interface TenantMapper {
 //        return mapStatusToString(status);
 //    }
 
-    default TenantStatusDto mapStatusObjectCheckReadiness(String statusJson) {
-
-        if (statusJson == null || statusJson.isBlank()) {
-            return null;
-        }
-
-        try {
-            TenantStatusDto dto =
-                    objectMapper.readValue(statusJson, TenantStatusDto.class);
-
-            if (dto.jobs != null) {
-                List<EventStatusDto> onlyCheckReadiness =
-                        dto.jobs.stream()
-                                .filter(job ->
-                                        "CHECK_READINESS".equalsIgnoreCase(job.getName())
-                                )
-                                .collect(Collectors.toList());
-
-                dto.jobs=onlyCheckReadiness;
-            }
-
-            return dto;
-
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to deserialize status JSON", e);
-        }
-    }
+//    default TenantStatusDto mapStatusObjectCheckReadiness(String statusJson) {
+//
+//        if (statusJson == null || statusJson.isBlank()) {
+//            return null;
+//        }
+//
+//        try {
+//            TenantStatusDto dto =
+//                    objectMapper.readValue(statusJson, TenantStatusDto.class);
+//
+//            if (dto.jobs != null) {
+//                List<EventStatusDto> onlyCheckReadiness =
+//                        dto.jobs.stream()
+//                                .filter(job ->
+//                                        "CHECK_READINESS".equalsIgnoreCase(job.getName())
+//                                )
+//                                .collect(Collectors.toList());
+//
+//                dto.jobs=onlyCheckReadiness;
+//            }
+//
+//            return dto;
+//
+//        } catch (JsonProcessingException e) {
+//            throw new RuntimeException("Failed to deserialize status JSON", e);
+//        }
+//    }
 
 }

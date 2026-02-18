@@ -68,6 +68,8 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#94](https://github.com/ARGOeu/argo-mon-status-api/pull/94/) ARGO-5374 List tenant status pages based on tenant role
 - [#95](https://github.com/ARGOeu/argo-mon-status-api/pull/95) ARGO-5378 Create seperate endpoint to notify ams about CHECK READINESS event
 - [#96](https://github.com/ARGOeu/argo-mon-status-api/pull/96) ARGO-5382 Implement System Health Check Endpoint
+- [#97](https://github.com/ARGOeu/argo-mon-status-api/pull/97) ARGO-5384 Re-Appear CHECK_READINESS in job list
+
 
 ### Fix
 

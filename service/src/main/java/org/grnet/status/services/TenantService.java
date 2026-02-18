@@ -665,7 +665,7 @@ public class TenantService {
 
         alert.getProperties().put("tenant_id", id);
         alert.setCreatedAt(String.valueOf(now));
-        send(id, alert);
+        send(id, alert,"");
 
 
         var statusOpt = tenantRepository.fetchTenantStatus(id);
@@ -694,12 +694,12 @@ public class TenantService {
 
         alert.getProperties().put("tenant_id", id);
         alert.setCreatedAt(String.valueOf(now));
-        send(id, alert);
+        send(id, alert,"A request is sent to the monitoring service to validate that the necessary data and configuration are in place prior to starting the monitoring process");
 
 
         var statusOpt = tenantRepository.fetchTenantStatus(id);
         if (!statusOpt.isEmpty()) {
-            return TenantMapper.INSTANCE.mapStatusObjectCheckReadiness(statusOpt.get());
+            return TenantMapper.INSTANCE.mapStatusObject(statusOpt.get());
         }
         return null;
     }
@@ -709,9 +709,9 @@ public class TenantService {
 
         String createdAt = String.valueOf(Instant.now());
 
-        send(tenant.id, buildAlert(EventName.INIT_AMS, tenant, createdAt));
-        send(tenant.id, buildAlert(EventName.INIT_MONGO, tenant, createdAt));
-        send(tenant.id, buildAlert(EventName.INIT_COMPUTE_ENGINE, tenant, createdAt));
+        send(tenant.id, buildAlert(EventName.INIT_AMS, tenant, createdAt), "");
+        send(tenant.id, buildAlert(EventName.INIT_MONGO, tenant, createdAt), "");
+        send(tenant.id, buildAlert(EventName.INIT_COMPUTE_ENGINE, tenant, createdAt), "");
     }
 
     private AlertDefinitionRequest buildAlert(EventName eventName, Tenant tenant, String createdAt) {
@@ -725,65 +725,170 @@ public class TenantService {
         return alert;
     }
 
-    private void send(String id, AlertDefinitionRequest alert) {
+    private void send(String id, AlertDefinitionRequest alert, String eventMsg) {
+
+        final boolean hasCustomMsg =
+                eventMsg != null && !eventMsg.isEmpty();
+
+
+        // INITIALISING message
+        final String publishingMsg =
+                hasCustomMsg
+                        ? eventMsg
+                        : "Event notification: " + alert.name +
+                        " is sent to Messaging Service for publishing";
+
+
+        // Your special INITIALISED message (only when eventMsg exists)
+        final String customInitialisedMsg =
+                "A request is initialised to the Messaging Service " +
+                        "to validate that the necessary data and configuration " +
+                        "are in place prior to starting the monitoring process";
+
+
+        // FINAL INITIALISED message
+        final String initialisedMsg =
+                hasCustomMsg
+                        ? customInitialisedMsg
+                        : "Event notification: " + alert.name +
+                        " is initialised to Messaging Service for publishing";
+
+// ✅ CUSTOM FAILED
+        final String customFailedMsg =
+                "A request to validate that the necessary data and configuration " +
+                        "are in place prior to starting the monitoring process, failed to be published the Messaging Service.";
+
+
+// FAILED
+        final String failedMsg =
+                hasCustomMsg
+                        ? customFailedMsg
+                        : "Event notification: " + alert.name +
+                        " failed to be initialised to Messaging Service";
         try {
-            var now = Instant.now();
+            final Instant now = Instant.now();
 
-            var objectMapper = new ObjectMapper();
-            var json = objectMapper.writeValueAsString(alert);
+            final ObjectMapper objectMapper = new ObjectMapper();
+            final String json = objectMapper.writeValueAsString(alert);
 
-            Log.infof("Sending to Messaging Service | project=%s | topic=%s notification for: tenantId=%s | event=%s | properties=%s | created_at=%s",
-                    amsService.getProject(), amsService.getTopic(), id, alert.name.toUpperCase(), alert.properties, alert.createdAt);
+            Log.infof(
+                    "Sending to Messaging Service | project=%s | topic=%s | tenantId=%s | event=%s",
+                    amsService.getProject(),
+                    amsService.getTopic(),
+                    id,
+                    alert.name.toUpperCase()
+            );
 
-            var encodedData = Base64.getEncoder().encodeToString(json.getBytes());
 
-            var message = new PublishRequest.Message();
+            final String encodedData =
+                    Base64.getEncoder().encodeToString(json.getBytes());
+
+            final PublishRequest.Message message =
+                    new PublishRequest.Message();
+
             message.setData(encodedData);
 
-            var publishData = new PublishRequest();
+            final PublishRequest publishData = new PublishRequest();
             publishData.setMessages(List.of(message));
 
-            // 1. Immediately update status to INITIALISING before async publish
-            updateTenantAlerts(id, setAlert(alert.name, EventStatus.INITIALISING,
-                    "Event notification:" + alert.name + " is sent to Messaging Service for publishing", now, alert.properties));
-            // 2. fire-and-forget async publish
+
+            // 1. INITIALISING
+            updateTenantAlerts(
+                    id,
+                    setAlert(
+                            alert.name,
+                            EventStatus.INITIALISING,
+                            publishingMsg,
+                            now,
+                            alert.properties
+                    )
+            );
+
+
+            // 2. Async publish
             CompletableFuture
-                    .runAsync(() -> {
-                        amsService.publishMessage(publishData);  // Publish call
-                    }, executorService)
+                    .runAsync(
+                            () -> amsService.publishMessage(publishData),
+                            executorService
+                    )
+
+
+                    // 3. INITIALISED
                     .thenRun(() -> {
-                        // Update status to INITIALISED after publishMessage returns
                         try {
-                            updateTenantAlerts(id, setAlert(alert.name, EventStatus.INITIALISED,
-                                    "Event notification: " + alert.name + "is initialising to Messaging Service", now, alert.properties));
+                            updateTenantAlerts(
+                                    id,
+                                    setAlert(
+                                            alert.name,
+                                            EventStatus.INITIALISED,
+                                            initialisedMsg,
+                                            now,
+                                            alert.properties
+                                    )
+                            );
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
                     })
+
+
+                    // 4. FINAL RESULT
                     .whenComplete((ignored, throwable) -> {
+
                         try {
                             if (throwable == null) {
-                                // Update status to PUBLISHED on successful completion
-                                updateTenantAlerts(id, setAlert(alert.name, EventStatus.INITIALISED,
-                                        "Event notification: " + alert.name + " initialised successfully to Messaging Service", now, alert.properties));
-                                Log.debugf("Messaging Service publish succeeded for tenantId=%s, alert=%s", id, alert.name);
+
+                                updateTenantAlerts(
+                                        id,
+                                        setAlert(
+                                                alert.name,
+                                                EventStatus.INITIALISED,
+                                                initialisedMsg,
+                                                now,
+                                                alert.properties
+                                        )
+                                );
+
+                                Log.debugf(
+                                        "Messaging Service publish succeeded for tenantId=%s, alert=%s",
+                                        id,
+                                        alert.name
+                                );
 
                             } else {
-                                // Failure case
-                                Log.errorf(throwable, "Messaging Service publish failed for tenantId=%s, alert=%s", id, alert.name);
-                                updateTenantAlerts(id, setAlert(alert.name, EventStatus.FAILED_INITIALISATION,
-                                        "Event notification: " + alert.name + " failed to be initialised to Messaging Service", now, alert.properties));
+
+                                Log.errorf(
+                                        throwable,
+                                        "Messaging Service publish failed for tenantId=%s, alert=%s",
+                                        id,
+                                        alert.name
+                                );
+
+                                updateTenantAlerts(
+                                        id,
+                                        setAlert(
+                                                alert.name,
+                                                EventStatus.FAILED_INITIALISATION,
+                                                failedMsg,
+                                                now,
+                                                alert.properties
+                                        )
+                                );
                             }
+
                         } catch (Exception e) {
                             Log.error("Failed to update tenant status", e);
                         }
                     });
 
         } catch (Exception e) {
-            Log.error("Failed to send alert to Messaging Service", e);
-            Log.errorf(e, "Failed to send event notification for  tenantId=%s, alert=%s to Messaging Service", id, alert.name);
 
-            throw new RuntimeException("Failed to send event notification: " + alert.name + " to Messaging Service", e);
+            Log.error("Failed to send alert to Messaging Service", e);
+
+            throw new RuntimeException(
+                    "Failed to send event notification: " + alert.name,
+                    e
+            );
         }
     }
 

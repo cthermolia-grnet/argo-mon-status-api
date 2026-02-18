@@ -67,6 +67,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#93](https://github.com/ARGOeu/argo-mon-status-api/pull/93) ARGO-5373 Reports order by active first
 - [#94](https://github.com/ARGOeu/argo-mon-status-api/pull/94/) ARGO-5374 List tenant status pages based on tenant role
 - [#95](https://github.com/ARGOeu/argo-mon-status-api/pull/95) ARGO-5378 Create seperate endpoint to notify ams about CHECK READINESS event
+- [#96](https://github.com/ARGOeu/argo-mon-status-api/pull/96) ARGO-5382 Implement System Health Check Endpoint
 
 ### Fix
 

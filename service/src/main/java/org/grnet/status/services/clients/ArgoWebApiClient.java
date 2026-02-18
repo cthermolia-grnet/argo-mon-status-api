@@ -2,6 +2,7 @@ package org.grnet.status.services.clients;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.grnet.status.dtos.Status;
 import org.grnet.status.dtos.argo.ArgoStatusGroupsResponse;
@@ -226,4 +227,9 @@ public interface ArgoWebApiClient {
             @PathParam("id") String id,
             @HeaderParam("x-api-key") String apiKey
     ) throws WebApplicationException, ProcessingException;
+
+    @GET
+    @Path("/api/v2/version")
+    @Produces(MediaType.APPLICATION_JSON)
+    Response version();
 }

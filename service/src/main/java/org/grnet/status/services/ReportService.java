@@ -76,7 +76,7 @@ public class ReportService {
         }
 
         return    partialReports.stream()
-                        .sorted(Comparator.comparing(r -> Boolean.parseBoolean(r.disabled)))
+                        .sorted(Comparator.comparing(r -> r.disabled))
                         .collect(Collectors.toList());
 
     }

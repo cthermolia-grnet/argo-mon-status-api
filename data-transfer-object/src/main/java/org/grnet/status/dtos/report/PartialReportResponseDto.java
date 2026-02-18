@@ -35,12 +35,12 @@ public class PartialReportResponseDto {
     @JsonProperty("tenant_name")
     public String tenantName;
 
-    @Schema(type = SchemaType.STRING,
-            implementation = String.class,
+    @Schema(type = SchemaType.BOOLEAN,
+            implementation = Boolean.class,
             description = "State of the report",
             example = "true")
     @JsonProperty("disabled")
-    public String disabled;
+    public Boolean disabled;
 
     @Schema(
             type = SchemaType.STRING,

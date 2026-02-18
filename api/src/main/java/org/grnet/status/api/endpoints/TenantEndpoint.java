@@ -56,6 +56,7 @@ import org.grnet.status.dtos.tenant.alerts.AlertDefinitionRequest;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationRequest;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
+import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
 import org.grnet.status.repositories.StatusPageRepository;
 import org.grnet.status.repositories.StatusPageRepository;
 import org.grnet.status.repositories.TenantInvitationRepository;
@@ -107,6 +108,9 @@ public class TenantEndpoint {
 
     @Inject
     ProfileService profileService;
+
+    @Inject
+    ContactService contactService;
 
     @Operation(
             summary = "List Tenants Available to the User",
@@ -1782,4 +1786,118 @@ public class TenantEndpoint {
         var status = tenantService.notifyAmsCheckReadiness(id, request);
         return Response.ok().entity(status).build();
     }
+
+
+    @Tag(name = "Tenant")
+    @Operation(
+            summary = "Get Tenant's status By Id .",
+            description = "Returns a specific tenant's status.")
+    @APIResponse(
+            responseCode = "200",
+            description = "The corresponding tenant's status.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = TenantStatusFullResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Entity Not Found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/{id}/status")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Authenticated
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+
+    public Response getTenantStatus(@Parameter(
+            description = "The ID of the tenant to retrieve status.",
+            required = true,
+            example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+            schema = @Schema(type = SchemaType.STRING)) @PathParam("id")
+                                    @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id) {
+
+        var status = tenantService.getTenantStatus(id);
+
+        return Response.ok().entity(status).build();
+    }
+
+    @Tag(name = "Tenant")
+    @Operation(
+            summary = "Get list of contact types.",
+            description = "This endpoint returns a list of contact types ")
+    @APIResponse(
+            responseCode = "200",
+            description = "List of contact types existing.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.ARRAY,
+                    implementation = List.class)))
+    @APIResponse(
+            responseCode = "400",
+            description = "Bad Request",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Entity Not Found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/contact-types")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Authenticated
+    @CheckEntitlements(roles = { "admin"}, resolvers = {
+            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    })
+
+    public Response getContactTypes() {
+
+        var contactTypes = contactService.getContactTypes();
+
+        return Response.ok().entity(contactTypes).build();
+    }
+
+
 }

@@ -1523,7 +1523,7 @@ public class AdminEndpoint {
     public Response updateStatus(
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
-            String id, TenantStatusDto request) throws IOException {
+            String id, TenantStatusDto request) {
 
         var status = tenantService.updateTenantManualJobs(id, request);
         return Response.ok().entity(status).build();

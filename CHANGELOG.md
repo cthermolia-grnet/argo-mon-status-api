@@ -102,6 +102,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#90](https://github.com/ARGOeu/argo-mon-status-api/pull/90) ARGO-5368 Fix Filter Tags to tenant's report
 - [#92](https://github.com/ARGOeu/argo-mon-status-api/pull/92) ARGO-5372: List tenant status pages based on tenant role
 - [#99](https://github.com/ARGOeu/argo-mon-status-api/pull/99) ARGO-5387 Improve error handling (Group Management + Invitations)
+- [#100](https://github.com/ARGOeu/argo-mon-status-api/pull/100) ARGO-5391 FIX "id to load is required for loading" error when accessing tenant admin the v1/tenants/contact-types
 
 
 ### Removed

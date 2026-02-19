@@ -1888,9 +1888,7 @@ public class TenantEndpoint {
     @Path("/contact-types")
     @Produces(MediaType.APPLICATION_JSON)
     @Authenticated
-    @CheckEntitlements(roles = { "admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
-    })
+    @CheckEntitlements(byPassAuthorization = true)
 
     public Response getContactTypes() {
 

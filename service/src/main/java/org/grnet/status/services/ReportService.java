@@ -114,7 +114,7 @@ public class ReportService {
         try {
             return argoWebApiClient.fetchReportByIdSuperAdmin(reportId, accessToken, id).data.get(0);
         } catch (ClientWebApplicationException e) {
-            throw new ClientWebApplicationException("Fetching Report... Report not found in argo-web-api with id: " + reportId);
+            throw new ClientWebApplicationException("Fetching Report... Report not found in Argo Web Api with id: " + reportId);
         }
     }
 }

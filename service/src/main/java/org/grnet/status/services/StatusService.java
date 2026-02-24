@@ -42,15 +42,7 @@ public class StatusService {
         try {
              report = reportService.fetchReportById(tenantId, reportId);
         }catch (RuntimeException e){
-            var builder=new StringBuilder();
-            builder.append("Fetching Report Groups... ");
-            builder.append("No groups retrieved for report with id:");
-            builder.append(reportId);
-
-            builder.append("Received error: ");
-            builder.append("\\n");
-            builder.append(e.getMessage());
-            throw new WebApplicationException(builder.toString());
+            throw new WebApplicationException("Fetching Report Groups...No groups retrieved for report with id: "+reportId);
         }
         ArgoStatusGroupsResponse argoGroups=null;
         var list = new ArrayList<StatusGroupResponseDto>();

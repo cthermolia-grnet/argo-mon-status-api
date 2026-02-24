@@ -4,7 +4,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.util.List;
-@Schema(description = "WebApiReportResponse returns the argo-web-api response of a report")
+@Schema(description = "WebApiReportResponse returns the Argo Web Api response of a report")
 
 public class WebApiReportResponse {
 

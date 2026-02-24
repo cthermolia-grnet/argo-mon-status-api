@@ -143,10 +143,13 @@ public class TenantService {
             if (tenantCreatedRemotely && remoteTenantId != null) {
                 webApiService.deleteTenant(remoteTenantId);
             }
-            if(e instanceof  WebApplicationException){
-                throw new WebApplicationException("Creating Tenant... Failed to create tenant in Argo Web Api. Message received: "+e.getMessage(),((WebApplicationException) e).getResponse().getStatus());
+
+            Log.error(e.getMessage(), e);
+            if (e instanceof WebApplicationException) {
+                throw new WebApplicationException("Creating Tenant... Failed to create tenant in Argo Web Api", ((WebApplicationException) e).getResponse().getStatus());
             }
-            throw new RuntimeException("Creating Tenant... Failed to create tenant. Message received: "+e.getMessage());
+
+            throw new RuntimeException("Creating Tenant... Failed to create tenant");
         }
     }
 
@@ -179,8 +182,7 @@ public class TenantService {
             Log.error("JSON error while retrieving tenant {}", id, e);
 
             throw new WebApplicationException(
-                    "Retrieving Tenant... Failed to retrieve tenant with id: " + id + " due to invalid response from Argo Web Api.\n"
-                            + " Error received: " + e.getMessage(),
+                    "Retrieving Tenant... Failed to retrieve tenant with id: " + id + " due to invalid response from Argo Web Api",
                     502   // Bad Gateway (external system issue)
             );
         }
@@ -241,10 +243,10 @@ public class TenantService {
 
         } catch (WebApplicationException e) {
 
-            Log.error("External API error while deleting tenant {}", id, e);
+            Log.error("Argo Web Api error while deleting tenant {}", id, e);
 
             throw new WebApplicationException(
-                    "Deleting Tenant... Failed to delete tenant from argo-web-api. Received message is: \n" + e.getMessage(),
+                    "Deleting Tenant... Failed to delete tenant from Argo Web Api",
                     e.getResponse().getStatus()
             );
         } catch (JsonProcessingException e) {
@@ -289,7 +291,8 @@ public class TenantService {
                 try {
                     webApiService.deleteTenant(id);
                 } catch (JsonProcessingException e) {
-                    throw new RuntimeException("Deleting Tenant... Failed to delete tenant with id: "+t.id+" from Argo Web Api \n Received message is: "+e);
+                    Log.error(e.getMessage(), e);
+                    throw new RuntimeException("Deleting Tenant... Failed to delete tenant with id: " + t.id + " from Argo Web Api");
                 }
 
             } catch (RuntimeException e) {
@@ -301,9 +304,9 @@ public class TenantService {
                     status = ((WebApplicationException) e).getResponse().getStatus();
                 }
 
-                var message = e.getMessage();
-                Log.error("ERROR deleting tenant with id: " + t.id +"\n Received status is: " + status + "and message : " + message);
-           }
+                Log.error(e.getMessage(),e);
+                Log.error("ERROR deleting tenant with id: " + t.id +" Received status is: "+status);
+            }
         });
     }
 
@@ -490,19 +493,20 @@ public class TenantService {
             return tenant;
 
         } catch (PersistenceException e) {
-           Log.error("Database error while saving tenant {}", remoteTenantId, e);
+            Log.error("Database error while saving tenant {}", remoteTenantId, e);
             throw new WebApplicationException(
-                    "Saving in database... "+"Failed to save tenant due to database error.",
+                    "Saving in database... " + "Failed to save tenant due to database error.",
                     500
             );
         } catch (Exception e) {
             Log.error("Unexpected error while saving tenant {}", remoteTenantId, e);
             throw new WebApplicationException(
-                 "Saving in database... "+  "Unexpected error occurred while saving tenant.",
+                    "Saving in database... " + "Unexpected error occurred while saving tenant.",
                     500
             );
         }
     }
+
     //updates the tenant in the database
     private void updateTenantInDB(TenantRequestDto request, Tenant tenant) {
         // Update simple fields:
@@ -1074,15 +1078,16 @@ public class TenantService {
         } catch (JsonProcessingException e) {
 
             Log.error("Invalid JSON received while checking readiness for tenant {}", id, e);
+
             throw new WebApplicationException(
-                    "Checking Readiness... " + "Failed to check tenant readiness due to invalid response from Argo Web Api with message:\n" + e.getMessage(),
+                    "Checking Readiness... " + "Failed to check tenant readiness due to invalid response from Argo Web Api",
                     502  // Bad Gateway (external system problem)
             );
 
         } catch (WebApplicationException e) {
-            Log.error("External API error while checking readiness for tenant {}", id, e);
+            Log.error("Argo Web Api error while checking readiness for tenant {}", id, e);
             throw new WebApplicationException(
-                    "Checking readiness... " + "Argo Web Api error while checking tenant readiness:\n" + e.getMessage(),
+                    "Checking readiness... " + "Argo Web Api error while checking tenant readiness",
                     e.getResponse().getStatus()
             );
 

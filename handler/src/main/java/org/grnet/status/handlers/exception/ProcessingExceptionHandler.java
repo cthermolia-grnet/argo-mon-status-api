@@ -33,13 +33,13 @@ public class ProcessingExceptionHandler implements ExceptionMapper<ProcessingExc
         var msg = (root.getMessage() == null) ? "" : root.getMessage().toLowerCase();
 
         if (msg.contains("connection refused")) {
-            return "Remote service is unreachable (connection refused). Check the target URL.";
+            return "Remote service is unreachable (connection refused).";
         }
         if (msg.contains("no route to host")) {
-            return "Remote service is unreachable (no route to host). Check network access and DNS.";
+            return "Remote service is unreachable (no route to host).";
         }
         if (msg.contains("ssl") || msg.contains("handshake")) {
-            return "TLS handshake failed when connecting to the remote service. Check HTTPS configuration and certificates.";
+            return "TLS handshake failed when connecting to the remote service.";
         }
         if (msg.contains("timed out") || msg.contains("timeout")) {
             return "Remote service did not respond in time (timeout).";

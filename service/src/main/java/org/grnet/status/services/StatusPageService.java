@@ -80,7 +80,9 @@ public class StatusPageService {
         try {
             report = reportService.fetchReportById(tenantId, request.reportId);
         } catch (WebApplicationException e) {
-            throw new WebApplicationException("Creating Status Page... " + " Failed to create status page for report with id: " + request.reportId + " Received message:\n" + e.getMessage());
+
+            Log.error(e.getMessage(),e);
+            throw new WebApplicationException("Creating Status Page... " + " Failed to create status page for report with id: " + request.reportId );
 
         }
         var entity = StatusPageMapper.INSTANCE.dtoToEntity(request);

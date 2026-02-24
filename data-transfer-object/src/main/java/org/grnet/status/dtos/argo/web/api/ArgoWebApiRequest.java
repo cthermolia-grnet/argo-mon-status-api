@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Pattern;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
-@Schema(description = "Request to connect to argo-web-api")
+@Schema(description = "Request to connect to Argo Web Api")
 public class ArgoWebApiRequest {
 
     @Schema(type = SchemaType.STRING,

@@ -138,10 +138,10 @@ public class TenantInvitationService {
                 Log.info("Adding user to tenant group.");
                 groupManagementService.addUserToTenantGroup(invitation.tenant.name, username, invitation.role);
             } catch (Exception e) {
-                Log.warn("Failed to add user to tenant group.", e);
+                Log.warn("Accepting invitation... Failed to add user to tenant group.", e);
                 // invitation stays PENDING
                 throw new WebApplicationException(
-                        "The user could not be added to the tenant group at the moment.", 503
+                     "Accepting invitation... "+   "The user could not be added to the tenant group at the moment.", 503
                 );
             }
         }
@@ -152,7 +152,7 @@ public class TenantInvitationService {
             Log.info("Sending invitation notifications.");
             sendInvitationNotifications(result);
         } catch (Exception e) {
-            Log.warn("Invitation notifications failed.", e);
+            Log.warn("Notifying for invitation response... Invitation notifications failed.", e);
         }
 
         return result;
@@ -191,7 +191,7 @@ public class TenantInvitationService {
         var invitation = tenantInvitationRepository.findById(invitationId);
 
         if (!Objects.equals(invitation.tenant.getId(), tenantId)) {
-            throw new WebApplicationException("Invitation is not linked to this tenant.", 409);
+            throw new WebApplicationException("Revoking invitation... Invitation is not linked to this tenant.", 409);
         }
 
         invitation.status = mapToStatus(REVOKE);
@@ -272,22 +272,22 @@ public class TenantInvitationService {
     private void enforceInviteOwnership(String invitationEmail, String userEmail) {
 
         if (userEmail == null || userEmail.isBlank()) {
-            throw new BadRequestException("Authenticated user email is missing.");
+            throw new BadRequestException("Validating invitation... Authenticated user email is missing.");
         }
 
         if (invitationEmail == null || invitationEmail.isBlank()) {
-            throw new WebApplicationException("Invitation has no associated email.", 500);
+            throw new WebApplicationException("Validating invitation... Invitation has no associated email.", 500);
         }
 
         if (!invitationEmail.equalsIgnoreCase(userEmail)) {
-            throw new ForbiddenException("This invitation does not belong to the authenticated user.");
+            throw new ForbiddenException("Validating invitation... This invitation does not belong to the authenticated user.");
         }
     }
 
     private void enforcePending(InvitationStatus status) {
 
         if (status == null) {
-            throw new WebApplicationException("Invitation status is missing.", 409);
+            throw new WebApplicationException("Validating invitation's status... Invitation status is missing.", 409);
         }
 
         if (status == InvitationStatus.PENDING) {

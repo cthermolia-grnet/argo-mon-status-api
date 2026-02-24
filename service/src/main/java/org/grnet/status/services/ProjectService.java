@@ -58,7 +58,7 @@ public class ProjectService {
     public void deleteById(String id) {
         var project=projectRepository.findById(id);
         if (!project.getTenantProjects().isEmpty()) {
-            throw new IllegalStateException("Project cannot be deleted because it belongs to one or more tenants.");
+            throw new IllegalStateException("Deleting Project... Project cannot be deleted because it belongs to one or more tenants.");
         }
         projectRepository.deleteById(id);
     }

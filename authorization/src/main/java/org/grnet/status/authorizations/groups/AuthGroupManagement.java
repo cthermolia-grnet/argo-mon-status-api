@@ -39,7 +39,7 @@ public class AuthGroupManagement implements GroupManagement {
         // Resolve parent group ID
         var parentId = getGroupIdByPath(parentPath);
         if (parentId == null)
-            throw new IllegalStateException("Parent group not found: " + parentPath);
+            throw new IllegalStateException("Creating group failed. Parent group not found at path: " + parentPath);
 
         // Create child group
         groupClient.createSubGroup(parentId, req);
@@ -48,7 +48,7 @@ public class AuthGroupManagement implements GroupManagement {
         var newGroupPath = parentPath + "/" + name;
         var newGroupId = getGroupIdByPath(newGroupPath);
         if (newGroupId == null)
-            throw new IllegalStateException("New group not found after creation: " + newGroupPath);
+            throw new IllegalStateException("Creating group failed. New group not found after creation: " + newGroupPath);
 
         LOG.infof("Group created: %s → ID: %s", newGroupPath, newGroupId);
 

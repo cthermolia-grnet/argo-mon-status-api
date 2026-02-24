@@ -108,13 +108,13 @@ public class ReportService {
                 .anyMatch(r -> reportId.equals(r.id));
 
         if (!found) {
-            throw new NotFoundException("Not found report with id: " + reportId + " for tenant with id: " + id);
+            throw new NotFoundException("Fetching Report... Not found report with id: " + reportId + " for tenant with id: " + id);
         }
 
         try {
             return argoWebApiClient.fetchReportByIdSuperAdmin(reportId, accessToken, id).data.get(0);
         } catch (ClientWebApplicationException e) {
-            throw new ClientWebApplicationException("Report not found in argo-web-api with id: " + reportId);
+            throw new ClientWebApplicationException("Fetching Report... Report not found in argo-web-api with id: " + reportId);
         }
     }
 }

@@ -280,7 +280,7 @@ public interface TenantMapper {
             String metadataJson = objectMapper.writeValueAsString(dto.metadata);
             tenant.setMetadata(metadataJson);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to convert metadata DTO to JSON", e);
+            throw new RuntimeException("Failed to convert the tenant's metadata DTO to JSON", e);
         }
         return tenant;
     }
@@ -292,7 +292,7 @@ public interface TenantMapper {
         try {
             return objectMapper.readValue(metadataJson, TenantMetadata.class);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to deserialize metadata JSON", e);
+            throw new RuntimeException("Failed to deserialize the tenant's metadata JSON", e);
         }
     }
 
@@ -304,7 +304,7 @@ public interface TenantMapper {
         try {
             return objectMapper.writeValueAsString(metadata);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize metadata JSON", e);
+            throw new RuntimeException("Failed to serialize the tenant's metadata JSON", e);
         }
     }
 
@@ -317,7 +317,7 @@ public interface TenantMapper {
         try {
             return objectMapper.readValue(statusJson, TenantStatusDto.class);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to deserialize status JSON", e);
+            throw new RuntimeException("Failed to deserialize tenant's status JSON", e);
         }
     }
 
@@ -329,7 +329,7 @@ public interface TenantMapper {
         try {
             return objectMapper.writeValueAsString(readiness);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize readiness JSON", e);
+            throw new RuntimeException("Failed to serialize tenant's readiness JSON", e);
         }
     }
 
@@ -341,7 +341,7 @@ public interface TenantMapper {
         try {
             return objectMapper.writeValueAsString(status);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize status JSON", e);
+            throw new RuntimeException("Failed to serialize tenant's status JSON", e);
         }
     }
 
@@ -353,7 +353,7 @@ public interface TenantMapper {
         try {
             return objectMapper.writeValueAsString(status);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize status JSON", e);
+            throw new RuntimeException("Failed to serialize tenant's status JSON", e);
         }
     }
 
@@ -364,7 +364,7 @@ public interface TenantMapper {
         try {
             return objectMapper.readValue(json, TenantStatusDto.class);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to deserialize status JSON", e);
+            throw new RuntimeException("Failed to deserialize tenant's status JSON", e);
         }
     }
 
@@ -375,19 +375,9 @@ public interface TenantMapper {
         try {
             return objectMapper.readValue(json, TenantReadiness.class);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to deserialize readiness JSON", e);
+            throw new RuntimeException("Failed to deserialize  tenant's readiness JSON", e);
         }
     }
-//    default TenantStatusDto mapAlertsFromString(String json) {
-//        if (json == null || json.isBlank()) {
-//            return new TenantStatusDto();
-//        }
-//        try {
-//            return objectMapper.readValue(json, TenantStatusDto.class);
-//        } catch (Exception e) {
-//            throw new RuntimeException("Failed to deserialize status JSON", e);
-//        }
-//    }
 
     default String mergeJobsIntoStatus(String existingStatusJson, TenantStatusDto processStatus) {
         TenantStatusDto status = mapStatusFromString(existingStatusJson);
@@ -398,42 +388,4 @@ public interface TenantMapper {
 
         return mapStatusToString(status);
     }
-//    default String mergeAlertsIntoStatus(String existingAlertsJson,TenantStatusDto processStatus) {
-//        TenantStatusDto status = mapAlertsFromString(existingAlertsJson);
-//
-//        if (processStatus != null && processStatus.jobs != null) {
-//            status.jobs = processStatus.jobs;
-//        }
-//
-//        return mapStatusToString(status);
-//    }
-
-//    default TenantStatusDto mapStatusObjectCheckReadiness(String statusJson) {
-//
-//        if (statusJson == null || statusJson.isBlank()) {
-//            return null;
-//        }
-//
-//        try {
-//            TenantStatusDto dto =
-//                    objectMapper.readValue(statusJson, TenantStatusDto.class);
-//
-//            if (dto.jobs != null) {
-//                List<EventStatusDto> onlyCheckReadiness =
-//                        dto.jobs.stream()
-//                                .filter(job ->
-//                                        "CHECK_READINESS".equalsIgnoreCase(job.getName())
-//                                )
-//                                .collect(Collectors.toList());
-//
-//                dto.jobs=onlyCheckReadiness;
-//            }
-//
-//            return dto;
-//
-//        } catch (JsonProcessingException e) {
-//            throw new RuntimeException("Failed to deserialize status JSON", e);
-//        }
-//    }
-
 }

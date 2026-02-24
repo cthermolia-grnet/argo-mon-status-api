@@ -1,10 +1,16 @@
 package org.grnet.status.services;
 
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.grnet.status.dtos.argo.ArgoStatusGroupsResponse;
+import org.grnet.status.dtos.report.FullReportResponseDto;
 import org.grnet.status.dtos.status.StatusGroupRequestDto;
 import org.grnet.status.dtos.status.StatusGroupResponseDto;
 import org.grnet.status.dtos.statuspage.StatusPageConfigDto;
@@ -32,11 +38,33 @@ public class StatusService {
     String accessToken;
 
     public List<StatusGroupResponseDto> getStatusGroups(String tenantId, String reportId) {
+        FullReportResponseDto report=null;
+        try {
+             report = reportService.fetchReportById(tenantId, reportId);
+        }catch (RuntimeException e){
+            var builder=new StringBuilder();
+            builder.append("Fetching Report Groups... ");
+            builder.append("No groups retrieved for report with id:");
+            builder.append(reportId);
 
-        var report = reportService.fetchReportById(tenantId, reportId);
-        var argoGroups = argoWebApiClient.fetchStatusGroupsSuperAdmin(accessToken, tenantId, report.info.name);
-
+            builder.append("Received error: ");
+            builder.append("\\n");
+            builder.append(e.getMessage());
+            throw new WebApplicationException(builder.toString());
+        }
+        ArgoStatusGroupsResponse argoGroups=null;
         var list = new ArrayList<StatusGroupResponseDto>();
+
+        try {
+            argoGroups = argoWebApiClient
+                    .fetchStatusGroupsSuperAdmin(accessToken, tenantId, report.info.name);
+        } catch (WebApplicationException e) {
+            Log.error("Argo Web Api returned HTTP error: {}", e.getResponse().getStatus(), e);
+            throw new NotFoundException("Fetching Report Groups..."+"No groups retrieved from Argo Web Api for report: "+report.info.name);
+        } catch (ProcessingException e) {
+            Log.error("Argo Web Api is unreachable", e);
+            throw new RuntimeException("Fetching Report Groups... Argo Web Api is unreachable", e);
+        }
 
         if (argoGroups != null && argoGroups.groups != null) {
             for (var group : argoGroups.groups) {

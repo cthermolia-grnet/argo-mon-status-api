@@ -7,10 +7,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.grnet.status.dtos.general.ExistResponseDto;
 import org.grnet.status.dtos.pagination.PageResource;
+import org.grnet.status.dtos.report.FullReportResponseDto;
 import org.grnet.status.dtos.statuspage.*;
 import org.grnet.status.dtos.user.UserProfileDto;
 import org.grnet.status.entities.Page;
@@ -74,9 +76,13 @@ public class StatusPageService {
         validateGroupsExist(tenantId, request.reportId, request.config.groups);
         validateTheming(request.config);
         checkIfExistSlug(request.slug, null);
+        FullReportResponseDto report = null;
+        try {
+            report = reportService.fetchReportById(tenantId, request.reportId);
+        } catch (WebApplicationException e) {
+            throw new WebApplicationException("Creating Status Page... " + " Failed to create status page for report with id: " + request.reportId + " Received message:\n" + e.getMessage());
 
-        var report = reportService.fetchReportById(tenantId, request.reportId);
-
+        }
         var entity = StatusPageMapper.INSTANCE.dtoToEntity(request);
         entity.setTenant(tenantRepository.findById(tenantId));
         entity.setUserId(userId);
@@ -105,7 +111,7 @@ public class StatusPageService {
     public StatusPageResponseDto updateStatusPage(String tenantId, String statusPageId, StatusPageUpdateRequestDto request) {
 
         var entity = statusPageRepository.searchByIdOptional(statusPageId)
-                .orElseThrow(() -> new IllegalArgumentException("StatusPage not found with id " + statusPageId));
+                .orElseThrow(() -> new IllegalArgumentException("Updating StatusPage... StatusPage not found with id " + statusPageId));
 
         checkIfExistSlug(request.slug, statusPageId);
         validateGroupsExist(tenantId, request.reportId, request.config.groups);
@@ -155,10 +161,10 @@ public class StatusPageService {
     /**
      * Retrieves a page of Subjects submitted by the specified user.
      *
-     * @param page    The index of the page to retrieve (starting from 0).
-     * @param size    The maximum number of Subjects to include in a page.
-     * @param uriInfo The Uri Info.
-     * @param tenantId  The ID of the user.
+     * @param page     The index of the page to retrieve (starting from 0).
+     * @param size     The maximum number of Subjects to include in a page.
+     * @param uriInfo  The Uri Info.
+     * @param tenantId The ID of the user.
      * @return A list of SubjectResponse objects representing the submitted Subjects in the requested page.
      */
     public PageResource<StatusPageResponseDto> getStatusPageByUserAndPage(int page, int size, UriInfo uriInfo, String tenantId, String userId) {
@@ -208,7 +214,7 @@ public class StatusPageService {
 
         var entity = statusPageRepository.findById(id);
         if (entity == null) {
-            throw new IllegalArgumentException("StatusPage not found with id " + id);
+            throw new IllegalArgumentException("Deleting StatusPage... StatusPage not found with id " + id);
         }
         imageUploadUtil.deleteImageIfExists(baseUploadLogoDir, id);
 
@@ -354,12 +360,12 @@ public class StatusPageService {
         if (existing.isPresent()) {
             // CREATE case
             if (currentId == null) {
-                throw new BadRequestException("A page with slug '" + slug + "' already exists.");
+                throw new BadRequestException("Checking slug.... A page with slug '" + slug + "' already exists.");
             }
 
             // UPDATE case
             if (!existing.get().getId().equals(currentId)) {
-                throw new BadRequestException("A page with slug '" + slug + "' already exists.");
+                throw new BadRequestException("Checking slug... A page with slug '" + slug + "' already exists.");
             }
         }
     }
@@ -369,7 +375,7 @@ public class StatusPageService {
         var argoGroups = statusService.getStatusGroups(tenantId, reportId);
 
         if (argoGroups == null || argoGroups.isEmpty()) {
-            throw new IllegalArgumentException("Unable to retrieve groups from ARGO for this report.");
+            throw new IllegalArgumentException("Validating Groups... No groups exist or failed to be retrieved for report with id: " + reportId);
         }
 
         // Extract all valid endpoint names from ARGO
@@ -382,13 +388,13 @@ public class StatusPageService {
             for (var item : group.list) {
                 if (!validNames.contains(item.name)) {
                     throw new IllegalArgumentException(
-                            "Service '" + item.name + "' is not a valid ARGO item for this report."
+                            "Validating groups... " + "Service '" + item.name + "' is not a valid item for this report."
                     );
                 }
 
                 if (!ArgoItemStatusEnum.isValid(item.status)) {
                     throw new IllegalArgumentException(
-                            "Invalid ARGO status '" + item.status + "' for '" + item.name + "'."
+                            "Validating groups... " + "Invalid status '" + item.status + "' for '" + item.name + "'."
                     );
                 }
             }
@@ -405,34 +411,34 @@ public class StatusPageService {
 
             if (logo.startsWith("data:image/")) {
                 if (!logo.contains("base64,")) {
-                    throw new IllegalArgumentException("Invalid Base64 image format for logo");
+                    throw new IllegalArgumentException("Validating Theme... Invalid Base64 image format for logo");
                 }
             } else if (!logo.matches("^(https?://).+")) {
-                throw new IllegalArgumentException("Invalid logo format. Expected a Base64 data URI or HTTPS URL.");
+                throw new IllegalArgumentException("Validating Theme... Invalid logo format. Expected a Base64 data URI or HTTPS URL.");
             }
         }
 
         // validate color
         if (theming.color != null && !theming.color.matches("^#([A-Fa-f0-9]{6})$")) {
-            throw new IllegalArgumentException("Invalid color format, expected #RRGGBB");
+            throw new IllegalArgumentException("Validating Theme... Invalid color format, expected #RRGGBB");
         }
 
         // validate icon type
         var validIcons = Set.of("led", "icon", "none");
         if (!validIcons.contains(theming.status.icon)) {
-            throw new IllegalArgumentException("Invalid icon type: " + theming.status.icon);
+            throw new IllegalArgumentException("Validating Theme... Invalid icon type: " + theming.status.icon);
         }
 
         // validate status text mode
         var validTextModes = Set.of("text", "badge", "none");
         if (!validTextModes.contains(theming.status.text)) {
-            throw new IllegalArgumentException("Invalid status text mode: " + theming.status.text);
+            throw new IllegalArgumentException("Validating Theme... Invalid status text mode: " + theming.status.text);
         }
 
         // validate columns
         var validColumns = Set.of("one", "two");
         if (!validColumns.contains(theming.columns)) {
-            throw new IllegalArgumentException("Invalid column layout: " + theming.columns);
+            throw new IllegalArgumentException("Validating Theme... Invalid column layout: " + theming.columns);
         }
     }
 
@@ -447,7 +453,7 @@ public class StatusPageService {
 
             return objectMapper.writeValueAsString(root);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to update logo in config JSON", e);
+            throw new RuntimeException("Updating logo... Failed to update logo in config JSON", e);
         }
     }
 
@@ -459,7 +465,7 @@ public class StatusPageService {
             theming.putNull("logo");
             return objectMapper.writeValueAsString(root);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to remove logo from config JSON", e);
+            throw new RuntimeException("Removing logo... Failed to remove logo from config JSON", e);
         }
     }
 

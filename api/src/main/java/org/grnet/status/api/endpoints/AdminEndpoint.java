@@ -969,11 +969,11 @@ public class AdminEndpoint {
         var allowedOrder = List.of("ASC", "DESC");
 
         if (!allowedSort.contains(sort)) {
-            throw new BadRequestException("Allowed sort values: " + allowedSort);
+            throw new BadRequestException("The available values of sort parameter are : " + allowedSort);
         }
 
         if (!allowedOrder.contains(order)) {
-            throw new BadRequestException("Allowed order values: " + allowedOrder);
+            throw new BadRequestException("The available values of order parameter are : " + allowedOrder);
         }
 
         var project = tenantProjectService.getTenantsByProject(id, page - 1, size, uriInfo, search, sort, order);

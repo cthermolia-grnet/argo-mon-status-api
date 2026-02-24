@@ -41,7 +41,8 @@ public class WebApiService {
                 status = ((WebApplicationException) e).getResponse().getStatus();
             }
             var message = e.getMessage();
-            throw new WebApplicationException("tenant with id " + id + "failed in api " + message, status);
+           throw new WebApplicationException("Retrieving Tenants... tenant with id " + id + " failed in Argo Web Api \n Message received is: " + message,status);
+
         }
     }
 
@@ -68,18 +69,14 @@ public class WebApiService {
             if (status == 409) {
                 var optTenant = tenantRepository.fetchTenantByName(webApiRequest.info.name);
                 if (optTenant.isPresent()) {
-                    message = message + ". Existing tenant in Argo Mon Status API has id: " + optTenant.get().id;
+                    message ="Creating Tenant... Tenant already exists in Argo Monitoring Status with id" + optTenant.get().id+" Message received: "+e.getMessage();
                 } else {
-                    message = message + ". Tenant exists in Argo Web Api but not in Argo Mon Status API";
+                    message ="Creating Tenant... Tenant exists in Argo Web Api but not in Argo Monitoring Status"+" Message received: "+e.getMessage();
                 }
             }
             throw new WebApplicationException(message, status);
         }
     }
-//
-//    private ArgoWebApiClient produceClient() {
-//        return argoWebApiClientFactory.buildClient(webapi);
-//    }
 
     public Status updateTenantWebApi(TenantWebApiRequest webApiRequest, String id) {
         try {
@@ -90,7 +87,7 @@ public class WebApiService {
             argoWebApiClient.updateTenantTopology(id, accessToken, webApiRequest);
             return argoWebApiClient.updateTenantDBConf(id, accessToken, webApiRequest);
         } catch (Exception e) {
-            throw new WebApplicationException("Remote API update failed: " + e.getMessage(), 502);
+            throw new WebApplicationException("Updating Tenant... Failed to update tenant with id: " + id +" in Argo Web Api. Message received: "+e.getMessage(), 502);
         }
     }
 
@@ -107,7 +104,7 @@ public class WebApiService {
                 status = ((WebApplicationException) e).getResponse().getStatus();
             }
             var message = e.getMessage();
-            throw new WebApplicationException("tenant with id " + id + "failed in api " + message, status);
+            throw new WebApplicationException("Retrieving Tenant's Readiness... tenant with id " + id + "failed in Argo Web Api. Message received: " + message, status);
         }
     }
 

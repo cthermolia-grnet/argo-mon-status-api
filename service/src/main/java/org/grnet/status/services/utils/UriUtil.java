@@ -13,11 +13,11 @@ public class UriUtil {
         try {
             var uri = new URI(apiUrl);
             if (uri.getScheme() == null || uri.getHost() == null) {
-                throw new BadRequestException("URL must include scheme and host (e.g. http://example.com)");
+                throw new BadRequestException("URL: "+apiUrl+" must include scheme and host (e.g. http://example.com)");
             }
             return uri;
         } catch (URISyntaxException e) {
-            throw new BadRequestException("The URL is not correctly formatted.");
+            throw new BadRequestException("The URL: "+ apiUrl+" is not correctly formatted.");
         }
     }
 }

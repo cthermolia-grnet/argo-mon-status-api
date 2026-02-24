@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.persistence.PersistenceException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.BadRequestException;
@@ -37,6 +38,7 @@ import org.grnet.status.services.clients.WebApiService;
 import org.grnet.status.services.utils.ImageUploadUtil;
 
 import java.io.IOException;
+import java.rmi.RemoteException;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -114,7 +116,7 @@ public class TenantService {
 
         var existTenantOpt = tenantRepository.fetchTenantByName(request.info.name);
         if (existTenantOpt.isPresent()) {
-            var message = "Tenant: " + existTenantOpt.get().name + " already exists in ARGO Mon Status API with id: " + existTenantOpt.get().id;
+            var message = "Creating Tenant... " + "Tenant: " + existTenantOpt.get().name + " already exists in ARGO Status Pages with id: " + existTenantOpt.get().id;
             throw new CustomRuntimeException(409, message, new HashSet<>());
         }
         handleImage(request);
@@ -141,7 +143,10 @@ public class TenantService {
             if (tenantCreatedRemotely && remoteTenantId != null) {
                 webApiService.deleteTenant(remoteTenantId);
             }
-            throw e;
+            if(e instanceof  WebApplicationException){
+                throw new WebApplicationException("Creating Tenant... Failed to create tenant in Argo Web Api. Message received: "+e.getMessage(),((WebApplicationException) e).getResponse().getStatus());
+            }
+            throw new RuntimeException("Creating Tenant... Failed to create tenant. Message received: "+e.getMessage());
         }
     }
 
@@ -149,28 +154,43 @@ public class TenantService {
      * Get a tenant by Id.
      */
     public TenantResponseDto getTenantById(String id) {
-        TenantResponseDto webtenant = null;
-        try {
-            var tenant = tenantRepository.findById(id);
-            var webapiGetResponse = webApiService.retrieveTenantWebApi(tenant.id);
-            webtenant = TenantMapper.INSTANCE.webApiTenantToDto(tenant, webapiGetResponse);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
 
         var tenant = tenantRepository.findById(id);
-        if (tenant != null) {
-            webtenant.contacts = TenantMapper.INSTANCE.contactsToDtos(tenant.getContacts());
-            webtenant.groupStatus = getGroupStatus(tenant);
+
+        if (tenant == null) {
+            throw new WebApplicationException("Retrieving Tenant... Tenant with id: " + id + " not found", 404);
         }
-        return webtenant;
+
+        try {
+            var webapiGetResponse = webApiService.retrieveTenantWebApi(tenant.id);
+
+            var webtenant = TenantMapper.INSTANCE
+                    .webApiTenantToDto(tenant, webapiGetResponse);
+
+            webtenant.contacts =
+                    TenantMapper.INSTANCE.contactsToDtos(tenant.getContacts());
+
+            webtenant.groupStatus = getGroupStatus(tenant);
+
+            return webtenant;
+
+        } catch (JsonProcessingException e) {
+
+            Log.error("JSON error while retrieving tenant {}", id, e);
+
+            throw new WebApplicationException(
+                    "Retrieving Tenant... Failed to retrieve tenant with id: " + id + " due to invalid response from Argo Web Api.\n"
+                            + " Error received: " + e.getMessage(),
+                    502   // Bad Gateway (external system issue)
+            );
+        }
     }
 
     public void deleteTenantById(String id) {
 
         var tenant = tenantRepository.findById(id);
         if (tenant == null) {
-            throw new WebApplicationException("Tenant not found: " + id, 404);
+            throw new WebApplicationException("Deleting Tenant.. Tenant not found: " + id, 404);
         }
 
         var tenantName = tenant.name;
@@ -183,7 +203,7 @@ public class TenantService {
             authGroupSetupService.deleteGroup(groupPath);
 
         } catch (Exception ex) {
-            Log.error("Failed to queue async AGM group deletion for tenant " + id + ": " + ex.getMessage());
+            Log.error("Deleting Tenant... Failed to queue async AGM group deletion for tenant " + id + ": " + ex.getMessage());
         }
     }
 
@@ -195,38 +215,54 @@ public class TenantService {
 
         var tenant = tenantRepository.findById(id);
 
+        if (tenant == null) {
+            throw new WebApplicationException("Deleting Tenant... Tenant not found", 404);
+        }
+
         try {
-            // Create a copy so we can check which contacts might become orphan
             Set<Contact> oldContacts = new HashSet<>(tenant.getContacts());
 
-            // 1. Remove the relation from both sides
+            // 1. Remove relation from both sides
             for (Contact c : oldContacts) {
-                c.getTenants().remove(tenant); // remove tenant from contact
+                c.getTenants().remove(tenant);
             }
-            tenant.getContacts().clear(); // remove contacts from tenant
-            tenantRepository.persist(tenant); // update join table
+            tenant.getContacts().clear();
+            tenantRepository.persist(tenant);
 
-            // 2. Now safely delete the tenant
+            // 2. Delete tenant
             tenantRepository.delete(tenant);
 
-            // 3. Delete image and external API
+            // 3. External cleanups
             imageUploadUtil.deleteImageIfExists(baseUploadTenantsImagesDir, tenant.name);
-
             webApiService.deleteTenant(id);
 
             // 4. Delete orphan contacts
             deleteOrphanContacts(oldContacts);
 
-        } catch (RuntimeException e) {
-            int status = 500;
+        } catch (WebApplicationException e) {
 
-            if (e instanceof WebApplicationException) {
-                status = ((WebApplicationException) e).getResponse().getStatus();
-            }
+            Log.error("External API error while deleting tenant {}", id, e);
 
-            throw new WebApplicationException(e.getMessage(), status);
+            throw new WebApplicationException(
+                    "Deleting Tenant... Failed to delete tenant from argo-web-api. Received message is: \n" + e.getMessage(),
+                    e.getResponse().getStatus()
+            );
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+
+            Log.error("JSON processing error while deleting tenant {}", id, e);
+
+            throw new WebApplicationException(
+                    "Deleting Tenant.. Internal error while processing tenant data.",
+                    500
+            );
+        } catch (Exception e) {
+
+            Log.error("Unexpected error while deleting tenant {}", id, e);
+
+            throw new WebApplicationException(
+                    "Deleting Tenant... Unexpected error occurred while deleting tenant.",
+                    500
+            );
         }
     }
 
@@ -250,7 +286,11 @@ public class TenantService {
                 });
 
                 imageUploadUtil.deleteImageIfExists(baseUploadTenantsImagesDir, t.name);
-                webApiService.deleteTenant(id);
+                try {
+                    webApiService.deleteTenant(id);
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException("Deleting Tenant... Failed to delete tenant with id: "+t.id+" from Argo Web Api \n Received message is: "+e);
+                }
 
             } catch (RuntimeException e) {
 
@@ -262,10 +302,8 @@ public class TenantService {
                 }
 
                 var message = e.getMessage();
-                Log.error("ERROR deleting tenant " + t.id + " -> " + status + ": " + message);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
+                Log.error("ERROR deleting tenant with id: " + t.id +"\n Received status is: " + status + "and message : " + message);
+           }
         });
     }
 
@@ -286,7 +324,7 @@ public class TenantService {
 
         if (request.info != null && request.info.name != null &&
                 !Objects.equals(previousData.getInfo().getName(), request.info.name)) {
-            throw new WebApplicationException("Tenant name cannot be changed", 409);
+            throw new WebApplicationException("Updating Tenant.. Tenant name cannot be changed", 409);
         }
 
         var previousRemoteState = TenantMapper.INSTANCE.webApiTenantToTenantRequestDto(
@@ -325,11 +363,11 @@ public class TenantService {
                 webApiService.updateTenantWebApi(webApiRequestPreviousState, id);
             } catch (Exception rollbackEx) {
                 throw new WebApplicationException(
-                        "DB update failed AND remote rollback failed: " + rollbackEx.getMessage(),
+                        "Updating Tenant... DB update failed AND remote rollback failed: " + rollbackEx.getMessage(),
                         500
                 );
             }
-            throw new RuntimeException("DB update failed: " + dbException.getMessage());
+            throw new RuntimeException("Updating Tenant... DB update failed: " + dbException.getMessage());
         }
 
         return TenantMapper.INSTANCE.tenantToDto(tenant);
@@ -436,22 +474,35 @@ public class TenantService {
     }
 
     //construct and stores a tenant in the database
-    private Tenant writeInDB(TenantRequestDto request, Tenant tenant, String remoteTenantId, String userId) {
+    private Tenant writeInDB(TenantRequestDto request,
+                             Tenant tenant,
+                             String remoteTenantId,
+                             String userId) {
 
         tenant.id = remoteTenantId;
         tenant.updatedBy = userId;
-        Set<Contact> contacts = resolveAndMergeContacts(request);
 
-        tenant.setContacts(new HashSet(contacts));
+        Set<Contact> contacts = resolveAndMergeContacts(request);
+        tenant.setContacts(new HashSet<>(contacts));
+
         try {
             tenantRepository.persist(tenant);
             return tenant;
+
+        } catch (PersistenceException e) {
+           Log.error("Database error while saving tenant {}", remoteTenantId, e);
+            throw new WebApplicationException(
+                    "Saving in database... "+"Failed to save tenant due to database error.",
+                    500
+            );
         } catch (Exception e) {
-            e.printStackTrace();
-            throw e; // Rethrow to keep transactional behavior
+            Log.error("Unexpected error while saving tenant {}", remoteTenantId, e);
+            throw new WebApplicationException(
+                 "Saving in database... "+  "Unexpected error occurred while saving tenant.",
+                    500
+            );
         }
     }
-
     //updates the tenant in the database
     private void updateTenantInDB(TenantRequestDto request, Tenant tenant) {
         // Update simple fields:
@@ -511,8 +562,8 @@ public class TenantService {
         var existingStatus = TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
         request.jobs = mergeJobs(existingStatus.jobs, request.jobs);
 
+        var updatedStatusJson = TenantMapper.INSTANCE.mergeJobsIntoStatus(tenant.getStatus(), request);
         try {
-            var updatedStatusJson = TenantMapper.INSTANCE.mergeJobsIntoStatus(tenant.getStatus(), request);
 
             updateTenantStatusInDb(tenant, updatedStatusJson);
             var statusDto = TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
@@ -526,7 +577,7 @@ public class TenantService {
             //   return TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
         } catch (Exception dbException) {
 
-            throw new RuntimeException("DB update failed: " + dbException.getMessage());
+            throw new RuntimeException("Updating Tenant's Status.. DB update failed: " + dbException.getMessage());
         }
     }
 
@@ -555,7 +606,7 @@ public class TenantService {
             return TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
         } catch (Exception dbException) {
 
-            throw new RuntimeException("DB update failed: " + dbException.getMessage());
+            throw new RuntimeException("Updating Tenant's Status... DB update failed: " + dbException.getMessage());
         }
     }
 
@@ -628,7 +679,7 @@ public class TenantService {
             return TenantGroupStatus.EXISTS;
 
         } catch (Exception e) {
-            throw new ServiceUnavailableException("Group management service is unavailable.");
+            throw new ServiceUnavailableException("Creating Tenant's group management... Group management service is unavailable.");
         }
     }
 
@@ -656,14 +707,14 @@ public class TenantService {
         var tenant = tenantRepository.findById(id);
 
         if (alert.properties.containsKey("tenant_name") && !alert.properties.get("tenant_name").equals(tenant.name)) {
-            throw new BadRequestException("Value of property 'name' differs from tenant's name: " + tenant.name);
+            throw new BadRequestException("Notifying Messaging Service... Value of property 'name' differs from tenant's name: " + tenant.name);
         }
 
         validateAlertProperties(alert.name, alert.properties);
 
         alert.getProperties().put("tenant_id", id);
         alert.setCreatedAt(String.valueOf(now));
-        send(id, alert,"");
+        send(id, alert, "");
 
 
         var statusOpt = tenantRepository.fetchTenantStatus(id);
@@ -685,14 +736,14 @@ public class TenantService {
         var tenant = tenantRepository.findById(id);
 
         if (alert.properties.containsKey("tenant_name") && !alert.properties.get("tenant_name").equals(tenant.name)) {
-            throw new BadRequestException("Value of property 'name' differs from tenant's name: " + tenant.name);
+            throw new BadRequestException("Notifying Messaging Service... Value of property 'name' differs from tenant's name: " + tenant.name);
         }
 
         validateAlertProperties(alert.name, alert.properties);
 
         alert.getProperties().put("tenant_id", id);
         alert.setCreatedAt(String.valueOf(now));
-        send(id, alert,"A request is sent to the monitoring service to validate that the necessary data and configuration are in place prior to starting the monitoring process");
+        send(id, alert, "Notifying Messaging Service.. A request is sent to the Messaging Service to validate that the necessary data and configuration are in place prior to starting the monitoring process");
 
 
         var statusOpt = tenantRepository.fetchTenantStatus(id);
@@ -884,7 +935,7 @@ public class TenantService {
             Log.error("Failed to send alert to Messaging Service", e);
 
             throw new RuntimeException(
-                    "Failed to send event notification: " + alert.name,
+                    "Sending notification... Failed to send event notification: " + alert.name,
                     e
             );
         }
@@ -957,7 +1008,7 @@ public class TenantService {
 
         var def = org.grnet.status.enums.TenantJobEvent
                 .fromKey(job.name)
-                .orElseThrow(() -> new BadRequestException("Unknown job name: " + job.name));
+                .orElseThrow(() -> new BadRequestException("Updating Tenant's Status... Unknown job name: " + job.name));
 
         job.setName(def.key());
         job.setMode(def.modeValue());
@@ -976,10 +1027,10 @@ public class TenantService {
 
             var def = TenantJobEvent
                     .fromKey(job.getName())
-                    .orElseThrow(() -> new BadRequestException("Unknown job name: " + job.getName()));
+                    .orElseThrow(() -> new BadRequestException("Updating Tenant's Status... Unknown job name: " + job.getName()));
 
             if (def.mode() != expectedMode) {
-                throw new BadRequestException("Job '" + def.key() + "' is " + def.mode().name().toLowerCase()
+                throw new BadRequestException("Updating Tenant's Status... " + "Job '" + def.key() + "' is " + def.mode().name().toLowerCase()
                         + " and cannot be updated");
             }
         }
@@ -989,17 +1040,17 @@ public class TenantService {
         if (props == null || props.isEmpty()) return;
 
         var def = TenantJobEvent.fromKey(eventName)
-                .orElseThrow(() -> new jakarta.ws.rs.BadRequestException("Unknown job name: " + eventName));
+                .orElseThrow(() -> new jakarta.ws.rs.BadRequestException("Validating Event Notification... Unknown job name: " + eventName));
 
         for (var k : props.keySet()) {
             var keyEnum = TenantJobProperty.fromKey(k)
                     .orElseThrow(() -> new jakarta.ws.rs.BadRequestException(
-                            "Unknown property key '" + k + "' for job '" + def.key() + "'"
+                            "Validating Event Notification... Unknown property key '" + k + "' for job '" + def.key() + "'"
                     ));
 
             if (!def.allowedProperties().contains(keyEnum)) {
                 throw new jakarta.ws.rs.BadRequestException(
-                        "Property '" + keyEnum.key() + "' is not allowed for job '" + def.key() + "'"
+                        "Validating Event Notification... " + "Property '" + keyEnum.key() + "' is not allowed for job '" + def.key() + "'"
                 );
             }
         }
@@ -1010,13 +1061,39 @@ public class TenantService {
      */
     @Transactional
     public WebApiTenantReadiness checkReadiness(String id) {
-        try {
-            var tenant = tenantRepository.findById(id);
-            return webApiService.retrieveTenantReadinessWebApi(tenant.id);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+
+        var tenant = tenantRepository.findById(id);
+
+        if (tenant == null) {
+            throw new WebApplicationException("Checking Readiness.. Tenant not found", 404);
         }
 
+        try {
+            return webApiService.retrieveTenantReadinessWebApi(tenant.id);
+
+        } catch (JsonProcessingException e) {
+
+            Log.error("Invalid JSON received while checking readiness for tenant {}", id, e);
+            throw new WebApplicationException(
+                    "Checking Readiness... " + "Failed to check tenant readiness due to invalid response from Argo Web Api with message:\n" + e.getMessage(),
+                    502  // Bad Gateway (external system problem)
+            );
+
+        } catch (WebApplicationException e) {
+            Log.error("External API error while checking readiness for tenant {}", id, e);
+            throw new WebApplicationException(
+                    "Checking readiness... " + "Argo Web Api error while checking tenant readiness:\n" + e.getMessage(),
+                    e.getResponse().getStatus()
+            );
+
+        } catch (Exception e) {
+            Log.error("Unexpected error while checking readiness for tenant {}", id, e);
+
+            throw new WebApplicationException(
+                    "Checking readiness... " + "Unexpected error occurred while checking tenant readiness.",
+                    500
+            );
+        }
     }
 
 }

@@ -58,7 +58,7 @@ public class TenantProjectService {
 
         for (var projectId : request.projectIds) {
             if (projectRepository.findByIdOptional(projectId).isEmpty()) {
-                throw new WebApplicationException("Project not found: " + projectId, 404);
+                throw new WebApplicationException("Assigning project to tenant... Project not found: " + projectId, 404);
             }
         }
 

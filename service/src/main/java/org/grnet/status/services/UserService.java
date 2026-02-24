@@ -30,6 +30,7 @@ public class UserService {
         userProfile.name = utility.getUserName();
         userProfile.surname = utility.getUserSurname();
         userProfile.groups = userEntitlementsService.getUserEntitlements();
+        userProfile.uid = utility.getUid();
 
         return userProfile;
     }

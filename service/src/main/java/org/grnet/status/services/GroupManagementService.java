@@ -59,6 +59,7 @@ public class GroupManagementService {
                     user.username = gu.username;
                     user.firstName = gu.firstName;
                     user.lastName = gu.lastName;
+                    user.uid = gu.getUid();
                     user.tenants = gu.getTenants();
                     return user;
                 })

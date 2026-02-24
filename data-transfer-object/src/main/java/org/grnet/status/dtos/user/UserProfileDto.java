@@ -25,6 +25,7 @@ public class UserProfileDto {
         )
         @JsonProperty("username")
         public String username;
+
         @Schema(type = SchemaType.STRING,
                 implementation = String.class,
                 description = "User's email",
@@ -48,6 +49,15 @@ public class UserProfileDto {
         )
         @JsonProperty("surname")
         public String surname;
+
+
+        @Schema(type = SchemaType.STRING,
+                implementation = String.class,
+                description = "User's uid",
+                example = "uid"
+        )
+        @JsonProperty("uid")
+        public String uid;
 
         @Schema(
                 description = "User entitlements (group memberships and roles)"

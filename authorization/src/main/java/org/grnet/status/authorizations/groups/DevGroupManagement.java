@@ -73,6 +73,9 @@ public class DevGroupManagement implements GroupManagement {
                                               "cat_entitlements": [
                                                   "assessment:add78a27-722c-402d-990a-548f1d3994f8",
                                                   "assessment:2e1af1bd-1e92-49b2-a366-1623f4bde72d"
+                                              ],
+                                              "uid": [
+                                                   "test"
                                               ]
                                           },
                                           "federatedIdentities": [
@@ -145,6 +148,9 @@ public class DevGroupManagement implements GroupManagement {
                                               ],
                                               "cat_entitlements": [
                                                   "assessment:ad5f3c93-bc3b-490b-a922-ae3594df1bd9"
+                                              ],
+                                              "uid": [
+                                                   "test1"
                                               ]
                                           },
                                           "federatedIdentities": [
@@ -222,6 +228,9 @@ public class DevGroupManagement implements GroupManagement {
                                                   "assessment:590c84ef-54cf-4b82-81c6-df3d4e295ac1",
                                                   "assessment:b4b91b61-56d9-458f-9c5e-9ffdf50796eb",
                                                   "assessment:b9cd2434-ac37-4414-9181-1a6f64bf2e71"
+                                              ],
+                                              "uid": [
+                                                   "test2"
                                               ]
                                           },
                                           "federatedIdentities": [
@@ -309,6 +318,9 @@ public class DevGroupManagement implements GroupManagement {
                                                   "assessment:61ccb5c6-a619-4bb7-9ac9-53a75f3e74bf",
                                                   "assessment:3118d5b8-2c60-43cb-8e2d-5257531482d8",
                                                   "assessment:70547933-f52c-4d2c-99b5-d98e0d4f2341"
+                                              ],
+                                              "uid": [
+                                                   "test3"
                                               ]
                                           },
                                           "federatedIdentities": [
@@ -420,6 +432,9 @@ public class DevGroupManagement implements GroupManagement {
                                                   "assessment:50d0c7a5-8198-4119-9291-79faa3777e62",
                                                   "assessment:c22ab839-b343-4508-bb7b-db8c496733f0",
                                                   "assessment:78c05747-9eeb-4665-b28f-8909658148cc"
+                                              ],
+                                              "uid": [
+                                                   "test4"
                                               ]
                                           },
                                           "federatedIdentities": [

@@ -60,6 +60,8 @@ public class Utility {
         return tokenIntrospection.getJsonObject().getString("family_name", null);
     }
 
+    public String getUid() { return tokenIntrospection.getJsonObject().getString("preferred_username", null);}
+
     /**
      * This method paginates a list of objects.
      *

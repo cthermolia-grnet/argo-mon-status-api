@@ -71,7 +71,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#97](https://github.com/ARGOeu/argo-mon-status-api/pull/97) ARGO-5384 Re-Appear CHECK_READINESS in job list
 - [#98](https://github.com/ARGOeu/argo-mon-status-api/pull/98) ARGO-5386 Change tenant admin access to endpoints
 - [#102](https://github.com/ARGOeu/argo-mon-status-api/pull/102) ARGO-5396 Improve error messages in Argo Monitoring Status
-
+- [#103](https://github.com/ARGOeu/argo-mon-status-api/pull/103) ARGO-5398 Expose uid in User Profile and Status Members responses
 
 ### Fix
 

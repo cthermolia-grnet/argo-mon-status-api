@@ -19,6 +19,14 @@ public class GroupUser {
 
     public Attributes attributes;
 
+    @JsonGetter("uid")
+    public String getUid() {
+        if (attributes == null || attributes.uid == null || attributes.uid.isEmpty()) {
+            return null;
+        }
+        return attributes.uid.get(0);
+    }
+
     @JsonGetter("tenants")
     public List<UserGroupInfoDto> getTenants() {
 

@@ -12,5 +12,7 @@ public class GroupUserResponse {
 
     public String email;
 
+    public String uid;
+
     public List<UserGroupInfoDto> tenants;
 }

@@ -21,6 +21,7 @@ import org.grnet.status.dtos.statuspage.*;
 import org.grnet.status.dtos.tenant.*;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
+import org.grnet.status.dtos.tenantproject.TenantProjectDeleteDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
 import org.grnet.status.services.clients.AmsClient;
 import org.grnet.status.services.clients.AmsClientFactory;
@@ -215,6 +216,33 @@ public class TenantEndpointTest extends KeycloakTest {
 
         assertEquals("LOCALTENANT", response1.info.name);
     }
+    @Test
+    public void updateNotExistingTenant() {
+
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
+
+        var request1 = new TenantRequestDto();
+        var tenantInfo1 = new TenantInfoDto();
+        tenantInfo1.name = "TENANT-TEST-UPDATED";
+        tenantInfo1.email = "test2-updated@gmail.com";
+        tenantInfo1.description = "this is test2 updated tenant description";
+        tenantInfo1.image = "https://example/image.png";
+        tenantInfo1.website = "https://test2.updated.tenant.org";
+        request1.info = tenantInfo1;
+        var response1 = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .body(request1)
+                .contentType(ContentType.JSON)
+                .when()
+                .put("/v1/tenants/{id}", currentMockId)
+                .then()
+                .statusCode(404)
+                .extract()
+                .as(InformativeResponse.class);
+
+        assertEquals("There is no Tenant with the following id:  " + currentMockId, response1.message);
+    }
 
     @Test
     public void updateTenantForbiddenUser() {
@@ -343,6 +371,22 @@ public class TenantEndpointTest extends KeycloakTest {
 
         assertNotNull(reports);
         assertTrue(reports.length > 0);
+    }
+    @Test
+    public void notExistingTenant() {
+
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
+        var error = given()
+                .auth().oauth2(adminToken)
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/tenants/{id}", currentMockId)
+                .then()
+                .assertThat()
+                .statusCode(404)
+                .extract()
+                .as(InformativeResponse.class);
+
     }
 
     @Test
@@ -768,4 +812,6 @@ public class TenantEndpointTest extends KeycloakTest {
             return new ObjectMapper().readValue(is, ArgoStatusGroupsResponse.class);
         }
     }
+
+
 }

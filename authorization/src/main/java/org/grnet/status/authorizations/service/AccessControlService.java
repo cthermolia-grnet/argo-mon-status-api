@@ -17,65 +17,13 @@ public class AccessControlService {
     @Inject
     OIDCEntitlementService oidc;
 
+
     /**
-     * Performs authorization based on:
-     * - group from @CheckEntitlements
-     * - role (viewer/admin)
-     * - pathId (from URL)
-     * - entitlement hierarchy: [parent, subgroup, id]
+     * Resolves all accessible subgroup identifiers for the specified group name.
+     *
+     * @param group group name
+     * @return list of accessible subgroup identifiers
      */
-    public boolean hasAccess(String annotatedGroup, String requiredRole, String pathId, GroupIdResolver resolver) {
-
-        var entitlements = oidc.fetchEntitlements();
-
-        // GLOBAL GROUP ACCESS (2-level entitlements): namespace:<group>:role=...
-        boolean hasGlobal = entitlements.stream().anyMatch(e -> {
-            var h = e.getHierarchy();
-            return h != null && h.size() == 2 &&
-                    annotatedGroup.equals(h.get(1)) &&
-                    roleMatches(e.getRole(), requiredRole);
-        });
-
-        if (hasGlobal) {
-            return true;
-        }
-
-        //GROUP-LEVEL ACCESS (list endpoints, no ID provided)
-        if (pathId == null) {
-            return entitlements.stream().anyMatch(e -> {
-                var h = e.getHierarchy();
-                return h != null && h.size() >= 2 &&
-                        annotatedGroup.equals(h.get(1)) &&
-                        roleMatches(e.getRole(), requiredRole);
-            });
-        }
-
-        //ID-LEVEL ACCESS (endpoints with {id})
-        for (Entitlement e : entitlements) {
-
-            var hierarchy = e.getHierarchy();
-            if (hierarchy.size() < 3) {
-                continue;
-            }
-
-            var subgroup = hierarchy.get(1);
-            var subgroupValue = hierarchy.get(2);
-
-            if (!subgroup.equals(annotatedGroup)) continue;
-
-            var resolvedId = resolver.resolve(subgroupValue);
-
-            var idMatch = resolvedId != null && resolvedId.equals(pathId);
-            var roleMatch = roleMatches(e.getRole(), requiredRole);
-
-            if (idMatch && roleMatch) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     public List<String> resolveAccessibleGroupsByName(String group) {
 
         var entitlements = oidc.fetchEntitlementsBySubGroupId(group);
@@ -89,6 +37,13 @@ public class AccessControlService {
     }
 
 
+    /**
+     * Determines whether the user's role satisfies the required role.
+     *
+     * @param userRole role from entitlement
+     * @param requiredRole required role
+     * @return true if role requirement is satisfied
+     */
     private boolean roleMatches(String userRole, String requiredRole) {
         if (requiredRole == null || requiredRole.isBlank()) {
             return true;
@@ -110,17 +65,33 @@ public class AccessControlService {
     }
 
     /**
-     * A super_admin entitlement has no hierarchy.
+     * Checks whether the authenticated user has the super_admin role.
+     *
+     * @return true if user is super administrator
      */
     public boolean isSuperAdmin() {
         return isSuperAdmin(oidc.fetchEntitlements());
     }
 
+    /**
+     * Checks whether the provided entitlements include the super_admin role.
+     *
+     * @param entitlements list of entitlements
+     * @return true if super administrator role is present
+     */
     private boolean isSuperAdmin(List<Entitlement> entitlements) {
         return entitlements.stream()
                 .anyMatch(e -> "super_admin".equals(e.getRole()));
     }
 
+    /**
+     * Evaluates access based on role and hierarchy comparison.
+     *
+     * @param role required role
+     * @param targetHierarchy target hierarchy
+     * @param group group name
+     * @return true if access is granted
+     */
     public boolean hasAccess(String role, List<String> targetHierarchy, String group) {
 
         var entitlements = oidc.fetchEntitlements();
@@ -130,6 +101,13 @@ public class AccessControlService {
                 .anyMatch(e -> hierarchyCovers(e.getHierarchy(), targetHierarchy));
     }
 
+    /**
+     * Determines whether an entitlement hierarchy covers the target hierarchy.
+     *
+     * @param entitlementHierarchy entitlement hierarchy
+     * @param targetHierarchy target hierarchy
+     * @return true if entitlement hierarchy covers target hierarchy
+     */
     public boolean hierarchyCovers(List<String> entitlementHierarchy, List<String> targetHierarchy) {
 
         if (entitlementHierarchy.size() > targetHierarchy.size()) return false;

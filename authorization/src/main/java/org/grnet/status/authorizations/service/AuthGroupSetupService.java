@@ -9,6 +9,9 @@ import org.jboss.logging.Logger;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Service responsible for asynchronously creating and deleting authorization groups.
+ */
 @ApplicationScoped
 public class AuthGroupSetupService {
 
@@ -20,6 +23,14 @@ public class AuthGroupSetupService {
     @Inject
     ManagedExecutor executor;
 
+    /**
+     * Asynchronously creates a group under the specified parent path.
+     *
+     * @param parentPath parent group path
+     * @param name group name
+     * @param roles roles to assign
+     * @param attributes group attributes
+     */
     public void createGroup(String parentPath, String name, List<String> roles, Map<String, List<String>> attributes) {
 
         executor.runAsync(() -> {
@@ -33,6 +44,11 @@ public class AuthGroupSetupService {
         });
     }
 
+    /**
+     * Asynchronously deletes a group by its full path.
+     *
+     * @param fullPath full group path
+     */
     public void deleteGroup(String fullPath) {
 
         executor.runAsync(() -> {

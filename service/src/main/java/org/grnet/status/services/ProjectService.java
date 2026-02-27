@@ -16,6 +16,9 @@ import org.jboss.logging.Logger;
 import java.sql.Timestamp;
 import java.time.Instant;
 
+/**
+ * Service responsible for managing project entities.
+ */
 @ApplicationScoped
 public class ProjectService {
 
@@ -24,6 +27,12 @@ public class ProjectService {
 
     private static final Logger LOG = Logger.getLogger(ReportService.class);
 
+    /**
+     * Creates a new project.
+     *
+     * @param projectRequestDto project creation request
+     * @return created project response
+     */
     @Transactional
     public ProjectResponseDto createProject(ProjectRequestDto projectRequestDto) {
 
@@ -35,6 +44,12 @@ public class ProjectService {
     }
 
 
+    /**
+     * Retrieves a project by its identifier.
+     *
+     * @param id project identifier
+     * @return project response
+     */
     @Transactional
     public ProjectResponseDto getProjectById(String id) {
 
@@ -43,6 +58,13 @@ public class ProjectService {
         return ProjectMapper.INSTANCE.projectToDto(project);
     }
 
+    /**
+     * Updates an existing project by its identifier.
+     *
+     * @param id project identifier
+     * @param request project update request
+     * @return updated project response
+     */
     @Transactional
     public ProjectResponseDto updateProjectById(String id, ProjectUpdateDto request) {
 
@@ -54,6 +76,11 @@ public class ProjectService {
         return ProjectMapper.INSTANCE.projectToDto(updateProject);
     }
 
+    /**
+     * Deletes a project by its identifier.
+     *
+     * @param id project identifier
+     */
     @Transactional
     public void deleteById(String id) {
         var project=projectRepository.findById(id);
@@ -64,6 +91,17 @@ public class ProjectService {
     }
 
 
+    /**
+     * Retrieves a paginated list of projects with optional search and sorting.
+     *
+     * @param page 0-based page index
+     * @param size page size
+     * @param search search filter
+     * @param sort sort field
+     * @param order sort order
+     * @param uriInfo request context for pagination links
+     * @return paginated list of projects
+     */
     @Transactional
     public PageResource<ProjectResponseDto> getAllProjectsByPageAndSize(int page, int size, String search, String sort, String order, UriInfo uriInfo) {
 

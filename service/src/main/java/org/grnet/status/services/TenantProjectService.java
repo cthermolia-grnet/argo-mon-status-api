@@ -30,6 +30,9 @@ import org.grnet.status.util.Utility;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Service responsible for managing tenant to project assignments.
+ */
 @ApplicationScoped
 public class TenantProjectService {
 
@@ -45,12 +48,15 @@ public class TenantProjectService {
     @Inject
     Utility utility;
 
-    @Inject
-    GroupManagementService groupManagementService;
-
     // --------------------------------------------------------------------
     // SUPER_ADMIN
     // --------------------------------------------------------------------
+    /**
+     * Assigns projects to a tenant by adding missing links and removing obsolete links.
+     *
+     * @param request tenant project assignment request
+     * @return informative response
+     */
     @Transactional
     public InformativeResponse assign(TenantProjectRequestDto request) {
 
@@ -114,6 +120,17 @@ public class TenantProjectService {
         return response;
     }
 
+    /**
+     * Retrieves a paginated list of tenant project assignments with optional search and sorting.
+     *
+     * @param page 0-based page index
+     * @param size page size
+     * @param uriInfo request context for pagination links
+     * @param search search filter
+     * @param sort sort field
+     * @param order sort order
+     * @return paginated list of tenant project assignments
+     */
     public PageResource<TenantProjectDto> getTenantsProjects(int page, int size, UriInfo uriInfo, String search, String sort, String order) {
 
         var dto = tenantProjectJunctionRepository.fetchTenantsProjectsByPageAndSize(page, size, search, sort, order);
@@ -122,6 +139,18 @@ public class TenantProjectService {
     }
 
 
+    /**
+     * Retrieves a paginated list of tenants linked to the specified project.
+     *
+     * @param projectId project identifier
+     * @param page 0-based page index
+     * @param size page size
+     * @param uriInfo request context for pagination links
+     * @param search search filter
+     * @param sort sort field
+     * @param order sort order
+     * @return paginated list of tenants
+     */
     public PageResource<TenantResponseDto> getTenantsByProject(String projectId, int page, int size, UriInfo uriInfo, String search, String sort, String order) {
 
         var dto =  tenantRepository.findByProjectId(projectId, page, size, search, sort, order);
@@ -131,6 +160,18 @@ public class TenantProjectService {
 
     }
 
+    /**
+     * Retrieves a paginated list of projects linked to the specified tenant.
+     *
+     * @param tenantId tenant identifier
+     * @param page 0-based page index
+     * @param size page size
+     * @param uriInfo request context for pagination links
+     * @param search search filter
+     * @param sort sort field
+     * @param order sort order
+     * @return paginated list of projects
+     */
     public PageResource<ProjectResponseDto> getProjectsByTenant(String tenantId, int page, int size, UriInfo uriInfo, String search, String sort, String order) {
 
         var dto =  projectRepository.findByTenantId(tenantId, page, size, search, sort, order);
@@ -138,42 +179,14 @@ public class TenantProjectService {
         return new PageResource<>(dto, ProjectMapper.INSTANCE.projectsToDtos(dto.list()), uriInfo);
     }
 
-    public PageResource<GroupUserResponse> getMembersByTenant(String tenantId, int page, int size, UriInfo uriInfo) {
 
-        var tenant = tenantRepository.findById(tenantId);
-
-        var response = groupManagementService.getMembers("tenants/"+tenant.name, page * size, size, "");
-
-        var members = response
-                .results
-                .stream()
-                .map(g->g.user)
-                .map(gu -> {
-                    var user = new GroupUserResponse();
-                    user.id = gu.id;
-                    user.email = gu.email;
-                    user.username = gu.username;
-                    user.firstName = gu.firstName;
-                    user.lastName = gu.lastName;
-                    user.tenants = gu.getTenants();
-                    return user;
-                })
-                .collect(Collectors.toList());
-
-        var pageable = new PageQueryImpl<GroupUserResponse>();
-
-        pageable.list = members;
-        pageable.index = page;
-        pageable.size = size;
-        pageable.count = response.count;
-        pageable.page = Page.of(page, size);
-
-        return new PageResource<>(pageable, uriInfo);
-    }
-
-
+    /**
+     * Deletes a tenant to project assignment.
+     *
+     * @param request tenant project delete request
+     */
     @Transactional
-    public void deleteAssignment(TenantProjectDeleteDto request) {
+    public void deleteTenantProjectAssignment(TenantProjectDeleteDto request) {
 
         tenantProjectJunctionRepository.deleteByTenantAndProject(request.tenantId, request.projectId);
     }

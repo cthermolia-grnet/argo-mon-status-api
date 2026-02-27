@@ -9,6 +9,12 @@ public class EntitlementUtils {
     private static final Pattern PATTERN =
             Pattern.compile(".*group:((?:[^:]+)(?::[^:]+)*):role=([^:]+)$");
 
+    /**
+     * Parses a raw entitlement string into an Entitlement object.
+     *
+     * @param raw raw entitlement string
+     * @return parsed entitlement or null if format is invalid
+     */
     public static Entitlement parse(String raw) {
 
         var m = PATTERN.matcher(raw);
@@ -32,6 +38,12 @@ public class EntitlementUtils {
         return new Entitlement(group, hierarchy, role, raw);
     }
 
+    /**
+     * Parses a list of raw entitlement strings into structured Entitlement objects.
+     *
+     * @param raws list of raw entitlement strings
+     * @return list of parsed entitlements
+     */
     public static List<Entitlement> parseEntitlements(List<String> raws) {
         var list = new ArrayList<Entitlement>();
         if (raws == null) {

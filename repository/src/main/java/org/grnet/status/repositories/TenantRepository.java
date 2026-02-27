@@ -8,9 +8,18 @@ import org.grnet.status.entities.*;
 import java.util.Optional;
 import java.util.*;
 
+/**
+ * Repository responsible for managing Tenant entities.
+ */
 @ApplicationScoped
 public class TenantRepository implements Repository<Tenant, String> {
 
+    /**
+     * Retrieves a tenant by its name.
+     *
+     * @param name tenant name
+     * @return optional tenant
+     */
     public Optional<Tenant> fetchTenantByName(String name) {
 
         return find("from Tenant t where t.name = ?1", name).stream().findAny();
@@ -60,6 +69,17 @@ public class TenantRepository implements Repository<Tenant, String> {
 
     }
 
+    /**
+     * Retrieves a paginated list of tenants filtered by allowed tenant names.
+     *
+     * @param allowedNames list of allowed tenant names
+     * @param page 0-based page index
+     * @param size page size
+     * @param search search filter
+     * @param sort sort field
+     * @param order sort order
+     * @return paginated tenants
+     */
     public PageQuery<Tenant> fetchTenantsByIdsAndPageAndSize(List<String> allowedNames, int page, int size, String search, String sort, String order) {
 
         var joiner = new StringJoiner(StringUtils.SPACE);
@@ -103,6 +123,17 @@ public class TenantRepository implements Repository<Tenant, String> {
     }
 
 
+    /**
+     * Retrieves a paginated list of tenants assigned to a specific project.
+     *
+     * @param projectId project identifier
+     * @param page 0-based page index
+     * @param size page size
+     * @param search search filter
+     * @param sort sort field
+     * @param order sort order
+     * @return paginated tenants
+     */
     public PageQueryImpl<Tenant> findByProjectId(String projectId, int page, int size, String search, String sort, String order) {
 
         var joiner = new StringJoiner(" ");
@@ -143,15 +174,34 @@ public class TenantRepository implements Repository<Tenant, String> {
 
     }
 
+    /**
+     * Retrieves the tenant name and status for the specified identifier.
+     *
+     * @param id tenant identifier
+     * @return optional array containing name and status
+     */
     public Optional<Object[]> fetchTenantNameAndStatus(String id) {
         return find("select t.name, t.status from Tenant t where t.id = ?1", id).project(Object.class)
                 .firstResultOptional();
     }
+
+    /**
+     * Retrieves the status JSON of the specified tenant.
+     *
+     * @param id tenant identifier
+     * @return optional tenant status
+     */
     public Optional<String> fetchTenantStatus(String id) {
         return find("select t.status from Tenant t where t.id = ?1", id).project(String.class)
                 .firstResultOptional();
     }
 
+    /**
+     * Retrieves a tenant by name using case-insensitive comparison.
+     *
+     * @param name tenant name
+     * @return optional tenant
+     */
     public Optional<Tenant> findTenantByNameOptional(String name) {
         if (name == null || name.isBlank()) {
             return Optional.empty();

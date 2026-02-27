@@ -8,18 +8,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.StringJoiner;
 
+/**
+ * Repository responsible for managing TenantProjectJunction entities.
+ */
 @ApplicationScoped
 public class TenantProjectJunctionRepository implements Repository<TenantProjectJunction,String> {
 
+    /**
+     * Retrieves all tenant-project assignments for a specific tenant.
+     *
+     * @param tenantId tenant identifier
+     * @return list of tenant-project junctions
+     */
     public List<TenantProjectJunction> findByTenantId(String tenantId) {
         return list("tenant.id", tenantId);
     }
 
-    public List<TenantProjectJunction> findByProjectId(String projectId) {
-        return list("project.id", projectId);
-    }
-
-
+    /**
+     * Retrieves a paginated list of tenant-project assignments with optional search and sorting.
+     *
+     * @param page 0-based page index
+     * @param size page size
+     * @param search search filter
+     * @param sort sort field
+     * @param order sort order
+     * @return paginated tenant-project assignments
+     */
     public PageQuery<TenantProjectJunction> fetchTenantsProjectsByPageAndSize(int page, int size, String search, String sort, String order) {
         var joiner = new StringJoiner(" ");
 
@@ -55,6 +69,12 @@ public class TenantProjectJunctionRepository implements Repository<TenantProject
         return pageable;
     }
 
+    /**
+     * Deletes a tenant-project assignment for the specified tenant and project.
+     *
+     * @param tenantId tenant identifier
+     * @param projectId project identifier
+     */
     public void deleteByTenantAndProject(String tenantId, String projectId) {
         delete("tenant.id = ?1 and project.id = ?2", tenantId, projectId);
     }

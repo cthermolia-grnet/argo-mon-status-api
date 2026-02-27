@@ -442,7 +442,7 @@ public class TenantEndpoint {
             int size,
             @Context UriInfo uriInfo) {
 
-        var members = tenantProjectService.getMembersByTenant(id, page - 1, size, uriInfo);
+        var members = tenantService.getMembersByTenant(id, page - 1, size, uriInfo);
 
         return Response.ok().entity(members).build();
     }

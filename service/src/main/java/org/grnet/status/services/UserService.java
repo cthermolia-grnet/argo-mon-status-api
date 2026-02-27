@@ -7,8 +7,9 @@ import org.grnet.status.authorizations.service.UserEntitlementsService;
 import org.grnet.status.dtos.user.UserProfileDto;
 import org.grnet.status.util.Utility;
 
-import java.util.List;
-
+/**
+ * Service responsible for retrieving authenticated user profile information.
+ */
 @ApplicationScoped
 public class UserService {
 
@@ -19,6 +20,12 @@ public class UserService {
     UserEntitlementsService userEntitlementsService;
 
 
+    /**
+     * Builds the user profile using information from the authenticated token.
+     *
+     * @param id user identifier
+     * @return user profile response
+     */
     @Transactional
     public UserProfileDto getUserProfile(String id) {
 

@@ -21,9 +21,14 @@ public class AuthGroupManagement implements GroupManagement {
     KeycloakGroupClient groupClient;
 
 
-    // ---------------------------------------------------------
-    // CREATE GROUP
-    // ---------------------------------------------------------
+    /**
+     * Creates a subgroup under a parent path and assigns roles and configuration.
+     *
+     * @param parentPath parent group path
+     * @param name group name
+     * @param roles roles to assign
+     * @param attributes group attributes
+     */
     @Override
     public void createGroup(String parentPath, String name, List<String> roles, Map<String, List<String>> attributes) {
 
@@ -62,9 +67,11 @@ public class AuthGroupManagement implements GroupManagement {
 
     }
 
-    // ---------------------------------------------------------
-    // DELETE GROUP
-    // ---------------------------------------------------------
+    /**
+     * Deletes a group by its full path if it exists.
+     *
+     * @param fullGroupPath full group path
+     */
     @Override
     public void deleteGroup(String fullGroupPath) {
         try {
@@ -79,22 +86,34 @@ public class AuthGroupManagement implements GroupManagement {
         }
     }
 
-    // ---------------------------------------------------------
-    // ADD ROLE
-    // ---------------------------------------------------------
+    /**
+     * Assigns a role to a group.
+     *
+     * @param groupId group identifier
+     * @param role role to assign
+     */
     @Override
     public void addRole(String groupId, String role) {
         groupClient.addRole(groupId, role);
     }
 
-    // ---------------------------------------------------------
-    // UPDATE CONFIGURATION (ROLES)
-    // ---------------------------------------------------------
+    /**
+     * Updates the default configuration roles of a group.
+     *
+     * @param groupId group identifier
+     * @param roles roles to set
+     */
     @Override
     public void updateConfiguration(String groupId, List<String> roles) {
         updateGroupConfigurationRoles(groupId, roles);
     }
 
+    /**
+     * Updates the group configuration to include the provided roles.
+     *
+     * @param groupId group identifier
+     * @param roles roles to set
+     */
     private void updateGroupConfigurationRoles(String groupId, List<String> roles) {
 
         // Fetch full group structure
@@ -122,20 +141,32 @@ public class AuthGroupManagement implements GroupManagement {
         LOG.infof("Updated roles for group %s → %s", groupId, roles);
     }
 
-    // ---------------------------------------------------------
-    // GROUP LOOKUP UTILITIES
-    // ---------------------------------------------------------
+    /**
+     * Resolves a group identifier from a full group path.
+     *
+     * @param fullPath full group path
+     * @return group identifier or null if not found
+     */
     @Override
     public String getGroupId(String fullPath) {
         return getGroupIdByPath(fullPath);
     }
 
-    // Internal lookup: resolves a group ID from the flattened groups map
+    /**
+     * Resolves a group identifier from a full group path using the flattened group map.
+     *
+     * @param fullPath full group path
+     * @return group identifier or null if not found
+     */
     private String getGroupIdByPath(String fullPath) {
         return flattenGroups().get(fullPath);
     }
 
-    // Builds a map of all groups (path → id, id → defaultConfigId) by flattening the Keycloak tree
+    /**
+     * Builds a flattened map of all group paths to group identifiers.
+     *
+     * @return map of group path to group identifier
+     */
     private Map<String, String> flattenGroups() {
         var response = groupClient.getGroups("");
         Map<String, String> map = new HashMap<>();
@@ -146,6 +177,15 @@ public class AuthGroupManagement implements GroupManagement {
         return map;
     }
 
+    /**
+     * Retrieves group members for the given group path with paging and optional search.
+     *
+     * @param fullPath full group path
+     * @param first offset
+     * @param max page size
+     * @param search search filter
+     * @return group members response
+     */
     @Override
     public GroupMembersResponse fetchGroupMembers(String fullPath, int first, int max, String search) {
 
@@ -154,6 +194,13 @@ public class AuthGroupManagement implements GroupManagement {
         return groupClient.getGroupMembers(groupId, first, max, search);
     }
 
+    /**
+     * Retrieves group members for the given group filtered by role.
+     *
+     * @param fullPath full group path
+     * @param role role filter
+     * @return list of group users
+     */
     @Override
     public List<GroupUser> fetchGroupMembersByRole(String fullPath, String role) {
 
@@ -173,6 +220,13 @@ public class AuthGroupManagement implements GroupManagement {
                 .toList();
     }
 
+    /**
+     * Adds a user to a group with the specified role if not already a member.
+     *
+     * @param fullPath full group path
+     * @param username user identifier
+     * @param role role to assign
+     */
     @Override
     public void addGroupMember(String fullPath, String username, String role) {
 
@@ -187,6 +241,13 @@ public class AuthGroupManagement implements GroupManagement {
         groupClient.addUserToGroup(groupId, new AddGroupMemberRequest(username, List.of(role)));
     }
 
+    /**
+     * Adds a user to a group by group identifier with the specified role if not already a member.
+     *
+     * @param id group identifier
+     * @param username user identifier
+     * @param role role to assign
+     */
     @Override
     public void addMemberToGroupByGroupId(String id, String username, String role) {
 
@@ -199,6 +260,11 @@ public class AuthGroupManagement implements GroupManagement {
         groupClient.addUserToGroup(id, new AddGroupMemberRequest(username, List.of(role)));
     }
 
+    /**
+     * Retrieves a flattened list of groups.
+     *
+     * @return list of partial groups
+     */
     @Override
     public List<PartialGroup> fetchGroups() {
 
@@ -212,6 +278,12 @@ public class AuthGroupManagement implements GroupManagement {
         return groups;
     }
 
+    /**
+     * Removes a member from a group.
+     *
+     * @param fullPath full group path
+     * @param memberId member identifier
+     */
     @Override
     public void removeMemberFromGroup(String fullPath, String memberId) {
 
@@ -220,7 +292,12 @@ public class AuthGroupManagement implements GroupManagement {
         groupClient.removeMemberFromGroup(groupId, memberId);
     }
 
-    // Recursively adds a group's path, id, and default configuration to the lookup map
+    /**
+     * Collects groups and identifiers recursively into the provided map.
+     *
+     * @param group root group
+     * @param map group path to identifier map
+     */
     private void collectGroupRecursive(Group group, Map<String, String> map) {
         // Path → ID
         map.put(group.path, group.id);

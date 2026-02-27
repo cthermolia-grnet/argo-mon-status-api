@@ -13,19 +13,23 @@ import java.util.stream.IntStream;
 import static java.lang.Math.min;
 import static java.util.stream.Collectors.toMap;
 
+/**
+ * Utility service providing helper methods for extracting user information and common operations.
+ */
 @ApplicationScoped
 public class Utility {
 
-    /**
-     * Injection point for the Token Introspection
-     */
     @Inject
     TokenIntrospection tokenIntrospection;
 
     @ConfigProperty(name = "api.oidc.user.unique.id")
     String key;
 
-    public String getUserUniqueIdentifier() {
+    /**
+     * Retrieves the configured unique user identifier from the OIDC access token.
+     *
+     * @return user unique identifier
+     */public String getUserUniqueIdentifier() {
 
         String id;
 
@@ -40,6 +44,11 @@ public class Utility {
         return id;
     }
 
+    /**
+     * Retrieves the username from the access token.
+     *
+     * @return username
+     */
     public String getUsername() {
         try {
             return getUserUniqueIdentifier();
@@ -48,26 +57,45 @@ public class Utility {
         }
     }
 
+    /**
+     * Retrieves the user's email from the access token.
+     *
+     * @return user email or null if not present
+     */
     public String getUserEmail() {
         return tokenIntrospection.getJsonObject().getString("email", null);
     }
 
+    /**
+     * Retrieves the user's given name from the access token.
+     *
+     * @return user given name or null if not present
+     */
     public String getUserName() {
         return tokenIntrospection.getJsonObject().getString("given_name", null);
     }
 
+    /**
+     * Retrieves the user's family name from the access token.
+     *
+     * @return user family name or null if not present
+     */
     public String getUserSurname() {
         return tokenIntrospection.getJsonObject().getString("family_name", null);
     }
 
-    public String getUid() { return tokenIntrospection.getJsonObject().getString("preferred_username", null);}
+    /**
+     * Retrieves the preferred username (uid) from the access token.
+     *
+     * @return preferred username or null if not present
+     */public String getUid() { return tokenIntrospection.getJsonObject().getString("preferred_username", null);}
 
     /**
-     * This method paginates a list of objects.
+     * Partitions a list into pages of the specified size.
      *
-     * @param list The list to be paginated.
-     * @param pageSize The page size.
-     * @return A map containing the pages of objects.
+     * @param list list to partition
+     * @param pageSize page size
+     * @return map of page index to sublist
      */
     public <T> Map<Integer, List<T>> partition(List<T> list, int pageSize) {
 

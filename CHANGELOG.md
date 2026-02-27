@@ -107,6 +107,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#99](https://github.com/ARGOeu/argo-mon-status-api/pull/99) ARGO-5387 Improve error handling (Group Management + Invitations)
 - [#100](https://github.com/ARGOeu/argo-mon-status-api/pull/100) ARGO-5391 FIX "id to load is required for loading" error when accessing tenant admin the v1/tenants/contact-types
 - [#101](https://github.com/ARGOeu/argo-mon-status-api/pull/101) ARGO-5393 Improve API error message when required path parameter is missing
+- [#105](https://github.com/ARGOeu/argo-mon-status-api/pull/105) ARGO-5414 Add JavaDoc descriptions to service and repository methods
 
 
 ### Removed

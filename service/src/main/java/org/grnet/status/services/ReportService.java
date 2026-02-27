@@ -14,11 +14,9 @@ import org.grnet.status.mappers.GeneralMapper;
 import org.grnet.status.mappers.ReportMapper;
 import org.grnet.status.services.clients.ArgoWebApiClient;
 import org.grnet.status.services.utils.EncryptUtil;
-import org.grnet.status.util.Utility;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -26,6 +24,9 @@ import java.util.stream.Collectors;
 
 import static io.netty.util.AsciiString.contains;
 
+/**
+ * Service responsible for retrieving reports and related data from Argo Web API.
+ */
 @ApplicationScoped
 public class ReportService {
 
@@ -37,18 +38,16 @@ public class ReportService {
     EncryptUtil encryptUtil;
 
     @Inject
-    Utility utility;
-
-    @Inject
     @RestClient
     ArgoWebApiClient argoWebApiClient;
 
 
     /**
-     * Fetches a list of reports from the ARGO Web API.
+     * Retrieves a list of reports for the given tenant with optional search filtering.
      *
-     * @param tenantId The id of the Tenant to request containing the API URL and encrypted secret.
-     * @return A list of report DTOs.
+     * @param tenantId tenant identifier
+     * @param search search filter
+     * @return list of reports
      */
     public List<PartialReportResponseDto> fetchReports(String tenantId, String search) {
 
@@ -81,13 +80,11 @@ public class ReportService {
 
     }
 
-
-
     /**
-     * Encrypts a plain-text secret.
+     * Encrypts a plain text secret.
      *
-     * @param request The request containing the plain secret.
-     * @return The encrypted secret DTO.
+     * @param request encryption request
+     * @return encryption response
      */
     public EncryptResponseDto encrypt(EncryptRequestDto request) {
 
@@ -96,10 +93,11 @@ public class ReportService {
     }
 
     /**
-     * Fetch tenant's report by the report id,
-     * @param id, tenant's id
-     * @param reportId, report's id
-     * @return
+     * Retrieves a report by its identifier for the given tenant.
+     *
+     * @param id tenant identifier
+     * @param reportId report identifier
+     * @return report response
      */
     public FullReportResponseDto fetchReportById(String id, String reportId) {
 

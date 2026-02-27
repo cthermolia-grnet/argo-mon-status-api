@@ -12,14 +12,32 @@ import java.util.Set;
 import java.util.StringJoiner;
 
 
+/**
+ * Repository responsible for managing TenantInvitation entities.
+ */
 @ApplicationScoped
 public class TenantInvitationRepository implements Repository<TenantInvitation, String> {
 
+    /**
+     * Retrieves a pending invitation for a specific tenant and email.
+     *
+     * @param tenantId tenant identifier
+     * @param email invitation email
+     * @return optional pending invitation
+     */
     public Optional<TenantInvitation> findPendingInvitationsByTenantAndEmail(String tenantId, String email) {
         return find("tenant.id = ?1 and lower(email) = ?2 and status  = ?3",
                 tenantId, email.toLowerCase(), InvitationStatus.PENDING)
                 .firstResultOptional();
     }
+    /**
+     * Retrieves a paginated list of invitations for a specific email.
+     *
+     * @param email invitation email
+     * @param page 0-based page index
+     * @param size page size
+     * @return paginated invitations
+     */
     public PageQuery<TenantInvitation> findAllByEmail(String email, int page, int size) {
 
         var panache = find("email = ?1", Sort.by("createdAt", Sort.Direction.Descending), email).page(page, size);
@@ -35,6 +53,16 @@ public class TenantInvitationRepository implements Repository<TenantInvitation, 
 
     }
 
+    /**
+     * Retrieves a paginated list of tenant invitations with optional search and sorting.
+     *
+     * @param search search filter
+     * @param sort sort field
+     * @param order sort order
+     * @param page 0-based page index
+     * @param size page size
+     * @return paginated invitations
+     */
     public PageQuery<TenantInvitation> fetchInvitationsByPageAndSize(String search, String sort, String order, int page, int size) {
 
         var joiner = new StringJoiner(" ");
@@ -78,6 +106,17 @@ public class TenantInvitationRepository implements Repository<TenantInvitation, 
         return result;
     }
 
+    /**
+     * Retrieves a paginated list of invitations for a specific tenant with optional search and sorting.
+     *
+     * @param search search filter
+     * @param sort sort field
+     * @param order sort order
+     * @param tenantId tenant identifier
+     * @param page 0-based page index
+     * @param size page size
+     * @return paginated tenant invitations
+     */
     public PageQuery<TenantInvitation> fetchInvitationsByTenantByPageAndSize(String search, String sort, String order, String tenantId, int page, int size) {
 
         var joiner = new StringJoiner(" ");

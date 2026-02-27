@@ -11,7 +11,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.argo.ArgoStatusGroupsResponse;
 import org.grnet.status.dtos.report.FullReportResponseDto;
-import org.grnet.status.dtos.status.StatusGroupRequestDto;
 import org.grnet.status.dtos.status.StatusGroupResponseDto;
 import org.grnet.status.dtos.statuspage.StatusPageConfigDto;
 import org.grnet.status.mappers.StatusPageMapper;
@@ -21,6 +20,9 @@ import org.grnet.status.services.clients.ArgoWebApiClient;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Service responsible for retrieving status groups and status page configuration.
+ */
 @ApplicationScoped
 public class StatusService {
 
@@ -37,6 +39,13 @@ public class StatusService {
     @ConfigProperty(name = "web.api.access.token")
     String accessToken;
 
+    /**
+     * Retrieves status groups for the given tenant and report.
+     *
+     * @param tenantId tenant identifier
+     * @param reportId report identifier
+     * @return list of status groups
+     */
     public List<StatusGroupResponseDto> getStatusGroups(String tenantId, String reportId) {
         FullReportResponseDto report=null;
         try {
@@ -74,6 +83,12 @@ public class StatusService {
     }
 
 
+    /**
+     * Retrieves the status page configuration by slug with updated live group statuses.
+     *
+     * @param slug status page slug
+     * @return status page configuration
+     */
     @Transactional
     public StatusPageConfigDto getConfigBySlug(String slug) {
         var statusPage = statusPageRepository.find("slug", slug)
@@ -110,6 +125,4 @@ public class StatusService {
 
         return config;
     }
-
-
 }

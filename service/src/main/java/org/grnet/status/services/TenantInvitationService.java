@@ -27,6 +27,9 @@ import java.util.Objects;
 import static org.grnet.status.enums.InvitationAction.REVOKE;
 
 
+/**
+ * Service responsible for managing tenant invitations.
+ */
 @ApplicationScoped
 public class TenantInvitationService {
 
@@ -46,6 +49,14 @@ public class TenantInvitationService {
     ManagedExecutor executor;
 
 
+    /**
+     * Creates a new tenant invitation or resends an existing pending invitation.
+     *
+     * @param tenantId tenant identifier
+     * @param request invitation request
+     * @param createdBy creator identifier
+     * @return invitation response
+     */
     @Transactional
     public TenantInvitationResponse createInvitation(String tenantId, TenantInvitationRequest request, String createdBy) {
 
@@ -88,7 +99,13 @@ public class TenantInvitationService {
     }
 
     /**
-     * Returns all invitations for the authenticated user.
+     * Retrieves paginated invitations for the specified user.
+     *
+     * @param userEmail user email
+     * @param page 0-based page index
+     * @param size page size
+     * @param uriInfo request context for pagination links
+     * @return paginated list of invitations
      */
     public PageResource<TenantInvitationResponse> getAllInvitationsByUser(String userEmail, int page, int size, UriInfo uriInfo) {
 
@@ -97,15 +114,33 @@ public class TenantInvitationService {
         return new PageResource<>(invitations, TenantInvitationMapper.INSTANCE.listToDtos(invitations.list()), uriInfo);
     }
 
+    /**
+     * Retrieves a tenant invitation by its identifier for the specified user.
+     *
+     * @param id invitation identifier
+     * @param userEmail user email
+     * @return invitation response
+     */
     public TenantInvitationResponse getInvitationById(String id, String userEmail) {
 
         var invitations = tenantInvitationRepository.findById(id);
 
-        enforceInviteOwnership(invitations.email, userEmail);
+        enforceInvitationOwnership(invitations.email, userEmail);
 
         return TenantInvitationMapper.INSTANCE.tenantInvitationToDto(invitations);
     }
 
+    /**
+     * Retrieves paginated invitations with optional search and sorting.
+     *
+     * @param search search filter
+     * @param sort sort field
+     * @param order sort order
+     * @param page 0-based page index
+     * @param size page size
+     * @param uriInfo request context for pagination links
+     * @return paginated list of invitations
+     */
     public PageResource<TenantInvitationResponse> getInvitationsByPageAndSize (String search, String sort, String order, int page, int size, UriInfo uriInfo) {
 
         var invitations = tenantInvitationRepository.fetchInvitationsByPageAndSize(search, sort, order, page, size);
@@ -115,6 +150,18 @@ public class TenantInvitationService {
 
 
 
+    /**
+     * Retrieves paginated invitations for a specific tenant.
+     *
+     * @param search search filter
+     * @param sort sort field
+     * @param order sort order
+     * @param tenantId tenant identifier
+     * @param page 0-based page index
+     * @param size page size
+     * @param uriInfo request context for pagination links
+     * @return paginated list of invitations
+     */
     public PageResource<TenantInvitationResponse> getInvitationsByTenantByPageAndSize (String search, String sort, String order, String tenantId, int page, int size, UriInfo uriInfo) {
 
         var tenantInvitations = tenantInvitationRepository.fetchInvitationsByTenantByPageAndSize(search, sort, order, tenantId, page, size);
@@ -122,6 +169,16 @@ public class TenantInvitationService {
         return new PageResource<>(tenantInvitations, TenantInvitationMapper.INSTANCE.listToDtos(tenantInvitations.list()), uriInfo);
     }
 
+    /**
+     * Processes an invitation response for the authenticated user.
+     *
+     * @param invitationId invitation identifier
+     * @param request invitation action request
+     * @param userEmail user email
+     * @param userUniqueId user unique identifier
+     * @param username username used for group assignment
+     * @return invitation response
+     */
     public TenantInvitationResponse respondToInvitation(String invitationId,
                                                         TenantInvitationActionResponse request,
                                                         String userEmail,
@@ -130,7 +187,7 @@ public class TenantInvitationService {
 
         var invitation = tenantInvitationRepository.findById(invitationId);
 
-        enforceInviteOwnership(invitation.email, userEmail);
+        enforceInvitationOwnership(invitation.email, userEmail);
         enforcePending(invitation.status);
 
         if (request.action == InvitationAction.ACCEPT) {
@@ -158,6 +215,14 @@ public class TenantInvitationService {
         return result;
     }
 
+    /**
+     * Revokes a tenant invitation.
+     *
+     * @param tenantId tenant identifier
+     * @param invitationId invitation identifier
+     * @param userUniqueId user unique identifier
+     * @return invitation response
+     */
     public TenantInvitationResponse revokeInvitation(String tenantId, String invitationId, String userUniqueId) {
 
         return revoke(tenantId, invitationId, userUniqueId);
@@ -165,8 +230,13 @@ public class TenantInvitationService {
 
 
     /**
-     * Accept or reject invitation for the authenticated user.
-     * On ACCEPT we add user to the tenant role group and send confirmation emails.
+     * Updates the invitation status based on the provided action.
+     *
+     * @param invitationId invitation identifier
+     * @param request invitation action request
+     * @param userEmail user email
+     * @param userUniqueId user unique identifier
+     * @return invitation response
      */
     @Transactional
     public TenantInvitationResponse respond(String invitationId,
@@ -185,6 +255,14 @@ public class TenantInvitationService {
         return TenantInvitationMapper.INSTANCE.tenantInvitationToDto(invitation);
     }
 
+    /**
+     * Updates the invitation status to revoked for the specified tenant.
+     *
+     * @param tenantId tenant identifier
+     * @param invitationId invitation identifier
+     * @param userUniqueId user unique identifier
+     * @return invitation response
+     */
     @Transactional
     public TenantInvitationResponse revoke(String tenantId, String invitationId, String userUniqueId) {
 
@@ -201,6 +279,9 @@ public class TenantInvitationService {
         return TenantInvitationMapper.INSTANCE.tenantInvitationToDto(invitation);
     }
 
+    /**
+     * Deletes all tenant invitations.
+     */
     @Transactional
     public void deleteAll() {
         tenantInvitationRepository.deleteAll();
@@ -210,7 +291,11 @@ public class TenantInvitationService {
     // Helpers
     // -------------------------
 
-
+    /**
+     * Sends invitation response notifications to invitee and tenant administrators.
+     *
+     * @param response invitation response
+     */
     private void sendInvitationNotifications(TenantInvitationResponse response) {
 
         // Invitee mail (only on ACCEPT)
@@ -269,7 +354,13 @@ public class TenantInvitationService {
         }
     }
 
-    private void enforceInviteOwnership(String invitationEmail, String userEmail) {
+    /**
+     * Validates that the invitation belongs to the authenticated user.
+     *
+     * @param invitationEmail invitation email
+     * @param userEmail user email
+     */
+    private void enforceInvitationOwnership(String invitationEmail, String userEmail) {
 
         if (userEmail == null || userEmail.isBlank()) {
             throw new BadRequestException("Validating invitation... Authenticated user email is missing.");
@@ -284,6 +375,11 @@ public class TenantInvitationService {
         }
     }
 
+    /**
+     * Validates that the invitation status is pending.
+     *
+     * @param status invitation status
+     */
     private void enforcePending(InvitationStatus status) {
 
         if (status == null) {
@@ -304,6 +400,12 @@ public class TenantInvitationService {
         throw new WebApplicationException(message, 409);
     }
 
+    /**
+     * Maps an invitation action to the corresponding invitation status.
+     *
+     * @param action invitation action
+     * @return invitation status
+     */
     private InvitationStatus mapToStatus(InvitationAction action) {
         return switch (action) {
             case ACCEPT -> InvitationStatus.ACCEPTED;

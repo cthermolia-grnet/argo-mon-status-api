@@ -14,6 +14,9 @@ import org.jboss.logging.Logger;
 import java.util.HashMap;
 import java.util.List;
 
+/**
+ * Service responsible for sending system notification emails using predefined templates.
+ */
 @ApplicationScoped
 public class MailerService {
 
@@ -50,8 +53,14 @@ public class MailerService {
     @Location("tenant_added_to_group.html")
     Template tenantAddedToGroupTemplate;
 
-
-
+    /**
+     * Sends a tenant invitation email to the specified recipients.
+     *
+     * @param recipientEmail list of recipient email addresses
+     * @param tenantName tenant name
+     * @param role role assigned in the invitation
+     * @param invitationUrl invitation acceptance URL
+     */
     public void sendTenantInvitationEmail(List<String> recipientEmail,
                                           String tenantName,
                                           String role,
@@ -73,6 +82,14 @@ public class MailerService {
     }
 
 
+    /**
+     * Sends a notification email to the invitee after accepting a tenant invitation.
+     *
+     * @param recipientEmail list of recipient email addresses
+     * @param tenantName tenant name
+     * @param role assigned role
+     * @param uiBaseUrl application base URL
+     */
     public void sendInvitationAcceptedToInvitee(List<String> recipientEmail,
                                                 String tenantName,
                                                 String role, String uiBaseUrl) {
@@ -92,6 +109,14 @@ public class MailerService {
         sendBcc(tenantInvitationAcceptTemplate, params, MailType.TENANT_INVITATION_RESPONSE_NOTIFY_USER, recipientEmail);
     }
 
+    /**
+     * Sends an email notification to a user after being added to a tenant group.
+     *
+     * @param recipientEmail list of recipient email addresses
+     * @param tenantName tenant name
+     * @param role assigned role
+     * @param uiBaseUrl application base URL
+     */
     public void sendEmailToMemberAddedGroup(List<String> recipientEmail,
                                                 String tenantName,
                                                 String role, String uiBaseUrl) {
@@ -110,6 +135,16 @@ public class MailerService {
         sendBcc(tenantAddedToGroupTemplate, params, MailType.TENANT_ACCESS_GRANTED_USER, recipientEmail);
     }
 
+    /**
+     * Sends a notification email to tenant administrators about an invitation response.
+     *
+     * @param adminEmails list of administrator email addresses
+     * @param tenantName tenant name
+     * @param inviteeEmail invitee email address
+     * @param role invitation role
+     * @param status invitation status
+     * @param uiBaseUrl application base URL
+     */
     public void sendInvitationResponseToAdmins(List<String> adminEmails,
                                                String tenantName,
                                                String inviteeEmail,
@@ -134,6 +169,14 @@ public class MailerService {
         sendBcc(tenantInvitationNotifyAdminTemplate, params, MailType.TENANT_INVITATION_RESPONSE_NOTIFY_ADMIN, adminEmails);
     }
 
+    /**
+     * Sends an email using the provided template and parameters to the specified recipients.
+     *
+     * @param template email template
+     * @param params template parameters
+     * @param mailType mail type configuration
+     * @param recipients list of recipient email addresses
+     */
     private void sendBcc(Template template,
                          HashMap<String, Object> params,
                          MailType mailType,

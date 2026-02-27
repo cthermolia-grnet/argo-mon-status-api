@@ -10,9 +10,21 @@ import org.grnet.status.entities.StatusPage;
 import java.util.List;
 
 
+/**
+ * Repository responsible for managing StatusPage entities.
+ */
 @ApplicationScoped
 public class StatusPageRepository implements Repository<StatusPage, String> {
 
+    /**
+     * Retrieves a paginated list of status pages for a specific tenant and user.
+     *
+     * @param page 0-based page index
+     * @param size page size
+     * @param tenantId tenant identifier
+     * @param userId user identifier
+     * @return paginated status pages
+     */
     public PageQuery<StatusPage> fetchStatusPageByTenantAndAndUserAndPage(int page, int size, String tenantId, String userId){
 
 
@@ -28,6 +40,14 @@ public class StatusPageRepository implements Repository<StatusPage, String> {
         return pageable;
     }
 
+    /**
+     * Retrieves a paginated list of status pages for a specific tenant.
+     *
+     * @param page 0-based page index
+     * @param size page size
+     * @param tenantId tenant identifier
+     * @return paginated status pages
+     */
     public PageQuery<StatusPage> fetchStatusPagesByTenant(int page, int size, String tenantId) {
 
         var panache = find(
@@ -43,6 +63,13 @@ public class StatusPageRepository implements Repository<StatusPage, String> {
         return pageable;
     }
 
+    /**
+     * Retrieves a paginated list of all status pages.
+     *
+     * @param page 0-based page index
+     * @param size page size
+     * @return paginated status pages
+     */
     public PageQuery<StatusPage> fetchStatusPageByPage(int page, int size){
 
         var panache = find("from StatusPage sp", Sort.by("createdAt", Sort.Direction.Descending)).page(page, size);
@@ -58,10 +85,23 @@ public class StatusPageRepository implements Repository<StatusPage, String> {
     }
 
 
+    /**
+     * Retrieves all status pages for a specific tenant.
+     *
+     * @param tenantId tenant identifier
+     * @return list of status pages
+     */
     public List<StatusPage> listByTenant(String tenantId) {
         return find("tenant.id = ?1", Sort.by("createdAt", Sort.Direction.Descending), tenantId).list();
     }
 
+    /**
+     * Retrieves all status pages for a specific tenant and user.
+     *
+     * @param tenantId tenant identifier
+     * @param userId user identifier
+     * @return list of status pages
+     */
     public List<StatusPage> listByTenantAndUser(String tenantId, String userId) {
         return find("tenant.id = ?1 and userId = ?2",
                 Sort.by("createdAt", Sort.Direction.Descending),

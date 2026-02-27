@@ -23,7 +23,9 @@ public class OIDCEntitlementService {
 
 
     /**
-     * Extracts and parses entitlements from the OIDC token.
+     * Retrieves and parses all entitlements from the authenticated OIDC token.
+     *
+     * @return list of parsed entitlements
      */
     public List<Entitlement> fetchEntitlements() {
 
@@ -43,7 +45,10 @@ public class OIDCEntitlementService {
     }
 
     /**
-     * Extracts and parses entitlements from the OIDC token by subgroup.
+     * Retrieves and parses entitlements from the authenticated OIDC token filtered by subgroup.
+     *
+     * @param subgroup subgroup identifier
+     * @return list of parsed entitlements
      */
     public List<Entitlement> fetchEntitlementsBySubGroupId(String subgroup) {
 
@@ -64,7 +69,11 @@ public class OIDCEntitlementService {
     }
 
     /**
-     * Parses entitlements by subgroup.
+     * Parses a provided list of raw entitlement strings filtered by subgroup.
+     *
+     * @param entitlements raw entitlement strings
+     * @param subgroup subgroup identifier
+     * @return list of parsed entitlements
      */
     public List<Entitlement> parseEntitlementsBySubGroup(List<String> entitlements, String subgroup) {
 

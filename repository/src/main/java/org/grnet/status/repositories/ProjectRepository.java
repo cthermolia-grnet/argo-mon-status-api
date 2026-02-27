@@ -10,9 +10,22 @@ import java.util.Set;
 import java.util.StringJoiner;
 
 
+/**
+ * Repository responsible for managing Project entities.
+ */
 @ApplicationScoped
 public class ProjectRepository implements Repository<Project, String> {
 
+    /**
+     * Retrieves a paginated list of projects with optional search and sorting.
+     *
+     * @param page 0-based page index
+     * @param size page size
+     * @param search search filter
+     * @param sort sort field
+     * @param order sort order
+     * @return paginated projects
+     */
     public PageQuery<Project> fetchProjectByPage(int page, int size, String search, String sort, String order) {
 
         var joiner = new StringJoiner(" ");
@@ -63,12 +76,17 @@ public class ProjectRepository implements Repository<Project, String> {
         return result;
     }
 
-    public boolean existsByNameForOtherId(String name, String id) {
-        return find("name = ?1 AND id <> ?2", name, id)
-                .firstResultOptional()
-                .isPresent();
-    }
-
+    /**
+     * Retrieves a paginated list of projects assigned to a specific tenant.
+     *
+     * @param tenantId tenant identifier
+     * @param page 0-based page index
+     * @param size page size
+     * @param search search filter
+     * @param sort sort field
+     * @param order sort order
+     * @return paginated tenant projects
+     */
     public PageQueryImpl<Project> findByTenantId(String tenantId, int page, int size, String search, String sort, String order) {
 
         var joiner = new StringJoiner(" ");
@@ -107,5 +125,4 @@ public class ProjectRepository implements Repository<Project, String> {
 
         return pageable;
     }
-
 }

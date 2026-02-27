@@ -8,25 +8,41 @@ import org.grnet.status.enums.ContactType;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Repository responsible for managing Contact entities.
+ */
 @ApplicationScoped
 public class ContactRepository implements Repository<Contact, String> {
 
+    /**
+     * Retrieves a contact by its name.
+     *
+     * @param name contact name
+     * @return optional contact
+     */
     public Optional<Contact> fetchContactByName(String name) {
         return find("contactName", name).firstResultOptional();
     }
 
+    /**
+     * Retrieves a contact by name, email, and type.
+     *
+     * @param name contact name
+     * @param email contact email
+     * @param type contact type
+     * @return optional contact
+     */
     public Optional<Contact> fetchContactByInfo(String name, String email, String type) {
         return find("from Contact c where c.contactName = :name AND c.contactEmail = :email AND c.contactType = :type",
                 Parameters.with("name", name).and("email", email).and("type", ContactType.valueOf(type)))
                 .stream().findAny();
     }
     /**
-     * Retrieves a page of tenants from the database.
+     * Retrieves a paginated list of contacts.
      *
-     * @param page The index of the page to retrieve (starting from 0).
-     * @param size The maximum number of users to include in a page.
-     * @return A list of Tenant objects representing the users in the
-     * requested page.
+     * @param page 0-based page index
+     * @param size page size
+     * @return paginated contacts
      */
     public PageQuery<Contact> fetchContactsByPageAndSize(int page, int size) {
         var panache = find("from Contact c ").page(page, size);
@@ -42,6 +58,13 @@ public class ContactRepository implements Repository<Contact, String> {
 
     }
 
+    /**
+     * Retrieves a paginated list of contacts along with their associated tenants.
+     *
+     * @param page 0-based page index
+     * @param size page size
+     * @return paginated contacts with tenant information
+     */
     public PageQuery<ContactTenantJunction> fetchContactsWithTenantsByPageAndSize(int page, int size) {
         var panache = find("from Contact c").page(page, size);
 
@@ -87,6 +110,4 @@ public class ContactRepository implements Repository<Contact, String> {
 
         return pageable;
     }
-
-
 }

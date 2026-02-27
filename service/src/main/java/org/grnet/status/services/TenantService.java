@@ -13,6 +13,7 @@ import jakarta.ws.rs.ServiceUnavailableException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.grnet.status.authorizations.dtos.GroupUserResponse;
 import org.grnet.status.authorizations.groups.GroupManagement;
 import org.grnet.status.authorizations.service.AccessControlService;
 import org.grnet.status.authorizations.service.AuthGroupSetupService;
@@ -27,6 +28,8 @@ import org.grnet.status.dtos.tenant.status.EventStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
 import org.grnet.status.entities.Contact;
+import org.grnet.status.entities.Page;
+import org.grnet.status.entities.PageQueryImpl;
 import org.grnet.status.entities.Tenant;
 import org.grnet.status.enums.*;
 import org.grnet.status.exceptions.CustomRuntimeException;
@@ -46,8 +49,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+/**
+ * Service responsible for managing tenants and tenant status workflows.
+ */
 @ApplicationScoped
-
 public class TenantService {
 
     @Inject
@@ -65,6 +70,9 @@ public class TenantService {
 
     @Inject
     GroupManagement groupManagement;
+
+    @Inject
+    GroupManagementService groupManagementService;
 
     @ConfigProperty(name = "api.auth.entitlements.parent.group")
     String namespace;
@@ -84,6 +92,14 @@ public class TenantService {
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(2); // Adjust as needed
 
+    /**
+     * Creates a tenant and initializes its group.
+     *
+     * @param request tenant request
+     * @param userId user identifier
+     * @return created tenant response
+     * @throws IOException when image handling fails
+     */
     public TenantResponseDto create(TenantRequestDto request, String userId) throws IOException {
 
         var response = createTenant(request, userId);
@@ -105,11 +121,12 @@ public class TenantService {
     }
 
     /**
-     * Create a tenant
+     * Creates a tenant in Argo Web API and stores it locally.
      *
-     * @param request , TenantRequestDto with all the info needed
-     * @param userId  , the creator of the tenant
-     * @return, TenantResponseDto representing the tenant's info
+     * @param request tenant request
+     * @param userId user identifier
+     * @return created tenant response
+     * @throws IOException when image handling fails
      */
     @Transactional
     public TenantResponseDto createTenant(TenantRequestDto request, String userId) throws IOException {
@@ -154,7 +171,10 @@ public class TenantService {
     }
 
     /**
-     * Get a tenant by Id.
+     * Retrieves a tenant by its identifier.
+     *
+     * @param id tenant identifier
+     * @return tenant response
      */
     public TenantResponseDto getTenantById(String id) {
 
@@ -188,6 +208,11 @@ public class TenantService {
         }
     }
 
+    /**
+     * Deletes a tenant by its identifier and queues group deletion.
+     *
+     * @param id tenant identifier
+     */
     public void deleteTenantById(String id) {
 
         var tenant = tenantRepository.findById(id);
@@ -210,7 +235,9 @@ public class TenantService {
     }
 
     /**
-     * Delete a tenant by Id.
+     * Deletes a tenant by its identifier.
+     *
+     * @param id tenant identifier
      */
     @Transactional
     public void deleteTenant(String id) {
@@ -269,7 +296,7 @@ public class TenantService {
     }
 
     /**
-     * Delete all tenants.
+     * Deletes all tenants.
      */
     @Transactional
     public void deleteAll() {
@@ -311,7 +338,12 @@ public class TenantService {
     }
 
     /**
-     * Update an existing tenant.
+     * Updates an existing tenant by its identifier.
+     *
+     * @param id tenant identifier
+     * @param request tenant update request
+     * @return updated tenant response
+     * @throws IOException when image handling fails
      */
     @Transactional
     public TenantResponseDto updateTenant(String id, @Valid TenantRequestDto request) throws IOException {
@@ -377,12 +409,15 @@ public class TenantService {
     }
 
     /**
-     * Retrieves a page of tenant objects existing.
+     * Retrieves a paginated list of tenants with optional search and sorting.
      *
-     * @param page    The index of the page to retrieve (starting from 0).
-     * @param size    The maximum number of tenant objects to include in a page.
-     * @param uriInfo The Uri Info.
-     * @return A list of TenantResponseDto objects representing the submitted tenant objects in the requested page.
+     * @param page 0-based page index
+     * @param size page size
+     * @param uriInfo request context for pagination links
+     * @param search search filter
+     * @param sort sort field
+     * @param order sort order
+     * @return paginated list of tenants
      */
     public PageResource<TenantResponseDto> getTenantsByPageAndSize(int page, int size, UriInfo uriInfo, String search, String sort, String order) {
 
@@ -403,6 +438,17 @@ public class TenantService {
     }
 
 
+    /**
+     * Retrieves a paginated list of tenants accessible to the authenticated user.
+     *
+     * @param page 0-based page index
+     * @param size page size
+     * @param uriInfo request context for pagination links
+     * @param search search filter
+     * @param sort sort field
+     * @param order sort order
+     * @return paginated list of tenants
+     */
     public PageResource<TenantResponseDto> listAuthorizedTenants(int page, int size, UriInfo uriInfo, String search, String sort, String order) {
 
         if (accessControlService.isSuperAdmin()) {
@@ -429,6 +475,11 @@ public class TenantService {
         return new PageResource<>(tenants, tenantList, uriInfo);
     }
 
+    /**
+     * Validates and stores the tenant logo image and updates the request with the resolved URL.
+     *
+     * @param request tenant request
+     */
     private void handleImage(TenantRequestDto request) {
 
         var image = request.info.image;
@@ -440,6 +491,12 @@ public class TenantService {
         }
     }
 
+    /**
+     * Resolves contacts from the request by reusing existing records or creating new ones.
+     *
+     * @param request tenant request
+     * @return merged contact set
+     */
     private Set<Contact> resolveAndMergeContacts(TenantRequestDto request) {
 
         Set<Contact> result = new HashSet<>();
@@ -468,6 +525,11 @@ public class TenantService {
         return result;
     }
 
+    /**
+     * Deletes contacts that are no longer linked to any tenant.
+     *
+     * @param oldContacts previous tenant contacts
+     */
     private void deleteOrphanContacts(Set<Contact> oldContacts) {
         for (Contact contact : oldContacts) {
             if (contact.getTenants() == null || contact.getTenants().isEmpty()) {
@@ -477,6 +539,15 @@ public class TenantService {
     }
 
     //construct and stores a tenant in the database
+    /**
+     * Persists the tenant and its contacts in the database using the remote tenant identifier.
+     *
+     * @param request tenant request
+     * @param tenant tenant entity
+     * @param remoteTenantId remote tenant identifier
+     * @param userId user identifier
+     * @return persisted tenant entity
+     */
     private Tenant writeInDB(TenantRequestDto request,
                              Tenant tenant,
                              String remoteTenantId,
@@ -508,6 +579,12 @@ public class TenantService {
     }
 
     //updates the tenant in the database
+    /**
+     * Updates an existing tenant and its contacts in the database.
+     *
+     * @param request tenant request
+     * @param tenant tenant entity
+     */
     private void updateTenantInDB(TenantRequestDto request, Tenant tenant) {
         // Update simple fields:
         TenantMapper.INSTANCE.updateToTenant(request, tenant);
@@ -527,6 +604,12 @@ public class TenantService {
         tenantRepository.flush(); // force errors
     }
 
+    /**
+     * Updates the stored tenant status JSON in the database.
+     *
+     * @param tenant tenant entity
+     * @param updatedStatusJson updated status JSON
+     */
     private void updateTenantStatusInDb(Tenant tenant, String updatedStatusJson) {
         // Update simple fields:
 
@@ -535,6 +618,13 @@ public class TenantService {
         tenantRepository.flush(); // force errors
     }
 
+    /**
+     * Updates manual tenant jobs for the specified tenant.
+     *
+     * @param id tenant identifier
+     * @param request tenant status request
+     * @return tenant status response
+     */
     @Transactional
     public TenantStatusFullResponse updateTenantManualJobs(String id, @Valid TenantStatusDto request) {
         validateJobsMode(request.jobs, EventMode.MANUAL);
@@ -546,6 +636,13 @@ public class TenantService {
         return updateTenantJobsInternal(id, request);
     }
 
+    /**
+     * Updates automatic tenant jobs for the specified tenant.
+     *
+     * @param id tenant identifier
+     * @param request tenant status request
+     * @return tenant status response
+     */
     @Transactional
     public TenantStatusFullResponse updateTenantAutoJobs(String id, @Valid TenantStatusDto request) {
         validateJobsMode(request.jobs, EventMode.AUTO);
@@ -557,7 +654,11 @@ public class TenantService {
     }
 
     /**
-     * Update a job status.
+     * Updates tenant jobs for the specified tenant.
+     *
+     * @param id tenant identifier
+     * @param request tenant status request
+     * @return tenant status response
      */
     public TenantStatusFullResponse updateTenantJobsInternal(String id, @Valid TenantStatusDto request) {
 
@@ -586,7 +687,12 @@ public class TenantService {
     }
 
     /**
-     * Update an alert status.
+     * Updates tenant alert jobs for the specified tenant.
+     *
+     * @param id tenant identifier
+     * @param request tenant status request
+     * @return tenant status response
+     * @throws IOException when status serialization fails
      */
     @Transactional
     public TenantStatusDto updateTenantAlerts(String id, @Valid TenantStatusDto request) throws IOException {
@@ -614,7 +720,13 @@ public class TenantService {
         }
     }
 
-    //updates the job list existing in the status with the new job value.
+    /**
+     * Merges existing jobs with new jobs by replacing or adding job entries by name.
+     *
+     * @param existingJobs existing jobs
+     * @param newJobs new jobs
+     * @return merged job list
+     */
     private List<EventStatusDto> mergeJobs(List<EventStatusDto> existingJobs,
                                            List<EventStatusDto> newJobs) {
 
@@ -656,6 +768,12 @@ public class TenantService {
     }
 
 
+    /**
+     * Creates the tenant group in the authorization provider if it does not exist.
+     *
+     * @param tenantId tenant identifier
+     * @return tenant group status
+     */
     public TenantGroupStatus createTenantGroup(String tenantId) {
 
         var tenant = tenantRepository.findById(tenantId);
@@ -688,6 +806,12 @@ public class TenantService {
     }
 
 
+    /**
+     * Retrieves the current authorization group status for the given tenant.
+     *
+     * @param tenant tenant entity
+     * @return tenant group status
+     */
     private TenantGroupStatus getGroupStatus(Tenant tenant) {
         var groupPath = "/" + namespace + "/tenants/" + tenant.name;
         try {
@@ -729,11 +853,54 @@ public class TenantService {
     }
 
     /**
-     * Notify ams that tenant is created and should initialize the corresponding event process
+     * Retrieves a paginated list of tenant members from the authorization provider.
      *
-     * @param id,    the tenant's id
-     * @param alert, the alert to be sent to AMS
-     * @return TenantStatusDto
+     * @param tenantId tenant identifier
+     * @param page 0-based page index
+     * @param size page size
+     * @param uriInfo request context for pagination links
+     * @return paginated list of tenant members
+     */
+    public PageResource<GroupUserResponse> getMembersByTenant(String tenantId, int page, int size, UriInfo uriInfo) {
+
+        var tenant = tenantRepository.findById(tenantId);
+
+        var response = groupManagementService.getMembers("tenants/"+tenant.name, page * size, size, "");
+
+        var members = response
+                .results
+                .stream()
+                .map(g->g.user)
+                .map(gu -> {
+                    var user = new GroupUserResponse();
+                    user.id = gu.id;
+                    user.email = gu.email;
+                    user.username = gu.username;
+                    user.firstName = gu.firstName;
+                    user.lastName = gu.lastName;
+                    user.tenants = gu.getTenants();
+                    return user;
+                })
+                .collect(Collectors.toList());
+
+        var pageable = new PageQueryImpl<GroupUserResponse>();
+
+        pageable.list = members;
+        pageable.index = page;
+        pageable.size = size;
+        pageable.count = response.count;
+        pageable.page = Page.of(page, size);
+
+        return new PageResource<>(pageable, uriInfo);
+    }
+
+
+    /**
+     * Sends a readiness validation notification to the AMS for the specified tenant.
+     *
+     * @param id tenant identifier
+     * @param alert alert request
+     * @return tenant status response
      */
     public TenantStatusDto notifyAmsCheckReadiness(String id, AlertDefinitionRequest alert) {
         var now = Instant.now();
@@ -757,7 +924,11 @@ public class TenantService {
         return null;
     }
 
-    // send notifications to AMS to initialize ams and mongo
+    /**
+     * Sends initialization event notifications for the given tenant.
+     *
+     * @param tenant tenant entity
+     */
     private void sendNotifications(Tenant tenant) {
 
         String createdAt = String.valueOf(Instant.now());
@@ -767,6 +938,14 @@ public class TenantService {
         send(tenant.id, buildAlert(EventName.INIT_COMPUTE_ENGINE, tenant, createdAt), "");
     }
 
+    /**
+     * Builds an alert definition request for the specified event and tenant.
+     *
+     * @param eventName event name
+     * @param tenant tenant entity
+     * @param createdAt created timestamp
+     * @return alert definition request
+     */
     private AlertDefinitionRequest buildAlert(EventName eventName, Tenant tenant, String createdAt) {
         AlertDefinitionRequest alert = new AlertDefinitionRequest();
         alert.name = eventName.name();
@@ -778,6 +957,13 @@ public class TenantService {
         return alert;
     }
 
+    /**
+     * Publishes an alert event to the messaging service and updates tenant status accordingly.
+     *
+     * @param id tenant identifier
+     * @param alert alert request
+     * @param eventMsg custom publish message
+     */
     private void send(String id, AlertDefinitionRequest alert, String eventMsg) {
 
         final boolean hasCustomMsg =
@@ -945,7 +1131,16 @@ public class TenantService {
         }
     }
 
-    //building an alert with info
+    /**
+     * Creates a tenant status request containing a single alert job update.
+     *
+     * @param eventName event name
+     * @param status event status
+     * @param message status message
+     * @param start start timestamp
+     * @param properties alert properties
+     * @return tenant status request
+     */
     private TenantStatusDto setAlert(String eventName, EventStatus status, String message, Instant start, Map<String, String> properties) {
         var tenantStatus = new TenantStatusDto();
         tenantStatus.jobs = new ArrayList<>();
@@ -965,7 +1160,11 @@ public class TenantService {
         return tenantStatus;
     }
 
-    //sets the status of jobs and alerts to UNKNOWN
+    /**
+     * Builds the default tenant status with all jobs set to unknown.
+     *
+     * @return default tenant status
+     */
     private TenantStatusDto setDefaultStatus() {
         var dto = new TenantStatusDto();
         dto.jobs = new ArrayList<>();
@@ -985,7 +1184,10 @@ public class TenantService {
     }
 
     /**
-     * Get a tenant's status.
+     * Retrieves the tenant status by tenant identifier.
+     *
+     * @param id tenant identifier
+     * @return tenant status response
      */
     public TenantStatusFullResponse getTenantStatus(String id) {
         var resultOpt = tenantRepository.fetchTenantNameAndStatus(id);
@@ -1007,6 +1209,11 @@ public class TenantService {
         return null; // or Optional<TenantStatusFullResponse> if you prefer
     }
 
+    /**
+     * Normalizes a job entry by applying the corresponding job definition.
+     *
+     * @param job job entry
+     */
     private void applyJobDefinition(EventStatusDto job) {
         if (job == null || job.name == null) return;
 
@@ -1018,6 +1225,12 @@ public class TenantService {
         job.setMode(def.modeValue());
     }
 
+    /**
+     * Validates that all provided jobs match the expected mode.
+     *
+     * @param jobs job list
+     * @param expectedMode expected job mode
+     */
     private void validateJobsMode(List<EventStatusDto> jobs, EventMode expectedMode) {
 
         if (jobs == null || jobs.isEmpty()) {
@@ -1040,6 +1253,12 @@ public class TenantService {
         }
     }
 
+    /**
+     * Validates that the provided alert properties are allowed for the specified event.
+     *
+     * @param eventName event name
+     * @param props alert properties
+     */
     private void validateAlertProperties(String eventName, Map<String, String> props) {
         if (props == null || props.isEmpty()) return;
 
@@ -1061,7 +1280,10 @@ public class TenantService {
     }
 
     /**
-     * Check the readiness of a tenant by Id.
+     * Checks tenant readiness by tenant identifier.
+     *
+     * @param id tenant identifier
+     * @return tenant readiness response
      */
     @Transactional
     public WebApiTenantReadiness checkReadiness(String id) {

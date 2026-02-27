@@ -35,6 +35,9 @@ import java.util.stream.Collectors;
 
 import static io.netty.util.AsciiString.contains;
 
+/**
+ * Service responsible for managing status pages.
+ */
 @ApplicationScoped
 public class StatusPageService {
 
@@ -68,7 +71,12 @@ public class StatusPageService {
     String baseUploadLogoDir;
 
     /**
-     * Create a new status statuspage.
+     * Creates a new status page for the given tenant.
+     *
+     * @param tenantId tenant identifier
+     * @param request status page creation request
+     * @param userId user identifier
+     * @return created status page
      */
     @Transactional
     public StatusPageResponseDto createStatusPage(String tenantId, StatusPageRequestDto request, String userId) {
@@ -107,7 +115,12 @@ public class StatusPageService {
 
 
     /**
-     * Update an existing status statuspage.
+     * Updates an existing status page for the given tenant.
+     *
+     * @param tenantId tenant identifier
+     * @param statusPageId status page identifier
+     * @param request status page update request
+     * @return updated status page
      */
     @Transactional
     public StatusPageResponseDto updateStatusPage(String tenantId, String statusPageId, StatusPageUpdateRequestDto request) {
@@ -150,7 +163,10 @@ public class StatusPageService {
 
 
     /**
-     * Get a statuspage by ID.
+     * Retrieves a status page by its identifier.
+     *
+     * @param id status page identifier
+     * @return status page
      */
     public StatusPageResponseDto getStatusPageById(String id) {
 
@@ -161,13 +177,14 @@ public class StatusPageService {
 
 
     /**
-     * Retrieves a page of Subjects submitted by the specified user.
+     * Retrieves a paginated list of status pages for a tenant based on the user role.
      *
-     * @param page     The index of the page to retrieve (starting from 0).
-     * @param size     The maximum number of Subjects to include in a page.
-     * @param uriInfo  The Uri Info.
-     * @param tenantId The ID of the user.
-     * @return A list of SubjectResponse objects representing the submitted Subjects in the requested page.
+     * @param page 0-based page index
+     * @param size page size
+     * @param uriInfo request context for pagination links
+     * @param tenantId tenant identifier
+     * @param userId user identifier
+     * @return paginated list of status pages
      */
     public PageResource<StatusPageResponseDto> getStatusPageByUserAndPage(int page, int size, UriInfo uriInfo, String tenantId, String userId) {
 
@@ -183,6 +200,14 @@ public class StatusPageService {
     }
 
 
+    /**
+     * Retrieves a paginated list of status pages.
+     *
+     * @param page 0-based page index
+     * @param size page size
+     * @param uriInfo request context for pagination links
+     * @return paginated list of status pages
+     */
     public PageResource<StatusPageResponseDto> getStatusPageByPage(int page, int size, UriInfo uriInfo) {
 
         var statusPages = statusPageRepository.fetchStatusPageByPage(page, size);
@@ -192,14 +217,19 @@ public class StatusPageService {
 
 
     /**
-     * List all pages.
+     * Retrieves all status pages.
+     *
+     * @return list of status pages
      */
     public List<StatusPageResponseDto> listAll() {
         return StatusPageMapper.INSTANCE.entitiesToDtos(statusPageRepository.listAll());
     }
 
     /**
-     * Check if a slug is already used.
+     * Checks whether a status page slug already exists.
+     *
+     * @param slug status page slug
+     * @return slug existence response
      */
     public ExistResponseDto slugExists(String slug) {
 
@@ -209,7 +239,9 @@ public class StatusPageService {
     }
 
     /**
-     * Delete a statuspage by ID.
+     * Deletes a status page by its identifier.
+     *
+     * @param id status page identifier
      */
     @Transactional
     public void deleteStatusPage(String id) {
@@ -223,6 +255,16 @@ public class StatusPageService {
         statusPageRepository.delete(entity);
     }
 
+    /**
+     * Retrieves a paginated list of status pages accessible to the given user.
+     *
+     * @param userId user identifier
+     * @param search search filter
+     * @param page 0-based page index
+     * @param size page size
+     * @param uriInfo request context for pagination links
+     * @return paginated list of status pages
+     */
     public PageResource<StatusPageResponseDto> getAccessibleStatusPages(String userId, String search, int page, int size, UriInfo uriInfo) {
 
         Log.info("Fetching accessible status pages...");
@@ -346,6 +388,9 @@ public class StatusPageService {
         return new PageResource<>(pageable, uriInfo);
     }
 
+    /**
+     * Deletes all status pages.
+     */
     @Transactional
     public void deleteAll() {
         statusPageRepository.deleteAll();
@@ -355,6 +400,12 @@ public class StatusPageService {
     //----------------------------------------------------------------------------------------------------
     //  HELPER METHODS
     //----------------------------------------------------------------------------------------------------
+    /**
+     * Validates that the provided slug is not already used by another status page.
+     *
+     * @param slug status page slug
+     * @param currentId current status page identifier
+     */
     public void checkIfExistSlug(String slug, String currentId) {
         var existing = statusPageRepository.find("slug", slug)
                 .firstResultOptional();
@@ -372,6 +423,13 @@ public class StatusPageService {
         }
     }
 
+    /**
+     * Validates that all configured groups and items exist for the given report.
+     *
+     * @param tenantId tenant identifier
+     * @param reportId report identifier
+     * @param groups status page group configuration
+     */
     public void validateGroupsExist(String tenantId, String reportId, List<StatusPageGroupDto> groups) {
 
         var argoGroups = statusService.getStatusGroups(tenantId, reportId);
@@ -403,6 +461,11 @@ public class StatusPageService {
         }
     }
 
+    /**
+     * Validates the theming configuration of a status page.
+     *
+     * @param config status page configuration
+     */
     public void validateTheming(StatusPageConfigDto config) {
 
         var theming = config.theming;
@@ -444,6 +507,13 @@ public class StatusPageService {
         }
     }
 
+    /**
+     * Updates the logo value inside the status page config JSON.
+     *
+     * @param configJson config JSON
+     * @param newLogoPath new logo path
+     * @return updated config JSON
+     */
     public String updateLogo(String configJson, String newLogoPath) {
         try {
             var root = configJson == null || configJson.isBlank()
@@ -459,6 +529,12 @@ public class StatusPageService {
         }
     }
 
+    /**
+     * Removes the logo value from the status page config JSON.
+     *
+     * @param configJson config JSON
+     * @return updated config JSON
+     */
     public String removeLogo(String configJson) {
         try {
             if (configJson == null || configJson.isBlank()) return configJson;
@@ -471,16 +547,13 @@ public class StatusPageService {
         }
     }
 
-    public String extractLogo(String configJson) {
-        if (configJson == null || configJson.isBlank()) return null;
-        try {
-            var root = (ObjectNode) objectMapper.readTree(configJson);
-            return root.path("theming").path("logo").asText(null);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
+    /**
+     * Determines whether the user has viewer access for the specified tenant.
+     *
+     * @param tenantName tenant name
+     * @param userId user identifier
+     * @return true if user is viewer for the tenant
+     */
     private boolean isViewerForTenantFromProfile(String tenantName, String userId) {
 
         var user = userService.getUserProfile(userId);
@@ -511,6 +584,12 @@ public class StatusPageService {
         return "viewer".equalsIgnoreCase(role);
     }
 
+    /**
+     * Determines whether the user has super admin role.
+     *
+     * @param user user profile
+     * @return true if user is super admin
+     */
     private boolean isSuperAdmin(UserProfileDto user) {
         return user != null
                 && user.groups != null

@@ -3,15 +3,20 @@ package org.grnet.status.services;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.encrypt.EncryptRequestDto;
 import org.grnet.status.dtos.encrypt.EncryptResponseDto;
 import org.grnet.status.dtos.report.PartialReportResponseDto;
 import org.grnet.status.dtos.report.FullReportResponseDto;
 import org.grnet.status.mappers.GeneralMapper;
 import org.grnet.status.mappers.ReportMapper;
+import org.grnet.status.mappers.TenantMapper;
+import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.services.clients.ArgoWebApiClient;
 import org.grnet.status.services.utils.EncryptUtil;
 import org.jboss.logging.Logger;
@@ -41,6 +46,9 @@ public class ReportService {
     @RestClient
     ArgoWebApiClient argoWebApiClient;
 
+    @Inject
+    TenantRepository tenantRepository;
+
 
     /**
      * Retrieves a list of reports for the given tenant with optional search filtering.
@@ -50,6 +58,15 @@ public class ReportService {
      * @return list of reports
      */
     public List<PartialReportResponseDto> fetchReports(String tenantId, String search) {
+
+        LOG.info("Checking if Tenant is initialized...");
+        var tenant = argoWebApiClient.getTenant(accessToken, tenantId);
+        var dbConf = tenant.getData().get(0).getDb_conf();
+        var mongodbReady = dbConf != null && !dbConf.isEmpty();
+
+        if (!mongodbReady) {
+            throw new WebApplicationException("Reports are not available. The tenant is still initializing.");
+        }
 
         LOG.info("Fetching reports from ARGO Web API...");
         var reports = argoWebApiClient.fetchReportsSuperAdmin(accessToken, tenantId);
@@ -100,6 +117,15 @@ public class ReportService {
      * @return report response
      */
     public FullReportResponseDto fetchReportById(String id, String reportId) {
+
+        LOG.info("Checking if Tenant is initialized...");
+        var tenant = argoWebApiClient.getTenant(accessToken, id);
+        var dbConf = tenant.getData().get(0).getDb_conf();
+        var mongodbReady = dbConf != null && !dbConf.isEmpty();
+
+        if (!mongodbReady) {
+            throw new WebApplicationException("Report is not available. The tenant is still initializing.");
+        }
 
         var reports = argoWebApiClient.fetchReportsSuperAdmin(accessToken, id);
         boolean found = reports.data.stream()

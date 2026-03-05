@@ -137,6 +137,15 @@ public class TenantEndpointTest extends KeycloakTest {
         info.setUpdated("2025-01-02 00:00:00");
         data.setInfo(info);
 
+        var db = new TenantWebApiGetResponse.DbConf();
+        db.setStore("mongo");
+        db.setServer("localhost");
+        db.setPort(27017);
+        db.setDatabase("argo_tenant_db");
+        db.setUsername("user");
+        db.setPassword("pass");
+        data.setDb_conf(List.of(db));
+
         var argoEngineUser = new TenantWebApiGetResponse.User();
         argoEngineUser.setName("argo_engine_MOCK-TENANT");
         argoEngineUser.setEmail("devlists.grnet.gr");

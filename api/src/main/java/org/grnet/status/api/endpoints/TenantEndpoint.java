@@ -30,6 +30,7 @@ import org.grnet.status.authorizations.interceptors.CheckEntitlements;
 import org.grnet.status.authorizations.interceptors.Resolver;
 import org.grnet.status.constraints.NotFoundEntity;
 import org.grnet.status.dtos.InformativeResponse;
+import org.grnet.status.dtos.general.ExistResponseDto;
 import org.grnet.status.dtos.Status;
 import org.grnet.status.dtos.general.ExistResponseDto;
 import org.grnet.status.dtos.pagination.PageResource;

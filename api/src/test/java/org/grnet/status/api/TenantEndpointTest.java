@@ -23,6 +23,9 @@ import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.dtos.tenantproject.TenantProjectDeleteDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
+import org.grnet.status.dtos.topology.EndpointTopologyDto;
+import org.grnet.status.dtos.topology.GroupTopologyDto;
+import org.grnet.status.dtos.topology.ServiceTypeDto;
 import org.grnet.status.services.clients.AmsClient;
 import org.grnet.status.services.clients.AmsClientFactory;
 import org.grnet.status.services.clients.ArgoWebApiClient;
@@ -216,6 +219,7 @@ public class TenantEndpointTest extends KeycloakTest {
 
         assertEquals("LOCALTENANT", response1.info.name);
     }
+
     @Test
     public void updateNotExistingTenant() {
 
@@ -358,7 +362,7 @@ public class TenantEndpointTest extends KeycloakTest {
 
         var tenant = createTenant("LOCALTENANT");
 
-        var reports  = given()
+        var reports = given()
                 .auth()
                 .oauth2(tenantViewer)
                 .contentType(ContentType.JSON)
@@ -372,6 +376,7 @@ public class TenantEndpointTest extends KeycloakTest {
         assertNotNull(reports);
         assertTrue(reports.length > 0);
     }
+
     @Test
     public void notExistingTenant() {
 
@@ -772,9 +777,6 @@ public class TenantEndpointTest extends KeycloakTest {
     }
 
 
-
-
-
 //    @Test
 //    public void fetchReportById() {
 //        var request = createTenant("MOCK-TENANT");
@@ -789,12 +791,11 @@ public class TenantEndpointTest extends KeycloakTest {
 //                .statusCode(200)
 //                .extract()
 //                .as(FullReportResponseDto.class);
-////
-////        assertEquals("MOCK-TENANT", response.getTenant());
+
+    /// /
+    /// /        assertEquals("MOCK-TENANT", response.getTenant());
 //
 //    }
-
-
     private WebApiReportResponse loadMockReport() throws Exception {
         try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("mocks/mock-report.json")) {
             return new ObjectMapper().readValue(is, WebApiReportResponse.class);
@@ -812,6 +813,5 @@ public class TenantEndpointTest extends KeycloakTest {
             return new ObjectMapper().readValue(is, ArgoStatusGroupsResponse.class);
         }
     }
-
 
 }

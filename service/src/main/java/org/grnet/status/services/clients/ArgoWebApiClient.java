@@ -14,6 +14,9 @@ import org.grnet.status.dtos.report.WebApiReportResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
+import org.grnet.status.dtos.topology.*;
+
+import java.util.List;
 
 @RegisterRestClient(configKey = "argo-web-api")
 @Produces(MediaType.APPLICATION_JSON)
@@ -232,4 +235,88 @@ public interface ArgoWebApiClient {
     @Path("/api/v2/version")
     @Produces(MediaType.APPLICATION_JSON)
     Response version();
+
+    @GET
+    @Path("/api/v2/topology/groups")
+    WebApiGroupTopologyResponse fetchTopologyGroupsSuperAdmin(
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId,
+            @QueryParam("date") String date
+    ) throws WebApplicationException, ProcessingException;
+
+
+    @GET
+    @Path("/api/v2/topology/endpoints")
+    WebApiEndpointTopologyResponse fetchTopologyEndpointsSuperAdmin(
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId,
+            @QueryParam("date") String date
+    ) throws WebApplicationException, ProcessingException;
+
+    @GET
+    @Path("/api/v2/topology/service-types")
+    WebApiServiceTypeResponse fetchServiceTypesSuperAdmin(
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId,
+            @QueryParam("date") String date
+    ) throws WebApplicationException, ProcessingException;
+
+    @POST
+    @Path("/api/v2/topology/groups")
+    Status createTopologyGroupsSuperAdmin(
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId,
+            @QueryParam("date") String date,
+            List<GroupTopologyDto> request
+    ) throws WebApplicationException, ProcessingException;
+
+    @POST
+    @Path("/api/v2/topology/endpoints")
+    Status createTopologyEndpointsSuperAdmin(
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId,
+            @QueryParam("date") String date,
+            List<EndpointTopologyDto> request
+    ) throws WebApplicationException, ProcessingException;
+
+    @DELETE
+    @Path("/api/v2/topology/groups")
+    Status deleteTopologyGroupsSuperAdmin(
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId,
+            @QueryParam("date") String date
+    ) throws WebApplicationException, ProcessingException;
+
+    @DELETE
+    @Path("/api/v2/topology/endpoints")
+    Status deleteTopologyEndpointsSuperAdmin(
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId,
+            @QueryParam("date") String date
+    ) throws WebApplicationException, ProcessingException;
+
+    @DELETE
+    @Path("/api/v2/topology/service-types")
+    Status deleteServiceTypesSuperAdmin(
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId,
+            @QueryParam("date") String date
+    ) throws WebApplicationException, ProcessingException;
+
+    //    @PUT
+//    @Path("/api/v2/topology/endpoints")
+//    Status updateTopologyEndpointsSuperAdmin(
+//            @HeaderParam("x-api-key") String apiKey,
+//            @HeaderParam("x-tenant-id") String tenantId,
+//            @QueryParam("date") String date,
+//            List<EndpointTopologyDto> request
+//    ) throws WebApplicationException, ProcessingException;
+    @POST
+    @Path("/api/v2/topology/service-types")
+    Status createServiceTypesSuperAdmin(
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId,
+            @QueryParam("date") String date,
+            List<ServiceTypeDto> request) throws WebApplicationException,ProcessingException;
+
 }

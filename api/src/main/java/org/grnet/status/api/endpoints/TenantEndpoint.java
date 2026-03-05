@@ -30,7 +30,7 @@ import org.grnet.status.authorizations.interceptors.CheckEntitlements;
 import org.grnet.status.authorizations.interceptors.Resolver;
 import org.grnet.status.constraints.NotFoundEntity;
 import org.grnet.status.dtos.InformativeResponse;
-import org.grnet.status.dtos.general.ExistResponseDto;
+import org.grnet.status.dtos.Status;
 import org.grnet.status.dtos.general.ExistResponseDto;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.profile.aggregation.AggregationProfileResponse;
@@ -44,12 +44,6 @@ import org.grnet.status.dtos.status.StatusGroupResponseDto;
 import org.grnet.status.dtos.statuspage.StatusPageRequestDto;
 import org.grnet.status.dtos.statuspage.StatusPageResponseDto;
 import org.grnet.status.dtos.statuspage.StatusPageUpdateRequestDto;
-import org.grnet.status.dtos.report.ReportResponseDto;
-import org.grnet.status.dtos.report.PartialReportResponseDto;
-import org.grnet.status.dtos.status.StatusGroupResponseDto;
-import org.grnet.status.dtos.statuspage.StatusPageRequestDto;
-import org.grnet.status.dtos.statuspage.StatusPageResponseDto;
-import org.grnet.status.dtos.statuspage.StatusPageUpdateRequestDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
 import org.grnet.status.dtos.tenant.alerts.AlertDefinitionRequest;
@@ -57,7 +51,9 @@ import org.grnet.status.dtos.tenant.invitations.TenantInvitationRequest;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
-import org.grnet.status.repositories.StatusPageRepository;
+import org.grnet.status.dtos.topology.EndpointTopologyDto;
+import org.grnet.status.dtos.topology.GroupTopologyDto;
+import org.grnet.status.dtos.topology.ServiceTypeDto;
 import org.grnet.status.repositories.StatusPageRepository;
 import org.grnet.status.repositories.TenantInvitationRepository;
 import org.grnet.status.repositories.TenantRepository;
@@ -65,7 +61,13 @@ import org.grnet.status.services.*;
 import org.grnet.status.util.Utility;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.SimpleTimeZone;
+import java.util.TimeZone;
 
 import static org.eclipse.microprofile.openapi.annotations.enums.ParameterIn.QUERY;
 
@@ -111,6 +113,9 @@ public class TenantEndpoint {
 
     @Inject
     ContactService contactService;
+
+    @Inject
+    TopologyService topologyService;
 
     @Operation(
             summary = "List Tenants Available to the User",
@@ -227,7 +232,7 @@ public class TenantEndpoint {
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response getTenant(
             @Parameter(description = "The ID of the tenant to retrieve.",
@@ -286,7 +291,7 @@ public class TenantEndpoint {
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @CheckEntitlements(roles = {"admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response updateTenant(
             @Parameter(
@@ -338,7 +343,7 @@ public class TenantEndpoint {
     @GET
     @Path("/{id}/projects")
     @CheckEntitlements(roles = {"admin", "viewer"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Produces(MediaType.APPLICATION_JSON)
     public Response getProjectsByTenant(
@@ -420,7 +425,7 @@ public class TenantEndpoint {
     @GET
     @Path("/{id}/members")
     @CheckEntitlements(roles = {"admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Produces(MediaType.APPLICATION_JSON)
     public Response getMembersByTenant(
@@ -485,7 +490,7 @@ public class TenantEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @CheckEntitlements(roles = {"admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response createInvitation(
             @Parameter(
@@ -541,7 +546,7 @@ public class TenantEndpoint {
     @Path("/{id}/invitations")
     @Produces(MediaType.APPLICATION_JSON)
     @CheckEntitlements(roles = {"admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response getInvitations(
             @Parameter(
@@ -587,9 +592,8 @@ public class TenantEndpoint {
             @Min(value = 1, message = "Page size must be between 1 and 100.")
             @Max(value = 100, message = "Page size must be between 1 and 100.")
             @QueryParam("size")
-            int size, @Context UriInfo uriInfo)
-    {
-        var response = tenantInvitationService.getInvitationsByTenantByPageAndSize(search, sort, order, id,page - 1, size, uriInfo);
+            int size, @Context UriInfo uriInfo) {
+        var response = tenantInvitationService.getInvitationsByTenantByPageAndSize(search, sort, order, id, page - 1, size, uriInfo);
 
         return Response.ok(response).build();
     }
@@ -639,7 +643,7 @@ public class TenantEndpoint {
     @PATCH
     @Path("/{id}/invitations/{invitation_id}")
     @CheckEntitlements(roles = {"admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -695,7 +699,7 @@ public class TenantEndpoint {
     @Path("/{id}/members/{member_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @CheckEntitlements(roles = {"admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Authenticated
     public Response deleteMemberFromGroup(
@@ -759,7 +763,7 @@ public class TenantEndpoint {
     @Path("/{id}/aggregation-profiles/{profile_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @CheckEntitlements(roles = {"admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Authenticated
     public Response listSpecificAggregationProfiles(
@@ -821,7 +825,7 @@ public class TenantEndpoint {
     @Path("/{id}/aggregation-profiles")
     @Produces(MediaType.APPLICATION_JSON)
     @CheckEntitlements(roles = {"admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Authenticated
     public Response listAllAggregationProfiles(
@@ -878,7 +882,7 @@ public class TenantEndpoint {
     @Path("/{id}/metric-profiles/{profile_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @CheckEntitlements(roles = {"admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Authenticated
     public Response listSpecificMetricProfiles(
@@ -940,7 +944,7 @@ public class TenantEndpoint {
     @Path("/{id}/metric-profiles")
     @Produces(MediaType.APPLICATION_JSON)
     @CheckEntitlements(roles = {"admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Authenticated
     public Response listAllMetricProfiles(
@@ -997,7 +1001,7 @@ public class TenantEndpoint {
     @Path("/{id}/operations-profiles/{profile_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @CheckEntitlements(roles = {"admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Authenticated
     public Response listSpecificOperationsProfiles(
@@ -1059,7 +1063,7 @@ public class TenantEndpoint {
     @Path("/{id}/operations-profiles")
     @Produces(MediaType.APPLICATION_JSON)
     @CheckEntitlements(roles = {"admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     @Authenticated
     public Response listAllOperationsProfiles(
@@ -1127,8 +1131,8 @@ public class TenantEndpoint {
     @Path("/{id}/reports")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(roles = {"viewer","admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response fetchReports(
             @Parameter(description = "The ID of the tenant.",
@@ -1192,7 +1196,7 @@ public class TenantEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @CheckEntitlements(roles = {"admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response fetchReportByID(
             @Parameter(description = "The ID of the tenant to retrieve report.",
@@ -1207,9 +1211,9 @@ public class TenantEndpoint {
                     example = "a242ffb7-6e4d-4406-8b2d-0c665b75b21d",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("report-id")
-            @Valid  String reportId) {
+            @Valid String reportId) {
 
-        var reports = reportService.fetchReportById(id,reportId);
+        var reports = reportService.fetchReportById(id, reportId);
 
         return Response.ok(reports).build();
     }
@@ -1248,8 +1252,8 @@ public class TenantEndpoint {
     @GET
     @Path("/{id}/reports/{report-id}/groups")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(roles = {"viewer","admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response fetchStatusGroups(
             @Parameter(
@@ -1314,8 +1318,8 @@ public class TenantEndpoint {
     @Path("/{id}/pages")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(roles = {"viewer","admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response createStatusPage(
             @Parameter(
@@ -1369,8 +1373,8 @@ public class TenantEndpoint {
     @GET
     @Path("/{id}/pages/{page-id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(roles = {"viewer","admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response getStatusPage(
             @Parameter(
@@ -1422,8 +1426,8 @@ public class TenantEndpoint {
     @GET
     @Path("/{id}/pages")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(roles = {"viewer","admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response listStatusPages(
             @Parameter(
@@ -1490,8 +1494,8 @@ public class TenantEndpoint {
     @PUT
     @Path("/{id}/pages/{page-id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(roles = {"viewer","admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response updateStatusPage(
             @Parameter(
@@ -1550,8 +1554,8 @@ public class TenantEndpoint {
     @DELETE
     @Path("/{id}/pages/{page-id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(roles = {"viewer","admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response deleteStatusPage(
             @Parameter(
@@ -1604,8 +1608,8 @@ public class TenantEndpoint {
     @GET
     @Path("/{id}/pages/check-slug/{slug}")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(roles = {"viewer","admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+    @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response checkSlugExists(
             @Parameter(
@@ -1649,12 +1653,12 @@ public class TenantEndpoint {
             description = "Tenant's Readiness not found.",
             content = @Content(schema = @Schema(
                     type = SchemaType.OBJECT,
-                     implementation = InformativeResponse.class)))
+                    implementation = InformativeResponse.class)))
     @GET
     @Path("/{id}/check-readiness")
     @Produces(MediaType.APPLICATION_JSON)
     @CheckEntitlements(roles = {"admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
     public Response checkReadiness(
             @Parameter(
@@ -1770,7 +1774,7 @@ public class TenantEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @CheckEntitlements(roles = {"admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
 
     public Response notifyAms(
@@ -1828,7 +1832,7 @@ public class TenantEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Authenticated
     @CheckEntitlements(roles = {"admin"}, resolvers = {
-            @Resolver( idResolver = TenantNameResolver.class, pathId = "id")
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
     })
 
     public Response getTenantStatus(@Parameter(
@@ -1897,5 +1901,605 @@ public class TenantEndpoint {
         return Response.ok().entity(contactTypes).build();
     }
 
+    @Tag(name = "Topologies")
+    @Operation(summary = "Fetch ARGO group topologies",
+            description = "Retrieves tenant's group topologies from the ARGO Web API.")
+    @APIResponse(
+            responseCode = "200",
+            description = "List of available group topologies",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.ARRAY,
+                    implementation = List.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "409",
+            description = "Topology already exists.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "501",
+            description = "Not Implemented.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "502",
+            description = "Connection error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/{id}/topology/groups")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response fetchGroupTopologies(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+            @Parameter(name = "date", in = QUERY, description = "Target date to retrieve a group topology ") @QueryParam("date")
+            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date) {
+
+        var topologies = topologyService.fetchGroupTopologies(id,date);
+
+        return Response.ok(topologies).build();
+    }
+
+    @Tag(name = "Topologies")
+    @Operation(summary = "Fetch ARGO endpoint topologies",
+            description = "Retrieves tenant's endpoint topologies from the ARGO Web API.")
+    @APIResponse(
+            responseCode = "200",
+            description = "List of available topologies",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.ARRAY,
+                    implementation = List.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "409",
+            description = "Topology already exists.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "501",
+            description = "Not Implemented.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "502",
+            description = "Connection error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/{id}/topology/endpoints")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response fetchEndpointTopologies(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+            @Parameter(name = "date", in = QUERY, description = "Target date to retrieve a endpoint topology ") @QueryParam("date")
+            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date
+            ) {
+
+        var topologies = topologyService.fetchEndpointTopologies(id,date);
+
+        return Response.ok(topologies).build();
+    }
+
+    @Tag(name = "Topologies")
+    @Operation(summary = "Fetch ARGO service types",
+            description = "Retrieves tenant's service types from the ARGO Web API.")
+    @APIResponse(
+            responseCode = "200",
+            description = "List of available service types",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.ARRAY,
+                    implementation = List.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "409",
+            description = "Topology already exists.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "501",
+            description = "Not Implemented.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "502",
+            description = "Connection error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/{id}/topology/service-types")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response fetchServiceTypes(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+            @Parameter(name = "date", in = QUERY, description = "Target date to retrieve service types ") @QueryParam("date")
+            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date
+            ) {
+
+        var topologies = topologyService.fetchServiceTypes(id,date);
+
+        return Response.ok(topologies).build();
+    }
+    @Tag(name = "Topologies")
+    @Operation(summary = "Create ARGO group topologies",
+            description = "Retrieves tenant's group topologies to the ARGO Web API.")
+    @APIResponse(
+            responseCode = "201",
+            description = "Succeeded",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = Status.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "409",
+            description = "Topology already exists.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "501",
+            description = "Not Implemented.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "502",
+            description = "Connection error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @POST
+    @Path("/{id}/topology/groups")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response createGroupTopologies(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+            @Parameter(name = "date", in = QUERY, description = "Target date to create a group topology ") @QueryParam("date")
+            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date,
+            @Valid @NotNull(message = "The request body is empty.") List<GroupTopologyDto> request) {
+
+        var topologies = topologyService.createGroupTopology(id,date, request);
+
+        return Response.ok().entity(topologies).build();
+    }
+
+
+    @Tag(name = "Topologies")
+    @Operation(summary = "Create ARGO endpoint topologies",
+            description = "Retrieves tenant's endpoint topologies to the ARGO Web API.")
+    @APIResponse(
+            responseCode = "201",
+            description = "Succeeded",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = Status.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "409",
+            description = "Topology already exists.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "501",
+            description = "Not Implemented.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "502",
+            description = "Connection error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @POST
+    @Path("/{id}/topology/endpoints")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response createEndpointTopologies(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+
+            @Parameter(name = "date", in = QUERY, description = "Target date to create an endpoint topology ") @QueryParam("date")
+            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date,
+            @Valid @NotNull(message = "The request body is empty.") List<EndpointTopologyDto> request) {
+
+        var topologies = topologyService.createEndpointTopology(id,date, request);
+
+        return Response.ok().entity(topologies).build();
+    }
+
+    @Tag(name = "Topologies")
+    @Operation(summary = "Create ARGO endpoint topologies",
+            description = "Retrieves tenant's endpoint topologies to the ARGO Web API.")
+    @APIResponse(
+            responseCode = "201",
+            description = "Succeeded",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = Status.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "409",
+            description = "Topology already exists.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "501",
+            description = "Not Implemented.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "502",
+            description = "Connection error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @POST
+    @Path("/{id}/topology/service-types")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response createServiceTypes(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+
+            @Parameter(name = "date", in = QUERY, description = "Target date to create service types ") @QueryParam("date")
+            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date,
+            @Valid @NotNull(message = "The request body is empty.") List<ServiceTypeDto> request) {
+
+        var topologies = topologyService.createServiceTypes(id, date, request);
+
+        return Response.ok().entity(topologies).build();
+    }
+
+
+    @Tag(name = "Topologies")
+    @Operation(
+            summary = "Delete group topology  from a tenant.",
+            description = "Delete group topology  from a tenant.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Group topology deleted successfully from a tenant.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Entity Not Found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @DELETE
+    @Path("/{id}/topology/groups")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    @Authenticated
+    public Response deleteGroupTopologies(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+
+            @Parameter(name = "date", in = QUERY, description = "Target date to delete a group topology ") @QueryParam("date")
+            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date
+    ) {
+
+        var topologies = topologyService.deleteGroupTopology(id,date);
+
+        return Response.ok().entity(topologies).build();
+    }
+
+    @Tag(name = "Topologies")
+    @Operation(
+            summary = "Delete endpoint topology from a tenant.",
+            description = "Delete endpoint topology from a tenant.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Endpoint topology  deleted successfully from a tenant.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Entity Not Found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @DELETE
+    @Path("/{id}/topology/endpoints")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    @Authenticated
+    public Response deleteEndpointTopologies(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+
+            @Parameter(name = "date", in = QUERY, description = "Target date to delete endpoint topology ") @QueryParam("date")
+            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date
+    ) {
+
+        var topologies = topologyService.deleteEndpointTopology(id,date);
+
+        return Response.ok().entity(topologies).build();
+    }
+    @Tag(name = "Topologies")
+    @Operation(
+            summary = "Delete service types  from a tenant.",
+            description = "Delete service types  from a tenant.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Service types deleted successfully from a tenant.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Entity Not Found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @DELETE
+    @Path("/{id}/topology/service-types")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    @Authenticated
+    public Response deleteServiceTypes(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+
+            @Parameter(name = "date", in = QUERY, description = "Target date to delete service types") @QueryParam("date")
+            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date
+    ) {
+
+        var topologies = topologyService.deleteServiceTypes(id,date);
+
+        return Response.ok().entity(topologies).build();
+    }
 
 }

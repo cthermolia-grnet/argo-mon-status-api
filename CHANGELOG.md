@@ -73,6 +73,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#102](https://github.com/ARGOeu/argo-mon-status-api/pull/102) ARGO-5396 Improve error messages in Argo Monitoring Status
 - [#103](https://github.com/ARGOeu/argo-mon-status-api/pull/103) ARGO-5398 Expose uid in User Profile and Status Members responses
 - [#104](https://github.com/ARGOeu/argo-mon-status-api/pull/104) ARGO-5401 Remove endpoints from Admin Resource that are common with Tenant Resource
+- [#106](https://github.com/ARGOeu/argo-mon-status-api/pull/106) ARGO-5419 ARGO-5432 ARGO-5433 CRUD topology
 
 ### Fix
 

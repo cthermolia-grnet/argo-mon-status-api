@@ -1,5 +1,7 @@
 package org.grnet.status.dtos.report;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -39,9 +41,13 @@ public class FullReportResponseDto {
     @Schema(description = "Profiles list")
     public List<Profile> profiles;
 
-    // ✅ CHANGED
     @Schema(description = "Filter tags list")
     public List<FilterTag> filter_tags;
+
+    @Schema(description = "Indicates if this report is the default node report")
+    @JsonProperty("node_report")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean nodeReport;
 
 
     /* ================= INFO ================= */
@@ -174,7 +180,6 @@ public class FullReportResponseDto {
 
     /* ================= FILTER TAG ================= */
 
-    // ✅ NEW CLASS
     public static class FilterTag {
 
         @Schema(type = SchemaType.STRING,

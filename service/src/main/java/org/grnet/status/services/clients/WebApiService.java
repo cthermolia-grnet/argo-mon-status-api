@@ -9,8 +9,11 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.Status;
 import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
+import org.grnet.status.dtos.tenant.node.WebApiNodeReportResponse;
+import org.grnet.status.dtos.tenant.node.WebApiNodeResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
+import org.grnet.status.dtos.tenant.webapi.TenantWebApiNodeRequest;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
 import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.services.ReportService;
@@ -86,9 +89,37 @@ public class WebApiService {
             //return client.updateTenant(id, accessToken, webApiRequest);
             argoWebApiClient.updateTenantInfo(id, accessToken, webApiRequest);
             argoWebApiClient.updateTenantTopology(id, accessToken, webApiRequest);
+
+            var tenantNode = new TenantWebApiNodeRequest();
+            tenantNode.node = webApiRequest.node;
+            updateTenantNodeWebApi(id, tenantNode);
+
             return argoWebApiClient.updateTenantDBConf(id, accessToken, webApiRequest);
         } catch (Exception e) {
             throw new WebApplicationException("Updating Tenant... Failed to update tenant with id: " + id +" in Argo Web Api", 502);
+        }
+    }
+
+    public WebApiNodeResponse updateTenantNodeWebApi(String tenantId, TenantWebApiNodeRequest request) {
+
+        LOG.info("Updating Tenant Node...");
+        LOG.infof("REQUEST NODE VALUE = %s", request == null ? null : request.node);
+
+        try {
+            if (Boolean.TRUE.equals(request.node)) {
+                LOG.info("NODE IS TRUE");
+                return argoWebApiClient.setTenantNode(tenantId, accessToken);
+            }
+
+            LOG.info("NODE IS NULL");
+            return argoWebApiClient.unsetTenantNode(tenantId, accessToken);
+
+        } catch (Exception e) {
+            LOG.error("Failed updating tenant node", e);
+            throw new WebApplicationException(
+                    "Updating Tenant's Node information... Failed to update tenant with id: " + tenantId + " in Argo Web Api",
+                    502
+            );
         }
     }
 
@@ -122,5 +153,22 @@ public class WebApiService {
         }
     }
 
+
+    /**
+     * Sets the default node report in Argo Web Api.
+     *
+     * @param reportId report identifier
+     * @return status response
+     */
+    public WebApiNodeReportResponse setNodeReportWebApi(String reportId, String tenantId) {
+        try {
+            return argoWebApiClient.setNodeReport(reportId, accessToken, tenantId);
+        } catch (Exception e) {
+            throw new WebApplicationException(
+                    "Updating Report... Failed to set node report with id: " + reportId + " in Argo Web Api",
+                    502
+            );
+        }
+    }
 
 }

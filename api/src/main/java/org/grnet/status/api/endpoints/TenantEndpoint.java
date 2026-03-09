@@ -32,7 +32,6 @@ import org.grnet.status.constraints.NotFoundEntity;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.general.ExistResponseDto;
 import org.grnet.status.dtos.Status;
-import org.grnet.status.dtos.general.ExistResponseDto;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.profile.aggregation.AggregationProfileResponse;
 import org.grnet.status.dtos.profile.metric.MetricProfileResponse;
@@ -50,11 +49,14 @@ import org.grnet.status.dtos.tenant.TenantResponseDto;
 import org.grnet.status.dtos.tenant.alerts.AlertDefinitionRequest;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationRequest;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
+import org.grnet.status.dtos.tenant.node.WebApiNodeResponse;
+import org.grnet.status.dtos.tenant.node.WebApiNodeReportResponse;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
 import org.grnet.status.dtos.topology.EndpointTopologyDto;
 import org.grnet.status.dtos.topology.GroupTopologyDto;
 import org.grnet.status.dtos.topology.ServiceTypeDto;
+import org.grnet.status.dtos.tenant.webapi.TenantWebApiNodeRequest;
 import org.grnet.status.repositories.StatusPageRepository;
 import org.grnet.status.repositories.TenantInvitationRepository;
 import org.grnet.status.repositories.TenantRepository;
@@ -62,13 +64,7 @@ import org.grnet.status.services.*;
 import org.grnet.status.util.Utility;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.SimpleTimeZone;
-import java.util.TimeZone;
 
 import static org.eclipse.microprofile.openapi.annotations.enums.ParameterIn.QUERY;
 
@@ -1220,6 +1216,76 @@ public class TenantEndpoint {
     }
 
     @Tag(name = "Reports")
+    @Operation(
+            summary = "Set default node report",
+            description = "Sets the specified report as the default node report for the given tenant."
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "Node report updated successfully.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = WebApiNodeReportResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Tenant or report not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "502",
+            description = "Connection error.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @POST
+    @Path("/{id}/reports/{report-id}/set-node-report")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response setNodeReport(
+            @Parameter(
+                    description = "The ID of the tenant.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid
+            @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+            @Parameter(
+                    description = "The ID of the report.",
+                    required = true,
+                    example = "13a28cec-2940-4fcf-ad95-57fbdaf5bbad",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("report-id") @Valid String reportId) {
+
+        var response = reportService.setNodeReport(id, reportId);
+
+        return Response.ok(response).build();
+    }
+
+    @Tag(name = "Reports")
     @Operation(summary = "Fetch status groups for a report",
             description = "Decrypts the provided secret key and retrieves report  groups from the ARGO Web API.")
     @APIResponse(
@@ -1674,6 +1740,56 @@ public class TenantEndpoint {
         return Response.ok(response).build();
     }
 
+    @Tag(name = "Tenant")
+    @Operation(
+            summary = "Update Tenant's node information.",
+            description = "Returns true if tenant is ready or false if it is not. "
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "Tenant's readiness details.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = WebApiNodeResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Tenant's Readiness not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @PUT
+    @Path("/{id}/set-node")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response updateTenantNode(
+            @Parameter(
+                    description = "The ID of the tenant to check readiness.",
+                    required = true,
+                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
+            @Valid @NotNull(message = "The request body is empty.")
+            TenantWebApiNodeRequest request) {
+
+        var response = tenantService.updateTenantNode(id, request);
+
+        return Response.ok(response).build();
+    }
 
     public static class PageableTenants extends PageResource<TenantResponseDto> {
 

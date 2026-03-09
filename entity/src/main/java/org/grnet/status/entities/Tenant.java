@@ -54,12 +54,12 @@ public class Tenant {
     @JdbcTypeCode(SqlTypes.JSON)
     @Getter
     private String status;
-//    @Column(name = "readiness", columnDefinition = "jsonb")
-//    @JdbcTypeCode(SqlTypes.JSON)
-//    @Getter
-//    private String readiness = "{}";
 
-    @ManyToMany(cascade = CascadeType.PERSIST)  // cascade persist so saving Tenant saves new Contacts
+    @Column(name = "node")
+    @Getter
+    private Boolean node;
+
+    @ManyToMany(cascade = CascadeType.PERSIST)
     @JoinTable(
             name = "tenant_contact",
             joinColumns = @JoinColumn(name = "tenant_id"),
@@ -79,14 +79,4 @@ public class Tenant {
             status = "{}";
         }
     }
-
-//    @PreUpdate
-//    public void preUpdate() {
-//        if (status == null || status.trim().isEmpty()) {
-//            status = "{}";
-//        }
-//        if (readiness == null || readiness.trim().isEmpty()) {
-//            readiness = "{}";
-//        }
-//    }
 }

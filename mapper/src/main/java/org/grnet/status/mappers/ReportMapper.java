@@ -20,6 +20,7 @@ public interface ReportMapper {
     @Mapping(target = "description", source = "info.description")
     @Mapping(target = "createdAt", source = "info.created")
     @Mapping(target = "updatedAt", source = "info.updated")
+    @Mapping(target = "nodeReport", source = "nodeReport")
     PartialReportResponseDto fullToPartialReport(FullReportResponseDto source);
 
     default Instant map(Timestamp timestamp) {

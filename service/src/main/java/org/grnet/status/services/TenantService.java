@@ -24,9 +24,11 @@ import org.grnet.status.dtos.tenant.ContactDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
 import org.grnet.status.dtos.tenant.alerts.AlertDefinitionRequest;
+import org.grnet.status.dtos.tenant.node.WebApiNodeResponse;
 import org.grnet.status.dtos.tenant.status.EventStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
+import org.grnet.status.dtos.tenant.webapi.TenantWebApiNodeRequest;
 import org.grnet.status.entities.Contact;
 import org.grnet.status.entities.Page;
 import org.grnet.status.entities.PageQueryImpl;
@@ -87,6 +89,7 @@ public class TenantService {
 
     @Inject
     AmsService amsService;
+
     private final ExecutorService executorService = Executors.newFixedThreadPool(2); // Adjust as needed
 
     /**
@@ -145,6 +148,7 @@ public class TenantService {
         tenantCreatedRemotely = true;
         var status = TenantMapper.INSTANCE.mapStatusToString(setDefaultStatus());
         tenant.setStatus(status);
+        tenant.setNode(Boolean.TRUE.equals(request.node) ? true : null);
 
         try {
             TenantMapper.INSTANCE.mapMetadata(request, tenant);
@@ -585,18 +589,19 @@ public class TenantService {
     private void updateTenantInDB(TenantRequestDto request, Tenant tenant) {
         // Update simple fields:
         TenantMapper.INSTANCE.updateToTenant(request, tenant);
-        TenantMapper.INSTANCE.mapMetadata(request, tenant);  // serialize metadata separately
+        TenantMapper.INSTANCE.mapMetadata(request, tenant);
 
         // ------------------------------
         // 4. Update tenant.contacts
         // ------------------------------
-        Set<Contact> updatedContacts = resolveAndMergeContacts(request);
+        var updatedContacts = resolveAndMergeContacts(request);
         tenant.setContacts(updatedContacts);
-//
-//            // Replace tenant.contacts with new set
+
+        // Replace tenant.contacts with new set
         tenant.setContacts(updatedContacts);
 
         TenantMapper.INSTANCE.mapMetadata(request, tenant);
+        tenant.setNode(Boolean.TRUE.equals(request.node) ? Boolean.TRUE : null);
         tenantRepository.persist(tenant);
         tenantRepository.flush(); // force errors
     }
@@ -1319,4 +1324,26 @@ public class TenantService {
             );
         }
     }
+    @Transactional
+    public WebApiNodeResponse updateTenantNode(String tenantId, TenantWebApiNodeRequest request) {
+
+        var tenant = tenantRepository.findById(tenantId);
+
+        try {
+            var response = webApiService.updateTenantNodeWebApi(tenantId, request);
+
+            tenant.setNode(Boolean.TRUE.equals(request.node) ? Boolean.TRUE : null);
+            tenantRepository.persist(tenant);
+            tenantRepository.flush();
+
+            return response;
+
+        } catch (Exception e) {
+            throw new WebApplicationException(
+                    "Updating Tenant Node... Failed to update tenant node for tenant with id: " + tenantId + " in Argo Web Api",
+                    502
+            );
+        }
+    }
+
 }

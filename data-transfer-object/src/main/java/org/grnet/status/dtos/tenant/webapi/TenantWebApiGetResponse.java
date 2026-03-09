@@ -2,6 +2,7 @@ package org.grnet.status.dtos.tenant.webapi;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.grnet.status.dtos.Status;
+import org.grnet.status.dtos.tenant.node.TenantNodeDto;
 
 import java.util.List;
 
@@ -34,6 +35,7 @@ public class TenantWebApiGetResponse {
         private List<DbConf> db_conf;
         private Topology topology;
         private List<User> users;
+        private Boolean node;
 
         public String getId() {
             return id;
@@ -74,6 +76,10 @@ public class TenantWebApiGetResponse {
         public void setUsers(List<User> users) {
             this.users = users;
         }
+
+        public Boolean getNode() { return node;}
+
+        public void setNode(Boolean node) {this.node = node;}
     }
 
     public static class Info {

@@ -1,5 +1,6 @@
 package org.grnet.status.dtos.report;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -59,4 +60,14 @@ public class PartialReportResponseDto {
     )
     @JsonProperty("updated_at")
     public String updatedAt;
+
+    @Schema(
+            type = SchemaType.BOOLEAN,
+            implementation = Boolean.class,
+            description = "Indicates if this report is the default node report",
+            example = "true"
+    )
+    @JsonProperty("node_report")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean nodeReport;
 }

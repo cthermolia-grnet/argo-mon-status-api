@@ -11,8 +11,11 @@ import org.grnet.status.dtos.profile.metric.MetricProfileResponse;
 import org.grnet.status.dtos.profile.operation.OperationProfileResponse;
 import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
 import org.grnet.status.dtos.report.WebApiReportResponse;
+import org.grnet.status.dtos.tenant.node.WebApiNodeReportResponse;
+import org.grnet.status.dtos.tenant.node.WebApiNodeResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
+import org.grnet.status.dtos.tenant.webapi.TenantWebApiNodeRequest;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
 import org.grnet.status.dtos.topology.*;
 
@@ -320,4 +323,26 @@ public interface ArgoWebApiClient {
             @QueryParam("date") String date,
             List<ServiceTypeDto> request) throws WebApplicationException,ProcessingException;
 
+    @POST
+    @Path("/api/v2/admin/tenants/{id}/node-set")
+    WebApiNodeResponse setTenantNode(
+            @PathParam("id") String id,
+            @HeaderParam("x-api-key") String apiKey
+    ) throws WebApplicationException, ProcessingException;
+
+    @POST
+    @Path("/api/v2/admin/tenants/{id}/node-unset")
+    WebApiNodeResponse unsetTenantNode(
+            @PathParam("id") String id,
+            @HeaderParam("x-api-key") String apiKey
+    ) throws WebApplicationException, ProcessingException;
+
+
+    @POST
+    @Path("/api/v2/reports/{id}/set-node-report")
+    WebApiNodeReportResponse setNodeReport(
+            @PathParam("id") String reportId,
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId
+    ) throws WebApplicationException, ProcessingException;
 }

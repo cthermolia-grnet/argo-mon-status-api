@@ -3,6 +3,7 @@ package org.grnet.status.services;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -10,6 +11,7 @@ import org.grnet.status.dtos.encrypt.EncryptRequestDto;
 import org.grnet.status.dtos.encrypt.EncryptResponseDto;
 import org.grnet.status.dtos.report.PartialReportResponseDto;
 import org.grnet.status.dtos.report.FullReportResponseDto;
+import org.grnet.status.dtos.tenant.node.WebApiNodeReportResponse;
 import org.grnet.status.mappers.GeneralMapper;
 import org.grnet.status.mappers.ReportMapper;
 import org.grnet.status.services.clients.ArgoWebApiClient;
@@ -39,11 +41,11 @@ public class ReportService {
     EncryptUtil encryptUtil;
 
     @Inject
-    @RestClient
-    ArgoWebApiClient argoWebApiClient;
+    WebApiService webApiService;
 
     @Inject
-    WebApiService webApiService;
+    @RestClient
+    ArgoWebApiClient argoWebApiClient;
 
 
     /**
@@ -121,6 +123,36 @@ public class ReportService {
             return argoWebApiClient.fetchReportByIdSuperAdmin(reportId, accessToken, id).data.get(0);
         } catch (ClientWebApplicationException e) {
             throw new ClientWebApplicationException("Fetching Report... Report not found in Argo Web Api with id: " + reportId);
+        }
+    }
+
+    /**
+     * Sets the default node report by tenant and report identifier.
+     *
+     * @param tenantId tenant identifier
+     * @param reportId report identifier
+     * @return status response
+     */
+    public WebApiNodeReportResponse setNodeReport(String tenantId, String reportId) {
+
+        webApiService.validateTenantInitialized(tenantId, "Reports");
+        var reports = argoWebApiClient.fetchReportsSuperAdmin(accessToken, tenantId);
+        var found = reports.data.stream()
+                .anyMatch(r -> reportId.equals(r.id));
+
+        if (!found) {
+            throw new NotFoundException("Fetching Report... Not found report with id: " + reportId + " for tenant with id: " + tenantId);
+        }
+
+        try {
+            return webApiService.setNodeReportWebApi(reportId, tenantId);
+        } catch (WebApplicationException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new WebApplicationException(
+                    "Updating Report... Failed to set node report with id: " + reportId,
+                    502
+            );
         }
     }
 }

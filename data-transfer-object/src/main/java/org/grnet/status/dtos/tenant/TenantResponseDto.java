@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.grnet.status.dtos.readiness.TenantReadiness;
 import org.grnet.status.dtos.tenant.metadata.TenantMetadata;
+import org.grnet.status.dtos.tenant.node.TenantNodeDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.enums.TenantGroupStatus;
 
@@ -30,6 +30,15 @@ public class TenantResponseDto {
     @Valid
     public TenantInfoDto info;
 
+    @Schema(
+            type = SchemaType.BOOLEAN,
+            implementation = Boolean.class,
+            description = "Indicates whether the tenant is configured as a node",
+            example = "true"
+    )
+    @JsonProperty("node")
+    @Valid
+    public Boolean node;
 
     @Schema(
             type = SchemaType.STRING,

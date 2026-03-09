@@ -9,6 +9,7 @@ import lombok.Setter;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.grnet.status.dtos.tenant.metadata.TenantMetadata;
+import org.grnet.status.dtos.tenant.node.TenantNodeDto;
 
 import java.util.List;
 
@@ -40,4 +41,13 @@ public class TenantRequestDto {
     @JsonProperty("metadata")
     @Valid
     public TenantMetadata metadata=new TenantMetadata();
+
+    @Schema(
+            type = SchemaType.BOOLEAN,
+            implementation = Boolean.class,
+            description = "Indicates whether the tenant is configured as a node",
+            example = "true"
+    )
+    @JsonProperty("node")
+    public Boolean node;
 }

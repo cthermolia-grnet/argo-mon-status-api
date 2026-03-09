@@ -9,7 +9,7 @@ import org.grnet.status.dtos.readiness.TenantReadiness;
 import org.grnet.status.dtos.tenant.*;
 import org.grnet.status.dtos.tenant.metadata.TenantMetadata;
 import org.grnet.status.dtos.tenant.metadata.TenantTopologyDto;
-import org.grnet.status.dtos.tenant.status.EventStatusDto;
+import org.grnet.status.dtos.tenant.node.TenantNodeDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
@@ -43,6 +43,7 @@ public interface TenantMapper {
     @Mapping(target = "topology", source = "metadata.instance.topology")
     @Mapping(target = "users", ignore = true)
     @Mapping(target = "db_conf", ignore = true)
+    @Mapping(target = "node", source = "node")
     TenantWebApiRequest toWebApiRequest(TenantRequestDto dto);
 
     //map the fields received from web api as TenantWebApiGetResponse.Data.get(0)
@@ -51,6 +52,7 @@ public interface TenantMapper {
     @Mapping(source = "topology", target = "topology")
     @Mapping(source = "db_conf", target = "db_conf")
     @Mapping(source = "users", target = "users")
+    @Mapping(source = "node", target = "node")
     TenantWebApiRequest dataToTenantWebApiRequest(TenantWebApiGetResponse.Data data);
 
     //updates existing TenantWebApiRequest with the fields of the TenantRequestDto
@@ -58,7 +60,8 @@ public interface TenantMapper {
     @Mapping(target = "topology", source = "metadata.instance.topology")
     @Mapping(target = "users", ignore = true)   // keep existing
     @Mapping(target = "db_conf", ignore = true)
-    // keep existing
+    @Mapping(target = "node", source = "node")
+// keep existing
     void updateExistingWebApiRequest(TenantRequestDto dto, @MappingTarget TenantWebApiRequest existing);
 
 
@@ -136,6 +139,7 @@ public interface TenantMapper {
                 });
         dto.status = mapStatusObject(tenant.getStatus());
         dto.contacts = contactsToDtos(tenant.getContacts());
+        dto.node = webApiGetResponse.getData().get(0).getNode();
 
         return dto;
     }
@@ -209,6 +213,7 @@ public interface TenantMapper {
     @Mapping(target = "updatedBy", source = "updatedBy")
     @Mapping(target = "contacts", source = "contacts", qualifiedByName = "contactsToDtos")
     @Mapping(target = "status", expression = "java(mapStatusObject(tenant.getStatus()))")
+    //@Mapping(target = "node", expression = "java(mapNodeObject(tenant.getNode()))")
     TenantResponseDto tenantToDto(Tenant tenant);
 
 

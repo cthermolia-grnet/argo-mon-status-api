@@ -2,17 +2,14 @@ package org.grnet.status.dtos.tenant.webapi;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.grnet.status.dtos.tenant.DBConfDto;
 import org.grnet.status.dtos.tenant.TenantInfoDto;
+import org.grnet.status.dtos.tenant.node.TenantNodeDto;
 import org.grnet.status.dtos.tenant.UserDto;
 import org.grnet.status.dtos.tenant.metadata.TenantTopologyDto;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -57,4 +54,13 @@ public class TenantWebApiRequest {
     @JsonProperty("db_conf")
     @Valid
     public List<DBConfDto> db_conf;
+
+    @Schema(
+            type = SchemaType.BOOLEAN,
+            implementation = Boolean.class,
+            description = "Indicates whether the tenant is configured as a node",
+            example = "true"    )
+    @JsonProperty("node")
+    @Valid
+    public Boolean node;
 }

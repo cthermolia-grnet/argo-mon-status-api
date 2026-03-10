@@ -13,7 +13,8 @@ import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
 import org.grnet.status.repositories.TenantRepository;
-import org.grnet.status.services.utils.EncryptUtil;
+import org.grnet.status.services.ReportService;
+import org.jboss.logging.Logger;
 
 @ApplicationScoped
 public class WebApiService {
@@ -24,6 +25,8 @@ public class WebApiService {
     ArgoWebApiClient argoWebApiClient;
     @Inject
     TenantRepository tenantRepository;
+
+    private static final Logger LOG = Logger.getLogger(ReportService.class);
 
     public TenantWebApiGetResponse retrieveTenantWebApi(String id) throws JsonProcessingException {
         TenantWebApiGetResponse webApiResponse = null;
@@ -106,5 +109,18 @@ public class WebApiService {
             throw new WebApplicationException("Retrieving Tenant's Readiness... tenant with id " + id + "failed in Argo Web Api", status);
         }
     }
+
+    public void validateTenantInitialized(String tenantId, String resourceName) {
+
+        LOG.info("Checking if Tenant is initialized...");
+        var tenant = argoWebApiClient.getTenant(accessToken, tenantId);
+        var dbConf = tenant.getData().get(0).getDb_conf();
+        var mongodbReady = dbConf != null && !dbConf.isEmpty();
+
+        if (!mongodbReady) {
+            throw new WebApplicationException(resourceName + " are not available. The tenant is still initializing.", 400);
+        }
+    }
+
 
 }

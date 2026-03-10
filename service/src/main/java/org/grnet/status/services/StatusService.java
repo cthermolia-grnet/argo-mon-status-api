@@ -10,12 +10,12 @@ import jakarta.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.argo.ArgoStatusGroupsResponse;
-import org.grnet.status.dtos.report.FullReportResponseDto;
 import org.grnet.status.dtos.status.StatusGroupResponseDto;
 import org.grnet.status.dtos.statuspage.StatusPageConfigDto;
 import org.grnet.status.mappers.StatusPageMapper;
 import org.grnet.status.repositories.StatusPageRepository;
 import org.grnet.status.services.clients.ArgoWebApiClient;
+import org.grnet.status.services.clients.WebApiService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +36,9 @@ public class StatusService {
     @Inject
     StatusPageRepository statusPageRepository;
 
+    @Inject
+    WebApiService webApiService;
+
     @ConfigProperty(name = "web.api.access.token")
     String accessToken;
 
@@ -47,21 +50,22 @@ public class StatusService {
      * @return list of status groups
      */
     public List<StatusGroupResponseDto> getStatusGroups(String tenantId, String reportId) {
-        FullReportResponseDto report=null;
-        try {
-             report = reportService.fetchReportById(tenantId, reportId);
-        }catch (RuntimeException e){
-            throw new WebApplicationException("Fetching Report Groups...No groups retrieved for report with id: "+reportId);
-        }
-        ArgoStatusGroupsResponse argoGroups=null;
+
+        //FullReportResponseDto report=null;
+        webApiService.validateTenantInitialized(tenantId, "Status Groups");
+
+        var report = reportService.fetchReportById(tenantId, reportId);
+
+        ArgoStatusGroupsResponse argoGroups = null;
         var list = new ArrayList<StatusGroupResponseDto>();
 
         try {
-            argoGroups = argoWebApiClient
-                    .fetchStatusGroupsSuperAdmin(accessToken, tenantId, report.info.name);
+            argoGroups = argoWebApiClient.fetchStatusGroupsSuperAdmin(accessToken, tenantId, report.info.name);
         } catch (WebApplicationException e) {
             Log.error("Argo Web Api returned HTTP error: {}", e.getResponse().getStatus(), e);
-            throw new NotFoundException("Fetching Report Groups..."+"No groups retrieved from Argo Web Api for report: "+report.info.name);
+            throw new NotFoundException(
+                    "Fetching Report Groups... No groups retrieved from Argo Web Api for report: " + report.info.name
+            );
         } catch (ProcessingException e) {
             Log.error("Argo Web Api is unreachable", e);
             throw new RuntimeException("Fetching Report Groups... Argo Web Api is unreachable", e);
@@ -100,6 +104,7 @@ public class StatusService {
         var config = statusPageDto.config;
 
         // Fetch live groups
+        webApiService.validateTenantInitialized(statusPage.getTenant().id, "Status Groups");
         var argoGroups = argoWebApiClient.fetchStatusGroupsSuperAdmin(accessToken, statusPage.getTenant().id,statusPage.getReport());
 
         // Update config group statuses in memory

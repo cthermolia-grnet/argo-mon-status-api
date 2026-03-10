@@ -110,6 +110,8 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#101](https://github.com/ARGOeu/argo-mon-status-api/pull/101) ARGO-5393 Improve API error message when required path parameter is missing
 - [#105](https://github.com/ARGOeu/argo-mon-status-api/pull/105) ARGO-5414 Add JavaDoc descriptions to service and repository methods
 - [#107](https://github.com/ARGOeu/argo-mon-status-api/pull/107) ARGO-5431: Status-api returns 502 in reports when a tenant is not fully ready
+- [#109](https://github.com/ARGOeu/argo-mon-status-api/pull/109) ARGO-5446 Validate tenant initialization when x-tenant-id header is used
+
 
 
 ### Removed

@@ -10,9 +10,9 @@ import org.grnet.status.dtos.topology.EndpointTopologyDto;
 import org.grnet.status.dtos.topology.GroupTopologyDto;
 import org.grnet.status.dtos.topology.ServiceTypeDto;
 import org.grnet.status.services.clients.ArgoWebApiClient;
+import org.grnet.status.services.clients.WebApiService;
 import org.jboss.logging.Logger;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @ApplicationScoped
@@ -20,6 +20,9 @@ public class TopologyService {
     @Inject
     @RestClient
     ArgoWebApiClient argoWebApiClient;
+
+    @Inject
+    WebApiService webApiService;
 
     @ConfigProperty(name = "web.api.access.token")
     String accessToken;
@@ -29,6 +32,7 @@ public class TopologyService {
     public List<GroupTopologyDto> fetchGroupTopologies(String id,String date) {
 
         LOG.info("Fetching group topology from ARGO Web API...");
+        webApiService.validateTenantInitialized(id, "Group Topology");
         var response = argoWebApiClient.fetchTopologyGroupsSuperAdmin(accessToken, id,date);
         return response.data;
     }
@@ -36,6 +40,7 @@ public class TopologyService {
     public List<EndpointTopologyDto> fetchEndpointTopologies(String id,String date) {
 
         LOG.info("Fetching endpoint topology from ARGO Web API...");
+        webApiService.validateTenantInitialized(id, "Endpoint Topology");
         var response = argoWebApiClient.fetchTopologyEndpointsSuperAdmin(accessToken, id,date);
         return response.data;
     }
@@ -43,6 +48,7 @@ public class TopologyService {
     public List<ServiceTypeDto> fetchServiceTypes(String id,String date) {
 
         LOG.info("Fetching service types from ARGO Web API...");
+        webApiService.validateTenantInitialized(id, "Service Type");
         var response = argoWebApiClient.fetchServiceTypesSuperAdmin(accessToken, id,date);
         return response.data;
     }
@@ -50,6 +56,7 @@ public class TopologyService {
 
         LOG.info("Creating group topology to ARGO Web API...");
         try {
+            webApiService.validateTenantInitialized(id, "Group Topology");
             return  argoWebApiClient.createTopologyGroupsSuperAdmin(accessToken, id, date, request);
 
         } catch (ProcessingException e) {
@@ -62,6 +69,7 @@ public class TopologyService {
 
         LOG.info("Creating endpoint topology to ARGO Web API...");
         try {
+            webApiService.validateTenantInitialized(id, "Endpoint Topology");
             return  argoWebApiClient.createTopologyEndpointsSuperAdmin(accessToken, id, date, request);
 
         } catch (ProcessingException e) {
@@ -75,6 +83,7 @@ public class TopologyService {
 
         LOG.info("Deleting group topology from ARGO Web API...");
         try {
+            webApiService.validateTenantInitialized(id, "Group Topology");
             return  argoWebApiClient.deleteTopologyGroupsSuperAdmin(accessToken, id, date);
 
         } catch (ProcessingException e) {
@@ -88,6 +97,7 @@ public class TopologyService {
 
         LOG.info("Deleting endpoint topology from ARGO Web API...");
         try {
+            webApiService.validateTenantInitialized(id, "Endpoint Topology");
             return  argoWebApiClient.deleteTopologyEndpointsSuperAdmin(accessToken, id, date);
 
         } catch (ProcessingException e) {
@@ -100,6 +110,7 @@ public class TopologyService {
 
         LOG.info("Deleting service types from ARGO Web API...");
         try {
+            webApiService.validateTenantInitialized(id, "Service Type");
             return  argoWebApiClient.deleteServiceTypesSuperAdmin(accessToken, id, date);
 
         } catch (ProcessingException e) {
@@ -113,6 +124,7 @@ public class TopologyService {
 
         LOG.info("Creating service types to ARGO Web API...");
         try {
+            webApiService.validateTenantInitialized(id, "Service Type");
             return  argoWebApiClient.createServiceTypesSuperAdmin(accessToken, id, date, request);
 
         } catch (ProcessingException e) {

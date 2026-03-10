@@ -123,7 +123,8 @@ public interface ArgoWebApiClient {
     @Path("/api/v2/admin/tenants/{id}/db-conf")
     Status updateTenantDBConf(
             @PathParam("id") String id,
-            @HeaderParam("x-api-key") String apiKey, TenantWebApiRequest request) throws WebApplicationException, ProcessingException;
+            @HeaderParam("x-api-key") String apiKey, TenantWebApiRequest request
+    ) throws WebApplicationException, ProcessingException;
 
     @GET
     @Path("/api/v2/operations_profiles/{id}")

@@ -41,7 +41,6 @@ import org.grnet.status.services.clients.WebApiService;
 import org.grnet.status.services.utils.ImageUploadUtil;
 
 import java.io.IOException;
-import java.rmi.RemoteException;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -88,8 +87,6 @@ public class TenantService {
 
     @Inject
     AmsService amsService;
-
-
     private final ExecutorService executorService = Executors.newFixedThreadPool(2); // Adjust as needed
 
     /**
@@ -1322,5 +1319,4 @@ public class TenantService {
             );
         }
     }
-
 }

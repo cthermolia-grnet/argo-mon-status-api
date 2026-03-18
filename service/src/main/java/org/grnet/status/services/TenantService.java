@@ -25,10 +25,14 @@ import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
 import org.grnet.status.dtos.tenant.alerts.AlertDefinitionRequest;
 import org.grnet.status.dtos.tenant.node.WebApiNodeResponse;
+import org.grnet.status.dtos.tenant.metadata.InstanceDto;
+import org.grnet.status.dtos.tenant.metadata.TenantMetadata;
+import org.grnet.status.dtos.tenant.node.WebApiNodeResponse;
 import org.grnet.status.dtos.tenant.status.EventStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiNodeRequest;
+import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.entities.Contact;
 import org.grnet.status.entities.Page;
 import org.grnet.status.entities.PageQueryImpl;
@@ -43,6 +47,7 @@ import org.grnet.status.services.clients.WebApiService;
 import org.grnet.status.services.utils.ImageUploadUtil;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -1346,4 +1351,98 @@ public class TenantService {
         }
     }
 
+
+    @Transactional
+    public void syncWebApiTenantsToLocalDb() {
+
+        Log.info("Starting tenant sync from Argo Web API to local DB...");
+
+        try {
+            var response = webApiService.retrieveTenantsWebApi();
+
+            if (response == null || response.getData() == null || response.getData().isEmpty()) {
+                Log.info("No tenants returned from Argo Web API.");
+                return;
+            }
+
+            response.getData().forEach(remoteTenant -> {
+                try {
+                    syncSingleTenantToLocalDb(remoteTenant);
+                } catch (Exception e) {
+                    Log.errorf(e, "Failed to sync tenant with id: %s", remoteTenant.getId());
+                }
+            });
+
+            Log.info("Tenant sync completed.");
+
+        } catch (Exception e) {
+            Log.error("Failed to fetch tenants from Argo Web API during startup sync.", e);
+        }
+    }
+
+    private void syncSingleTenantToLocalDb(TenantWebApiGetResponse.Data remoteTenant) {
+
+        if (remoteTenant == null || remoteTenant.getId() == null || remoteTenant.getInfo() == null) {
+            Log.warn("Skipping invalid tenant from Web API response.");
+            return;
+        }
+
+        var info = remoteTenant.getInfo();
+        var now = Timestamp.from(Instant.now());
+
+        var existingTenant = tenantRepository.findById(remoteTenant.getId());
+
+        if (existingTenant == null) {
+
+            var tenant = new Tenant();
+            tenant.setId(remoteTenant.getId());
+            tenant.setName(info.getName());
+            tenant.setEmail(info.getEmail());
+            tenant.setDescription(info.getDescription());
+            tenant.setWebsite(info.getWebsite());
+            tenant.setImage(info.getImage());
+            tenant.setUpdatedBy("dev-sync");
+            tenant.setCreatedAt(now);
+            tenant.setUpdatedAt(now);
+
+            var metadata = new TenantMetadata();
+            if (metadata.instance == null) {
+                metadata.instance = new InstanceDto();
+            }
+            metadata.instance.topology = TenantMapper.INSTANCE.topologyToDto(remoteTenant.getTopology());
+
+            tenant.setMetadata(TenantMapper.INSTANCE.mapMetadataToString(metadata));
+            tenant.setStatus(TenantMapper.INSTANCE.mapStatusToString(setDefaultStatus()));
+            tenant.setNode(Boolean.TRUE.equals(remoteTenant.getNode()) ? Boolean.TRUE : null);
+
+            tenantRepository.persist(tenant);
+
+            Log.infof("Tenant inserted locally: %s (%s)", tenant.getName(), tenant.getId());
+            return;
+        }
+
+        existingTenant.setName(info.getName());
+        existingTenant.setEmail(info.getEmail());
+        existingTenant.setDescription(info.getDescription());
+        existingTenant.setWebsite(info.getWebsite());
+        existingTenant.setImage(info.getImage());
+        existingTenant.setNode(Boolean.TRUE.equals(remoteTenant.getNode()) ? Boolean.TRUE : null);
+        existingTenant.setUpdatedBy("dev-sync");
+        existingTenant.setUpdatedAt(now);
+
+        var metadata = TenantMapper.INSTANCE.mapMetadataObject(existingTenant.getMetadata());
+        if (metadata == null) {
+            metadata = new TenantMetadata();
+        }
+        if (metadata.instance == null) {
+            metadata.instance = new InstanceDto();
+        }
+        metadata.instance.topology = TenantMapper.INSTANCE.topologyToDto(remoteTenant.getTopology());
+
+        existingTenant.setMetadata(TenantMapper.INSTANCE.mapMetadataToString(metadata));
+
+        tenantRepository.persist(existingTenant);
+
+        Log.infof("Tenant updated locally: %s (%s)", existingTenant.getName(), existingTenant.getId());
+    }
 }

@@ -75,6 +75,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#104](https://github.com/ARGOeu/argo-mon-status-api/pull/104) ARGO-5401 Remove endpoints from Admin Resource that are common with Tenant Resource
 - [#106](https://github.com/ARGOeu/argo-mon-status-api/pull/106) ARGO-5419 ARGO-5432 ARGO-5433 CRUD topology
 - [#108](https://github.com/ARGOeu/argo-mon-status-api/pull/108) ARGO-5443 Support node info in tenants and set reports as default
+- [#112](https://github.com/ARGOeu/argo-mon-status-api/pull/112) ARGO-5461: Sync Web API Tenants to Local DB (Dev Environment Only)
 
 ### Fix
 

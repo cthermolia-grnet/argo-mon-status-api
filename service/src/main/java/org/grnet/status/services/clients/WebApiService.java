@@ -153,6 +153,20 @@ public class WebApiService {
         }
     }
 
+    public TenantWebApiGetResponse retrieveTenantsWebApi() throws JsonProcessingException {
+        try {
+            return argoWebApiClient.getTenants(accessToken);
+        } catch (RuntimeException e) {
+            int status = 500;
+            if (e instanceof WebApplicationException) {
+                status = ((WebApplicationException) e).getResponse().getStatus();
+            }
+
+            Log.error(e.getMessage(), e);
+            throw new WebApplicationException("Retrieving Tenants... failed in Argo Web Api", status);
+        }
+    }
+
 
     /**
      * Sets the default node report in Argo Web Api.

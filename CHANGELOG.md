@@ -112,8 +112,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#105](https://github.com/ARGOeu/argo-mon-status-api/pull/105) ARGO-5414 Add JavaDoc descriptions to service and repository methods
 - [#107](https://github.com/ARGOeu/argo-mon-status-api/pull/107) ARGO-5431: Status-api returns 502 in reports when a tenant is not fully ready
 - [#109](https://github.com/ARGOeu/argo-mon-status-api/pull/109) ARGO-5446 Validate tenant initialization when x-tenant-id header is used
-
-
+- [#111](https://github.com/ARGOeu/argo-mon-status-api/pull/111) ARGO-5470 DELETE topology if already exists while trying to recreate
 
 ### Removed
 

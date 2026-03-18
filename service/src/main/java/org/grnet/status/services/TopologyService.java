@@ -3,6 +3,7 @@ package org.grnet.status.services;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.Status;
@@ -29,35 +30,50 @@ public class TopologyService {
 
     private static final Logger LOG = Logger.getLogger(TopologyService.class);
 
-    public List<GroupTopologyDto> fetchGroupTopologies(String id,String date) {
+    public List<GroupTopologyDto> fetchGroupTopologies(String id, String date) {
 
         LOG.info("Fetching group topology from ARGO Web API...");
         webApiService.validateTenantInitialized(id, "Group Topology");
-        var response = argoWebApiClient.fetchTopologyGroupsSuperAdmin(accessToken, id,date);
+        var response = argoWebApiClient.fetchTopologyGroupsSuperAdmin(accessToken, id, date);
         return response.data;
     }
 
-    public List<EndpointTopologyDto> fetchEndpointTopologies(String id,String date) {
+    public List<EndpointTopologyDto> fetchEndpointTopologies(String id, String date) {
 
         LOG.info("Fetching endpoint topology from ARGO Web API...");
         webApiService.validateTenantInitialized(id, "Endpoint Topology");
-        var response = argoWebApiClient.fetchTopologyEndpointsSuperAdmin(accessToken, id,date);
+        var response = argoWebApiClient.fetchTopologyEndpointsSuperAdmin(accessToken, id, date);
         return response.data;
     }
 
-    public List<ServiceTypeDto> fetchServiceTypes(String id,String date) {
+    public List<ServiceTypeDto> fetchServiceTypes(String id, String date) {
 
         LOG.info("Fetching service types from ARGO Web API...");
         webApiService.validateTenantInitialized(id, "Service Type");
-        var response = argoWebApiClient.fetchServiceTypesSuperAdmin(accessToken, id,date);
+        var response = argoWebApiClient.fetchServiceTypesSuperAdmin(accessToken, id, date);
         return response.data;
     }
-    public Status createGroupTopology(String id,String date, List<GroupTopologyDto> request) {
+
+    public Status createGroupTopology(String id, String date, List<GroupTopologyDto> request) {
 
         LOG.info("Creating group topology to ARGO Web API...");
+
+        // Attempt to delete, but ignore 404 errors
         try {
+            argoWebApiClient.deleteTopologyGroupsSuperAdmin(accessToken, id, date);
+        } catch (WebApplicationException e) {
+            if (e.getResponse().getStatus() == 404) {
+                LOG.info("Topology not found for date " + date + ", continuing to create.");
+            } else {
+                // Re-throw other HTTP errors
+                throw e;
+            }
+        }
+        try {
+
+
             webApiService.validateTenantInitialized(id, "Group Topology");
-            return  argoWebApiClient.createTopologyGroupsSuperAdmin(accessToken, id, date, request);
+            return argoWebApiClient.createTopologyGroupsSuperAdmin(accessToken, id, date, request);
 
         } catch (ProcessingException e) {
             e.printStackTrace();
@@ -65,13 +81,27 @@ public class TopologyService {
             throw e;
         }
     }
-    public Status createEndpointTopology(String id, String date,List<EndpointTopologyDto> request) {
+
+    public Status createEndpointTopology(String id, String date, List<EndpointTopologyDto> request) {
 
         LOG.info("Creating endpoint topology to ARGO Web API...");
-        try {
-            webApiService.validateTenantInitialized(id, "Endpoint Topology");
-            return  argoWebApiClient.createTopologyEndpointsSuperAdmin(accessToken, id, date, request);
 
+        // Attempt to delete, but ignore 404 errors
+        try {
+            argoWebApiClient.deleteTopologyEndpointsSuperAdmin(accessToken, id, date);
+        } catch (WebApplicationException e) {
+            if (e.getResponse().getStatus() == 404) {
+                LOG.info("Topology not found for date " + date + ", continuing to create.");
+            } else {
+                // Re-throw other HTTP errors
+                throw e;
+            }
+        }
+
+        try {
+            // Validate tenant and create topology
+            webApiService.validateTenantInitialized(id, "Endpoint Topology");
+            return argoWebApiClient.createTopologyEndpointsSuperAdmin(accessToken, id, date, request);
         } catch (ProcessingException e) {
             e.printStackTrace();
             System.out.println("CAUSE: " + e.getCause());
@@ -79,12 +109,13 @@ public class TopologyService {
         }
     }
 
-    public Status deleteGroupTopology(String id,String date) {
+
+    public Status deleteGroupTopology(String id, String date) {
 
         LOG.info("Deleting group topology from ARGO Web API...");
         try {
             webApiService.validateTenantInitialized(id, "Group Topology");
-            return  argoWebApiClient.deleteTopologyGroupsSuperAdmin(accessToken, id, date);
+            return argoWebApiClient.deleteTopologyGroupsSuperAdmin(accessToken, id, date);
 
         } catch (ProcessingException e) {
             e.printStackTrace();
@@ -93,12 +124,12 @@ public class TopologyService {
         }
     }
 
-    public Status deleteEndpointTopology(String id,String date) {
+    public Status deleteEndpointTopology(String id, String date) {
 
         LOG.info("Deleting endpoint topology from ARGO Web API...");
         try {
             webApiService.validateTenantInitialized(id, "Endpoint Topology");
-            return  argoWebApiClient.deleteTopologyEndpointsSuperAdmin(accessToken, id, date);
+            return argoWebApiClient.deleteTopologyEndpointsSuperAdmin(accessToken, id, date);
 
         } catch (ProcessingException e) {
             e.printStackTrace();
@@ -106,12 +137,13 @@ public class TopologyService {
             throw e;
         }
     }
-    public Status deleteServiceTypes(String id,String date) {
+
+    public Status deleteServiceTypes(String id, String date) {
 
         LOG.info("Deleting service types from ARGO Web API...");
         try {
             webApiService.validateTenantInitialized(id, "Service Type");
-            return  argoWebApiClient.deleteServiceTypesSuperAdmin(accessToken, id, date);
+            return argoWebApiClient.deleteServiceTypesSuperAdmin(accessToken, id, date);
 
         } catch (ProcessingException e) {
             e.printStackTrace();
@@ -120,12 +152,23 @@ public class TopologyService {
         }
     }
 
-    public Status createServiceTypes(String id, String date,List<ServiceTypeDto> request) {
+    public Status createServiceTypes(String id, String date, List<ServiceTypeDto> request) {
 
         LOG.info("Creating service types to ARGO Web API...");
         try {
+            argoWebApiClient.deleteServiceTypesSuperAdmin(accessToken, id, date);
+        } catch (WebApplicationException e) {
+            if (e.getResponse().getStatus() == 404) {
+                LOG.info("Service types not found for date " + date + ", continuing to create.");
+            } else {
+                // Re-throw other HTTP errors
+                throw e;
+            }
+        }
+
+        try {
             webApiService.validateTenantInitialized(id, "Service Type");
-            return  argoWebApiClient.createServiceTypesSuperAdmin(accessToken, id, date, request);
+            return argoWebApiClient.createServiceTypesSuperAdmin(accessToken, id, date, request);
 
         } catch (ProcessingException e) {
             e.printStackTrace();

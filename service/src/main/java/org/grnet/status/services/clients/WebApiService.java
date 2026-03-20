@@ -8,9 +8,9 @@ import jakarta.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.Status;
+import org.grnet.status.dtos.argo.ArgoWebApiErrorResponse;
 import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
-import org.grnet.status.dtos.tenant.node.WebApiNodeReportResponse;
-import org.grnet.status.dtos.tenant.node.WebApiNodeResponse;
+import org.grnet.status.dtos.tenant.node.*;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiNodeRequest;
@@ -185,4 +185,36 @@ public class WebApiService {
         }
     }
 
+    public WebApiNodeAvailabilityResponse retrieveNodeAvailability(String nodeName, String date, String startTime, String endTime, String startDate, String endDate, String granularity) {
+        try {
+            return argoWebApiClient.getNodeAvailabilityCapability(
+                    accessToken, nodeName, date, startTime, endTime, startDate, endDate, granularity
+            );
+        } catch (RuntimeException e) {
+            var status = 500;
+            if (e instanceof WebApplicationException) {
+                status = ((WebApplicationException) e).getResponse().getStatus();
+            }
+
+            Log.error(e.getMessage(), e);
+            throw new WebApplicationException(
+                    "Retrieving Node Availability... node with name " + nodeName + " failed in Argo Web Api", status
+            );
+        }
+    }
+    public WebApiNodeStatusResponse retrieveNodeStatus(String nodeName, String startTime, String endTime, Boolean history) {
+        try {
+            return argoWebApiClient.getNodeStatus(accessToken, nodeName, startTime, endTime, history);
+        } catch (RuntimeException e) {
+            var status = 500;
+            if (e instanceof WebApplicationException) {
+                status = ((WebApplicationException) e).getResponse().getStatus();
+            }
+
+            Log.error(e.getMessage(), e);
+            throw new WebApplicationException(
+                    "Retrieving Node Status... node with name " + nodeName + " failed in Argo Web Api", status
+            );
+        }
+    }
 }

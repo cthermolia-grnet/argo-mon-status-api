@@ -49,8 +49,7 @@ import org.grnet.status.dtos.tenant.TenantResponseDto;
 import org.grnet.status.dtos.tenant.alerts.AlertDefinitionRequest;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationRequest;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
-import org.grnet.status.dtos.tenant.node.WebApiNodeResponse;
-import org.grnet.status.dtos.tenant.node.WebApiNodeReportResponse;
+import org.grnet.status.dtos.tenant.node.*;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
 import org.grnet.status.dtos.topology.EndpointTopologyDto;
@@ -234,7 +233,7 @@ public class TenantEndpoint {
     public Response getTenant(
             @Parameter(description = "The ID of the tenant to retrieve.",
                     required = true,
-                    example = "6f9ff5ff-nn9g-4378-9200-5rf6719n6vg4",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id) {
@@ -294,7 +293,7 @@ public class TenantEndpoint {
             @Parameter(
                     description = "The ID of the tenant to retrieve.",
                     required = true,
-                    example = "6f9ff5ff-nn9g-4378-9200-5rf6719n6vg4",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
 
@@ -347,7 +346,7 @@ public class TenantEndpoint {
             @Parameter(
                     description = "The ID of the project to retrieve.",
                     required = true,
-                    example = "6f9ff5ff-nn9g-4378-9200-5rf6719n6vg4",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
@@ -429,7 +428,7 @@ public class TenantEndpoint {
             @Parameter(
                     description = "The ID of the tenant to retrieve.",
                     required = true,
-                    example = "6f9ff5ff-nn9g-4378-9200-5rf6719n6vg4",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
@@ -493,7 +492,7 @@ public class TenantEndpoint {
             @Parameter(
                     description = "The ID of the tenant to create an invitation.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
@@ -549,7 +548,7 @@ public class TenantEndpoint {
             @Parameter(
                     description = "The ID of the tenant under which the invitation was created.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             String id,
@@ -645,6 +644,10 @@ public class TenantEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response revoke(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
+                    schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
             String id,
@@ -702,7 +705,7 @@ public class TenantEndpoint {
     public Response deleteMemberFromGroup(
             @Parameter(description = "The ID of the tenant.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
@@ -766,7 +769,7 @@ public class TenantEndpoint {
     public Response listSpecificAggregationProfiles(
             @Parameter(description = "The ID of the tenant.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
@@ -828,7 +831,7 @@ public class TenantEndpoint {
     public Response listAllAggregationProfiles(
             @Parameter(description = "The ID of the tenant.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
@@ -885,7 +888,7 @@ public class TenantEndpoint {
     public Response listSpecificMetricProfiles(
             @Parameter(description = "The ID of the tenant.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
@@ -947,7 +950,7 @@ public class TenantEndpoint {
     public Response listAllMetricProfiles(
             @Parameter(description = "The ID of the tenant.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
@@ -1004,7 +1007,7 @@ public class TenantEndpoint {
     public Response listSpecificOperationsProfiles(
             @Parameter(description = "The ID of the tenant.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
@@ -1066,7 +1069,7 @@ public class TenantEndpoint {
     public Response listAllOperationsProfiles(
             @Parameter(description = "The ID of the tenant.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
@@ -1134,7 +1137,7 @@ public class TenantEndpoint {
     public Response fetchReports(
             @Parameter(description = "The ID of the tenant.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
@@ -1198,7 +1201,7 @@ public class TenantEndpoint {
     public Response fetchReportByID(
             @Parameter(description = "The ID of the tenant to retrieve report.",
                     required = true,
-                    example = "3ad67405-010f-4488-a4bb-eb56d4a0f8a0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
@@ -1267,7 +1270,7 @@ public class TenantEndpoint {
             @Parameter(
                     description = "The ID of the tenant.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid
@@ -1326,7 +1329,7 @@ public class TenantEndpoint {
             @Parameter(
                     description = "The ID of the tenant to retrieve report.",
                     required = true,
-                    example = "3ad67405-010f-4488-a4bb-eb56d4a0f8a0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id") @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
             String id,
@@ -1392,7 +1395,7 @@ public class TenantEndpoint {
             @Parameter(
                     description = "The ID of the tenant to create pages under.",
                     required = true,
-                    example = "3ad67405-010f-4488-a4bb-eb56d4a0f8a0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id") @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
             String id,
@@ -1447,7 +1450,7 @@ public class TenantEndpoint {
             @Parameter(
                     description = "The ID of the tenant to retrieve report.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id") @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
             String id,
@@ -1500,7 +1503,7 @@ public class TenantEndpoint {
             @Parameter(
                     description = "The ID of the tenant to retrieve pages.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id") @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
             String id,
@@ -1568,7 +1571,7 @@ public class TenantEndpoint {
             @Parameter(
                     description = "The ID of the tenant to retrieve report.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
@@ -1628,7 +1631,7 @@ public class TenantEndpoint {
             @Parameter(
                     description = "The ID of the tenant to retrieve report.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id") String id,
             @Parameter(
@@ -1682,7 +1685,7 @@ public class TenantEndpoint {
             @Parameter(
                     description = "The ID of the tenant to retrieve report.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id") String id,
             @PathParam("slug") String slug) {
@@ -1731,7 +1734,7 @@ public class TenantEndpoint {
             @Parameter(
                     description = "The ID of the tenant to check readiness.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             String id) {
@@ -1779,7 +1782,7 @@ public class TenantEndpoint {
             @Parameter(
                     description = "The ID of the tenant to check readiness.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
@@ -1898,7 +1901,7 @@ public class TenantEndpoint {
             @Parameter(
                     description = "The ID of the tenant to start automation process.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING)) @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
             @Valid @NotNull(message = "The request body is empty.")
@@ -1955,7 +1958,7 @@ public class TenantEndpoint {
     public Response getTenantStatus(@Parameter(
             description = "The ID of the tenant to retrieve status.",
             required = true,
-            example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+            example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
             schema = @Schema(type = SchemaType.STRING)) @PathParam("id")
                                     @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id) {
 
@@ -2074,7 +2077,7 @@ public class TenantEndpoint {
     public Response fetchGroupTopologies(
             @Parameter(description = "The ID of the tenant.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
@@ -2143,7 +2146,7 @@ public class TenantEndpoint {
     public Response fetchEndpointTopologies(
             @Parameter(description = "The ID of the tenant.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
@@ -2213,7 +2216,7 @@ public class TenantEndpoint {
     public Response fetchServiceTypes(
             @Parameter(description = "The ID of the tenant.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
@@ -2282,7 +2285,7 @@ public class TenantEndpoint {
     public Response createGroupTopologies(
             @Parameter(description = "The ID of the tenant.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
@@ -2353,7 +2356,7 @@ public class TenantEndpoint {
     public Response createEndpointTopologies(
             @Parameter(description = "The ID of the tenant.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
@@ -2424,7 +2427,7 @@ public class TenantEndpoint {
     public Response createServiceTypes(
             @Parameter(description = "The ID of the tenant.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
@@ -2485,7 +2488,7 @@ public class TenantEndpoint {
     public Response deleteGroupTopologies(
             @Parameter(description = "The ID of the tenant.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
@@ -2545,7 +2548,7 @@ public class TenantEndpoint {
     public Response deleteEndpointTopologies(
             @Parameter(description = "The ID of the tenant.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
@@ -2604,7 +2607,7 @@ public class TenantEndpoint {
     public Response deleteServiceTypes(
             @Parameter(description = "The ID of the tenant.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
@@ -2619,4 +2622,144 @@ public class TenantEndpoint {
         return Response.ok().entity(topologies).build();
     }
 
+    @Tag(name = "Capabilities")
+    @Operation(
+            summary = "Get availability results for node services.",
+            description = "Retrieve availability metrics for a node’s services from Argo Web API.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Availability retrieved successfully.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = WebApiNodeAvailabilityResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Node not found.",
+            content = @Content(schema = @Schema(
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    implementation = InformativeResponse.class)))
+    @GET
+    @Path("/{id}/capabilities/availability")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response getAvailability(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id") String id,
+            @Parameter(name = "date", in = QUERY,
+                    description = "Target date (YYYY-MM-DD).")
+            @QueryParam("date")
+            @Valid
+            @CheckDateFormat(pattern = "yyyy-MM-dd", message = "Valid date format is yyyy-MM-dd.")
+            String date,
+            @Parameter(name = "start_time", in = QUERY,
+                    description = "Start time in W3C format.")
+            @QueryParam("start_time")
+            String startTime,
+            @Parameter(name = "end_time", in = QUERY,
+                    description = "End time in W3C format.")
+            @QueryParam("end_time")
+            String endTime,
+            @Parameter(name = "start_date", in = QUERY,
+                    description = "Start date (YYYY-MM-DD).")
+            @QueryParam("start_date")
+            @Valid
+            @CheckDateFormat(pattern = "yyyy-MM-dd", message = "Valid date format is yyyy-MM-dd.")
+            String startDate,
+            @Parameter(name = "end_date", in = QUERY,
+                    description = "End date (YYYY-MM-DD).")
+            @QueryParam("end_date")
+            @Valid
+            @CheckDateFormat(pattern = "yyyy-MM-dd", message = "Valid date format is yyyy-MM-dd.")
+            String endDate,
+            @Parameter(name = "granularity", in = QUERY,
+                    description = "Granularity of results (daily, monthly).",
+                    example = "daily")
+            @QueryParam("granularity")
+            String granularity
+    ) {
+        var availability = tenantService.getAvailability(id, date, startTime, endTime, startDate, endDate, granularity);
+
+        return Response.ok().entity(availability).build();
+    }
+
+    @Tag(name = "Capabilities")
+    @Operation(
+            summary = "Get status results for node services.",
+            description = "Retrieve latest or historical status for a node’s services from Argo Web API.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Status retrieved successfully.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = WebApiNodeStatusResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Node not found.",
+            content = @Content(schema = @Schema(
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "500",
+            description = "Internal Server Error.",
+            content = @Content(schema = @Schema(
+                    implementation = InformativeResponse.class)))
+    @GET
+    @Path("/{id}/capabilities/status")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
+    })public Response getStatus(
+            @Parameter(description = "The ID of the tenant.",
+                    required = true,
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id") String id,
+            @Parameter(name = "start_time", in = QUERY,
+                    description = "Start time in W3C format.")
+            @QueryParam("start_time")
+            String startTime,
+
+            @Parameter(name = "end_time", in = QUERY,
+                    description = "End time in W3C format.")
+            @QueryParam("end_time")
+            String endTime,
+
+            @Parameter(name = "history", in = QUERY,
+                    description = "Show full history of status timelines.",
+                    example = "true")
+            @QueryParam("history")
+            Boolean history
+    ) {
+        var status = tenantService.getStatus(id, startTime, endTime, history);
+
+        return Response.ok().entity(status).build();
+    }
 }

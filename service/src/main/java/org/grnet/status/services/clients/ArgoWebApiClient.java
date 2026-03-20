@@ -11,11 +11,9 @@ import org.grnet.status.dtos.profile.metric.MetricProfileResponse;
 import org.grnet.status.dtos.profile.operation.OperationProfileResponse;
 import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
 import org.grnet.status.dtos.report.WebApiReportResponse;
-import org.grnet.status.dtos.tenant.node.WebApiNodeReportResponse;
-import org.grnet.status.dtos.tenant.node.WebApiNodeResponse;
+import org.grnet.status.dtos.tenant.node.*;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
-import org.grnet.status.dtos.tenant.webapi.TenantWebApiNodeRequest;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
 import org.grnet.status.dtos.topology.*;
 
@@ -307,14 +305,6 @@ public interface ArgoWebApiClient {
             @QueryParam("date") String date
     ) throws WebApplicationException, ProcessingException;
 
-    //    @PUT
-//    @Path("/api/v2/topology/endpoints")
-//    Status updateTopologyEndpointsSuperAdmin(
-//            @HeaderParam("x-api-key") String apiKey,
-//            @HeaderParam("x-tenant-id") String tenantId,
-//            @QueryParam("date") String date,
-//            List<EndpointTopologyDto> request
-//    ) throws WebApplicationException, ProcessingException;
     @POST
     @Path("/api/v2/topology/service-types")
     Status createServiceTypesSuperAdmin(
@@ -345,4 +335,28 @@ public interface ArgoWebApiClient {
             @HeaderParam("x-api-key") String apiKey,
             @HeaderParam("x-tenant-id") String tenantId
     ) throws WebApplicationException, ProcessingException;
+
+
+    @GET
+    @Path("/api/v4/nodes/{nodeName}/capabilities/availability")
+    WebApiNodeAvailabilityResponse getNodeAvailabilityCapability(
+            @HeaderParam("x-api-key") String accessToken,
+            @PathParam("nodeName") String nodeName,
+            @QueryParam("date") String date,
+            @QueryParam("start_time") String startTime,
+            @QueryParam("end_time") String endTime,
+            @QueryParam("start_date") String startDate,
+            @QueryParam("end_date") String endDate,
+            @QueryParam("granularity") String granularity
+    );
+
+    @GET
+    @Path("/api/v4/nodes/{nodeName}/capabilities/status")
+    WebApiNodeStatusResponse getNodeStatus(
+            @HeaderParam("x-api-key") String accessToken,
+            @PathParam("nodeName") String nodeName,
+            @QueryParam("start_time") String startTime,
+            @QueryParam("end_time") String endTime,
+            @QueryParam("history") Boolean history
+    );
 }

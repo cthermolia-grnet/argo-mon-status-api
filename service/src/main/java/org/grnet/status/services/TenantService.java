@@ -24,10 +24,12 @@ import org.grnet.status.dtos.tenant.ContactDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
 import org.grnet.status.dtos.tenant.alerts.AlertDefinitionRequest;
+import org.grnet.status.dtos.tenant.node.WebApiNodeAvailabilityResponse;
 import org.grnet.status.dtos.tenant.node.WebApiNodeResponse;
 import org.grnet.status.dtos.tenant.metadata.InstanceDto;
 import org.grnet.status.dtos.tenant.metadata.TenantMetadata;
-import org.grnet.status.dtos.tenant.node.WebApiNodeResponse;
+import org.grnet.status.dtos.tenant.node.WebApiNodeStatusResponse;
+import org.grnet.status.dtos.tenant.node.WebApiNodeUptimeResponse;
 import org.grnet.status.dtos.tenant.status.EventStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
@@ -1349,6 +1351,42 @@ public class TenantService {
                     502
             );
         }
+    }
+
+    /**
+     * Retrieves availability metrics for a node's services.
+     *
+     * @param id         the tenants identifier
+     * @param date       optional specific date (YYYY-MM-DD)
+     * @param startTime  optional start time (W3C format)
+     * @param endTime    optional end time (W3C format)
+     * @param startDate  optional start date (YYYY-MM-DD)
+     * @param endDate    optional end date (YYYY-MM-DD)
+     * @param granularity optional aggregation level (daily or monthly)
+     * @return availability results for the node's services
+     */
+    public WebApiNodeAvailabilityResponse getAvailability(String id, String date, String startTime, String endTime, String startDate, String endDate, String granularity) {
+
+        var tenant = tenantRepository.findById(id);
+
+        return webApiService.retrieveNodeAvailability(tenant.name, date, startTime, endTime, startDate, endDate, granularity);
+    }
+
+
+    /**
+     * Retrieves status information for a node's services.
+     *
+     * @param id         the tenants identifier
+     * @param startTime optional start time (W3C format)
+     * @param endTime   optional end time (W3C format)
+     * @param history   optional flag to include full status history
+     * @return status results for the node's services
+     */
+    public WebApiNodeStatusResponse getStatus(String id, String startTime, String endTime, Boolean history) {
+
+        var tenant = tenantRepository.findById(id);
+
+        return webApiService.retrieveNodeStatus(tenant.name, startTime, endTime, history);
     }
 
 

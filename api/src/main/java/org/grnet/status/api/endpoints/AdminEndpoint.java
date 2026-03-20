@@ -250,7 +250,7 @@ public class AdminEndpoint {
     public Response createGroupTenant(
             @Parameter(description = "The ID of the tenant to retrieve.",
                     required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id) {

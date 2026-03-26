@@ -269,6 +269,7 @@ public interface ArgoWebApiClient {
             @HeaderParam("x-api-key") String apiKey,
             @HeaderParam("x-tenant-id") String tenantId,
             @QueryParam("date") String date,
+            @QueryParam("force") Boolean force,
             List<GroupTopologyDto> request
     ) throws WebApplicationException, ProcessingException;
 
@@ -278,6 +279,7 @@ public interface ArgoWebApiClient {
             @HeaderParam("x-api-key") String apiKey,
             @HeaderParam("x-tenant-id") String tenantId,
             @QueryParam("date") String date,
+            @QueryParam("force") Boolean force,
             List<EndpointTopologyDto> request
     ) throws WebApplicationException, ProcessingException;
 
@@ -311,6 +313,7 @@ public interface ArgoWebApiClient {
             @HeaderParam("x-api-key") String apiKey,
             @HeaderParam("x-tenant-id") String tenantId,
             @QueryParam("date") String date,
+            @QueryParam("force") Boolean force,
             List<ServiceTypeDto> request) throws WebApplicationException,ProcessingException;
 
     @POST

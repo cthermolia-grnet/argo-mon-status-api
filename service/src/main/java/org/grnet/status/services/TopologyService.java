@@ -3,7 +3,6 @@ package org.grnet.status.services;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ProcessingException;
-import jakarta.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.Status;
@@ -54,26 +53,16 @@ public class TopologyService {
         return response.data;
     }
 
-    public Status createGroupTopology(String id, String date, List<GroupTopologyDto> request) {
+    public Status createGroupTopology(String id, String date, Boolean force, List<GroupTopologyDto> request) {
 
         LOG.info("Creating group topology to ARGO Web API...");
-
-        // Attempt to delete, but ignore 404 errors
-        try {
-            argoWebApiClient.deleteTopologyGroupsSuperAdmin(accessToken, id, date);
-        } catch (WebApplicationException e) {
-            if (e.getResponse().getStatus() == 404) {
-                LOG.info("Topology not found for date " + date + ", continuing to create.");
-            } else {
-                // Re-throw other HTTP errors
-                throw e;
-            }
-        }
         try {
 
 
             webApiService.validateTenantInitialized(id, "Group Topology");
-            return argoWebApiClient.createTopologyGroupsSuperAdmin(accessToken, id, date, request);
+
+            force = Boolean.TRUE.equals(force) ? Boolean.TRUE : null;
+            return argoWebApiClient.createTopologyGroupsSuperAdmin(accessToken, id, date, force, request);
 
         } catch (ProcessingException e) {
             e.printStackTrace();
@@ -82,26 +71,17 @@ public class TopologyService {
         }
     }
 
-    public Status createEndpointTopology(String id, String date, List<EndpointTopologyDto> request) {
+    public Status createEndpointTopology(String id, String date, Boolean force, List<EndpointTopologyDto> request) {
 
         LOG.info("Creating endpoint topology to ARGO Web API...");
-
-        // Attempt to delete, but ignore 404 errors
-        try {
-            argoWebApiClient.deleteTopologyEndpointsSuperAdmin(accessToken, id, date);
-        } catch (WebApplicationException e) {
-            if (e.getResponse().getStatus() == 404) {
-                LOG.info("Topology not found for date " + date + ", continuing to create.");
-            } else {
-                // Re-throw other HTTP errors
-                throw e;
-            }
-        }
 
         try {
             // Validate tenant and create topology
             webApiService.validateTenantInitialized(id, "Endpoint Topology");
-            return argoWebApiClient.createTopologyEndpointsSuperAdmin(accessToken, id, date, request);
+
+            force = Boolean.TRUE.equals(force) ? Boolean.TRUE : null;
+            return argoWebApiClient.createTopologyEndpointsSuperAdmin(accessToken, id, date, force, request);
+
         } catch (ProcessingException e) {
             e.printStackTrace();
             System.out.println("CAUSE: " + e.getCause());
@@ -152,23 +132,15 @@ public class TopologyService {
         }
     }
 
-    public Status createServiceTypes(String id, String date, List<ServiceTypeDto> request) {
+    public Status createServiceTypes(String id, String date, Boolean force, List<ServiceTypeDto> request) {
 
         LOG.info("Creating service types to ARGO Web API...");
-        try {
-            argoWebApiClient.deleteServiceTypesSuperAdmin(accessToken, id, date);
-        } catch (WebApplicationException e) {
-            if (e.getResponse().getStatus() == 404) {
-                LOG.info("Service types not found for date " + date + ", continuing to create.");
-            } else {
-                // Re-throw other HTTP errors
-                throw e;
-            }
-        }
 
         try {
             webApiService.validateTenantInitialized(id, "Service Type");
-            return argoWebApiClient.createServiceTypesSuperAdmin(accessToken, id, date, request);
+
+            force = Boolean.TRUE.equals(force) ? Boolean.TRUE : null;
+            return argoWebApiClient.createServiceTypesSuperAdmin(accessToken, id, date, force, request);
 
         } catch (ProcessingException e) {
             e.printStackTrace();

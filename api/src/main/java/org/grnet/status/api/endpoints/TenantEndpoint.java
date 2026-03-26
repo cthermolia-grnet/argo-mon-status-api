@@ -2291,10 +2291,17 @@ public class TenantEndpoint {
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
             String id,
             @Parameter(name = "date", in = QUERY, description = "Target date to create a group topology ") @QueryParam("date")
-            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date,
+            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.")
+            String date,
+            @Parameter(name = "force", in = QUERY,
+                    description = "Overwrite existing topology entries.",
+                    example = "true",
+                    schema = @Schema(type = SchemaType.BOOLEAN))
+            @QueryParam("force")
+            Boolean force,
             @Valid @NotNull(message = "The request body is empty.") List<GroupTopologyDto> request) {
 
-        var topologies = topologyService.createGroupTopology(id,date, request);
+        var topologies = topologyService.createGroupTopology(id,date, force, request);
 
         return Response.ok().entity(topologies).build();
     }
@@ -2361,12 +2368,20 @@ public class TenantEndpoint {
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
             String id,
+            @Parameter(name = "date", in = QUERY, description = "Target date to create an endpoint topology ")
+            @QueryParam("date")
+            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.")
+            String date,
+            @Parameter(name = "force",  in = QUERY,
+                    description = "Overwrite existing topology entries.",
+                    example = "true",
+                    schema = @Schema(type = SchemaType.BOOLEAN))
+            @QueryParam("force")
+            Boolean force,
+            @Valid @NotNull(message = "The request body is empty.")
+            List<EndpointTopologyDto> request) {
 
-            @Parameter(name = "date", in = QUERY, description = "Target date to create an endpoint topology ") @QueryParam("date")
-            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date,
-            @Valid @NotNull(message = "The request body is empty.") List<EndpointTopologyDto> request) {
-
-        var topologies = topologyService.createEndpointTopology(id,date, request);
+        var topologies = topologyService.createEndpointTopology(id,date, force, request);
 
         return Response.ok().entity(topologies).build();
     }
@@ -2432,12 +2447,18 @@ public class TenantEndpoint {
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
             String id,
-
             @Parameter(name = "date", in = QUERY, description = "Target date to create service types ") @QueryParam("date")
-            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date,
+            @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.")
+            String date,
+            @Parameter(name = "force", in = QUERY,
+                    description = "Overwrite existing topology entries.",
+                    example = "true",
+                    schema = @Schema(type = SchemaType.BOOLEAN))
+            @QueryParam("force")
+            Boolean force,
             @Valid @NotNull(message = "The request body is empty.") List<ServiceTypeDto> request) {
 
-        var topologies = topologyService.createServiceTypes(id, date, request);
+        var topologies = topologyService.createServiceTypes(id, date, force , request);
 
         return Response.ok().entity(topologies).build();
     }

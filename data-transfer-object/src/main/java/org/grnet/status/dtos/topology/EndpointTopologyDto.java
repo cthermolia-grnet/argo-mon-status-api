@@ -5,7 +5,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Schema(description = "Endpoint Topology")
 @JsonPropertyOrder({ "date", "group", "type", "service", "hostname", "tags", "notifications" })
@@ -51,7 +53,14 @@ public class EndpointTopologyDto {
 
     private NotificationsDTO notifications;
 
-    private TagsDTO tags;
+    @Schema(
+            type = SchemaType.OBJECT,
+            implementation = Map.class,
+            description = "Dynamic tags of the topology as key-value pairs",
+            example = "{\"info_ID\":\"12345\",\"custom_tag\":\"value\"}"
+    )
+    @JsonProperty("tags")
+    private Map<String, String> tags = new HashMap<>();
 
     public String getDate() {
         return date;
@@ -101,12 +110,12 @@ public class EndpointTopologyDto {
         this.notifications = notifications;
     }
 
-    public TagsDTO getTags() {
+    public Map<String, String> getTags() {
         return tags;
     }
 
-    public void setTags(TagsDTO tags) {
-        this.tags = tags;
+    public void setTags(Map<String, String> tags) {
+        this.tags = tags != null ? tags : new HashMap<>();
     }
 
     public static class NotificationsDTO {
@@ -152,7 +161,6 @@ public class EndpointTopologyDto {
                 description = "info id",
                 example = "1")
         @JsonProperty("info_ID")
-
         private String info_ID;
 
 
@@ -168,7 +176,6 @@ public class EndpointTopologyDto {
                 description = "Flag to define that topology element is monitored or not",
                 example = "1")
         @JsonProperty("monitored")
-
         private String monitored;
 
         @Schema(type = SchemaType.STRING,

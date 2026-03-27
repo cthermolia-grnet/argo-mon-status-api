@@ -7,7 +7,9 @@ import lombok.Setter;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Schema(description = "Group Topology")
 @JsonPropertyOrder({ "date", "group", "type", "subgroup", "tags", "notifications" })
@@ -45,7 +47,14 @@ public class GroupTopologyDto {
 
     private NotificationsDTO notifications;
 
-    private TagsDTO tags;
+    @Schema(
+            type = SchemaType.OBJECT,
+            implementation = Map.class,
+            description = "Dynamic tags of the topology as key-value pairs",
+            example = "{\"info_ID\":\"12345\",\"custom_tag\":\"value\"}"
+    )
+    @JsonProperty("tags")
+    private Map<String, String> tags = new HashMap<>();
 
     public String getDate() {
         return date;
@@ -87,12 +96,12 @@ public class GroupTopologyDto {
         this.notifications = notifications;
     }
 
-    public TagsDTO getTags() {
+    public Map<String, String> getTags() {
         return tags;
     }
 
-    public void setTags(TagsDTO tags) {
-        this.tags = tags;
+    public void setTags(Map<String, String> tags) {
+        this.tags = tags != null ? tags : new HashMap<>();
     }
 
     public static class NotificationsDTO {

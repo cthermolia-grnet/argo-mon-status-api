@@ -80,7 +80,7 @@ public class AutomationEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateStatus(@PathParam("id")
                                  @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
-                                 TenantStatusDto request) throws IOException {
+                                 TenantStatusDto request) {
 
         var status = tenantService.updateTenantAutoJobs(id, request);
         return Response.ok().entity(status).build();

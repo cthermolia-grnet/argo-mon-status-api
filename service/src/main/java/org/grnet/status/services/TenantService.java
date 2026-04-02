@@ -49,6 +49,7 @@ import org.grnet.status.services.clients.WebApiService;
 import org.grnet.status.services.utils.ImageUploadUtil;
 
 import java.io.IOException;
+import java.sql.SQLOutput;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
@@ -103,7 +104,7 @@ public class TenantService {
      * Creates a tenant and initializes its group.
      *
      * @param request tenant request
-     * @param userId user identifier
+     * @param userId  user identifier
      * @return created tenant response
      * @throws IOException when image handling fails
      */
@@ -131,7 +132,7 @@ public class TenantService {
      * Creates a tenant in Argo Web API and stores it locally.
      *
      * @param request tenant request
-     * @param userId user identifier
+     * @param userId  user identifier
      * @return created tenant response
      * @throws IOException when image handling fails
      */
@@ -339,8 +340,8 @@ public class TenantService {
                     status = ((WebApplicationException) e).getResponse().getStatus();
                 }
 
-                Log.error(e.getMessage(),e);
-                Log.error("ERROR deleting tenant with id: " + t.id +" Received status is: "+status);
+                Log.error(e.getMessage(), e);
+                Log.error("ERROR deleting tenant with id: " + t.id + " Received status is: " + status);
             }
         });
     }
@@ -348,7 +349,7 @@ public class TenantService {
     /**
      * Updates an existing tenant by its identifier.
      *
-     * @param id tenant identifier
+     * @param id      tenant identifier
      * @param request tenant update request
      * @return updated tenant response
      * @throws IOException when image handling fails
@@ -419,12 +420,12 @@ public class TenantService {
     /**
      * Retrieves a paginated list of tenants with optional search and sorting.
      *
-     * @param page 0-based page index
-     * @param size page size
+     * @param page    0-based page index
+     * @param size    page size
      * @param uriInfo request context for pagination links
-     * @param search search filter
-     * @param sort sort field
-     * @param order sort order
+     * @param search  search filter
+     * @param sort    sort field
+     * @param order   sort order
      * @return paginated list of tenants
      */
     public PageResource<TenantResponseDto> getTenantsByPageAndSize(int page, int size, UriInfo uriInfo, String search, String sort, String order) {
@@ -449,12 +450,12 @@ public class TenantService {
     /**
      * Retrieves a paginated list of tenants accessible to the authenticated user.
      *
-     * @param page 0-based page index
-     * @param size page size
+     * @param page    0-based page index
+     * @param size    page size
      * @param uriInfo request context for pagination links
-     * @param search search filter
-     * @param sort sort field
-     * @param order sort order
+     * @param search  search filter
+     * @param sort    sort field
+     * @param order   sort order
      * @return paginated list of tenants
      */
     public PageResource<TenantResponseDto> listAuthorizedTenants(int page, int size, UriInfo uriInfo, String search, String sort, String order) {
@@ -547,13 +548,14 @@ public class TenantService {
     }
 
     //construct and stores a tenant in the database
+
     /**
      * Persists the tenant and its contacts in the database using the remote tenant identifier.
      *
-     * @param request tenant request
-     * @param tenant tenant entity
+     * @param request        tenant request
+     * @param tenant         tenant entity
      * @param remoteTenantId remote tenant identifier
-     * @param userId user identifier
+     * @param userId         user identifier
      * @return persisted tenant entity
      */
     private Tenant writeInDB(TenantRequestDto request,
@@ -587,11 +589,12 @@ public class TenantService {
     }
 
     //updates the tenant in the database
+
     /**
      * Updates an existing tenant and its contacts in the database.
      *
      * @param request tenant request
-     * @param tenant tenant entity
+     * @param tenant  tenant entity
      */
     private void updateTenantInDB(TenantRequestDto request, Tenant tenant) {
         // Update simple fields:
@@ -616,7 +619,7 @@ public class TenantService {
     /**
      * Updates the stored tenant status JSON in the database.
      *
-     * @param tenant tenant entity
+     * @param tenant            tenant entity
      * @param updatedStatusJson updated status JSON
      */
     private void updateTenantStatusInDb(Tenant tenant, String updatedStatusJson) {
@@ -630,7 +633,7 @@ public class TenantService {
     /**
      * Updates manual tenant jobs for the specified tenant.
      *
-     * @param id tenant identifier
+     * @param id      tenant identifier
      * @param request tenant status request
      * @return tenant status response
      */
@@ -648,7 +651,7 @@ public class TenantService {
     /**
      * Updates automatic tenant jobs for the specified tenant.
      *
-     * @param id tenant identifier
+     * @param id      tenant identifier
      * @param request tenant status request
      * @return tenant status response
      */
@@ -665,7 +668,7 @@ public class TenantService {
     /**
      * Updates tenant jobs for the specified tenant.
      *
-     * @param id tenant identifier
+     * @param id      tenant identifier
      * @param request tenant status request
      * @return tenant status response
      */
@@ -674,31 +677,58 @@ public class TenantService {
         var tenant = tenantRepository.findById(id);
 
         var existingStatus = TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
+        var isComputeEngineCompleted=isComputeEngineCompleted( request);
         request.jobs = mergeJobs(existingStatus.jobs, request.jobs);
 
         var updatedStatusJson = TenantMapper.INSTANCE.mergeJobsIntoStatus(tenant.getStatus(), request);
-        try {
 
+        try {
+            // ✅ DB update
             updateTenantStatusInDb(tenant, updatedStatusJson);
+
             var statusDto = TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
 
             var response = new TenantStatusFullResponse();
             response.name = tenant.name;
             response.status = statusDto;
 
+            // 🚀 Async notification
+            if (isComputeEngineCompleted) {
+                var alert = buildAlert(
+                        EventName.INIT_TOPOLOGY_CONNECTOR,
+                        tenant,
+                        String.valueOf(Instant.now())
+                );
+
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        notifyAms(id, alert);
+                        System.out.println("NOTIFY INIT CONNECTOR");
+                    } catch (Exception ex) {
+                        Log.error("AMS notification failed for tenant {}", id, ex);
+
+                        // 👉 optional: persist failure / retry queue
+                    }
+                });
+            }
+
             return response;
 
-            //   return TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
         } catch (Exception dbException) {
-
             throw new RuntimeException("Updating Tenant's Status.. DB update failed: " + dbException.getMessage());
         }
+    }
+
+    private boolean isComputeEngineCompleted( TenantStatusDto request) {
+        return request.jobs.stream()
+                .anyMatch(j -> EventName.INIT_COMPUTE_ENGINE.name().equals(j.name) &&
+                        EventStatus.COMPLETED.name().equals(j.getStatus()));
     }
 
     /**
      * Updates tenant alert jobs for the specified tenant.
      *
-     * @param id tenant identifier
+     * @param id      tenant identifier
      * @param request tenant status request
      * @return tenant status response
      * @throws IOException when status serialization fails
@@ -733,7 +763,7 @@ public class TenantService {
      * Merges existing jobs with new jobs by replacing or adding job entries by name.
      *
      * @param existingJobs existing jobs
-     * @param newJobs new jobs
+     * @param newJobs      new jobs
      * @return merged job list
      */
     private List<EventStatusDto> mergeJobs(List<EventStatusDto> existingJobs,
@@ -839,6 +869,7 @@ public class TenantService {
      * @param alert, the alert to be sent to AMS
      * @return TenantStatusDto
      */
+    @Transactional
     public TenantStatusDto notifyAms(String id, AlertDefinitionRequest alert) {
         var now = Instant.now();
         var tenant = tenantRepository.findById(id);
@@ -865,21 +896,21 @@ public class TenantService {
      * Retrieves a paginated list of tenant members from the authorization provider.
      *
      * @param tenantId tenant identifier
-     * @param page 0-based page index
-     * @param size page size
-     * @param uriInfo request context for pagination links
+     * @param page     0-based page index
+     * @param size     page size
+     * @param uriInfo  request context for pagination links
      * @return paginated list of tenant members
      */
     public PageResource<GroupUserResponse> getMembersByTenant(String tenantId, int page, int size, UriInfo uriInfo) {
 
         var tenant = tenantRepository.findById(tenantId);
 
-        var response = groupManagementService.getMembers("tenants/"+tenant.name, page * size, size, "");
+        var response = groupManagementService.getMembers("tenants/" + tenant.name, page * size, size, "");
 
         var members = response
                 .results
                 .stream()
-                .map(g->g.user)
+                .map(g -> g.user)
                 .map(gu -> {
                     var user = new GroupUserResponse();
                     user.id = gu.id;
@@ -907,7 +938,7 @@ public class TenantService {
     /**
      * Sends a readiness validation notification to the AMS for the specified tenant.
      *
-     * @param id tenant identifier
+     * @param id    tenant identifier
      * @param alert alert request
      * @return tenant status response
      */
@@ -934,6 +965,36 @@ public class TenantService {
     }
 
     /**
+     * Sends a readiness validation notification to the AMS for the specified tenant.
+     *
+     * @param id    tenant identifier
+     * @param alert alert request
+     * @return tenant status response
+     */
+    public TenantStatusDto notifyAmsInitConnector(String id, AlertDefinitionRequest alert) {
+        var now = Instant.now();
+        var tenant = tenantRepository.findById(id);
+
+        if (alert.properties.containsKey("tenant_name") && !alert.properties.get("tenant_name").equals(tenant.name)) {
+            throw new BadRequestException("Notifying Messaging Service... Value of property 'name' differs from tenant's name: " + tenant.name);
+        }
+
+        validateAlertProperties(alert.name, alert.properties);
+
+        alert.getProperties().put("tenant_id", id);
+        alert.setCreatedAt(String.valueOf(now));
+        send(id, alert, "Notifying Messaging Service.. A request is sent to the Messaging Service to validate that the necessary data and configuration are in place prior to starting the monitoring process");
+
+
+        var statusOpt = tenantRepository.fetchTenantStatus(id);
+        if (!statusOpt.isEmpty()) {
+            return TenantMapper.INSTANCE.mapStatusObject(statusOpt.get());
+        }
+        return null;
+    }
+
+
+    /**
      * Sends initialization event notifications for the given tenant.
      *
      * @param tenant tenant entity
@@ -951,7 +1012,7 @@ public class TenantService {
      * Builds an alert definition request for the specified event and tenant.
      *
      * @param eventName event name
-     * @param tenant tenant entity
+     * @param tenant    tenant entity
      * @param createdAt created timestamp
      * @return alert definition request
      */
@@ -959,18 +1020,20 @@ public class TenantService {
         AlertDefinitionRequest alert = new AlertDefinitionRequest();
         alert.name = eventName.name();
         alert.setCreatedAt(createdAt);
-        alert.setProperties(Map.of(
+
+
+        alert.setProperties(new HashMap<>(Map.of(
                 "tenant_id", tenant.id,
                 "tenant_name", tenant.name
-        ));
+        )));
         return alert;
     }
 
     /**
      * Publishes an alert event to the messaging service and updates tenant status accordingly.
      *
-     * @param id tenant identifier
-     * @param alert alert request
+     * @param id       tenant identifier
+     * @param alert    alert request
      * @param eventMsg custom publish message
      */
     private void send(String id, AlertDefinitionRequest alert, String eventMsg) {
@@ -984,7 +1047,7 @@ public class TenantService {
                 hasCustomMsg
                         ? eventMsg
                         : "Event notification: " + alert.name +
-                        " is sent to Messaging Service for publishing";
+                          " is sent to Messaging Service for publishing";
 
 
         // Your special INITIALISED message (only when eventMsg exists)
@@ -999,7 +1062,7 @@ public class TenantService {
                 hasCustomMsg
                         ? customInitialisedMsg
                         : "Event notification: " + alert.name +
-                        " is initialised to Messaging Service for publishing";
+                          " is initialised to Messaging Service for publishing";
 
 // ✅ CUSTOM FAILED
         final String customFailedMsg =
@@ -1012,7 +1075,7 @@ public class TenantService {
                 hasCustomMsg
                         ? customFailedMsg
                         : "Event notification: " + alert.name +
-                        " failed to be initialised to Messaging Service";
+                          " failed to be initialised to Messaging Service";
         try {
             final Instant now = Instant.now();
 
@@ -1143,10 +1206,10 @@ public class TenantService {
     /**
      * Creates a tenant status request containing a single alert job update.
      *
-     * @param eventName event name
-     * @param status event status
-     * @param message status message
-     * @param start start timestamp
+     * @param eventName  event name
+     * @param status     event status
+     * @param message    status message
+     * @param start      start timestamp
      * @param properties alert properties
      * @return tenant status request
      */
@@ -1237,7 +1300,7 @@ public class TenantService {
     /**
      * Validates that all provided jobs match the expected mode.
      *
-     * @param jobs job list
+     * @param jobs         job list
      * @param expectedMode expected job mode
      */
     private void validateJobsMode(List<EventStatusDto> jobs, EventMode expectedMode) {
@@ -1266,7 +1329,7 @@ public class TenantService {
      * Validates that the provided alert properties are allowed for the specified event.
      *
      * @param eventName event name
-     * @param props alert properties
+     * @param props     alert properties
      */
     private void validateAlertProperties(String eventName, Map<String, String> props) {
         if (props == null || props.isEmpty()) return;
@@ -1331,6 +1394,7 @@ public class TenantService {
             );
         }
     }
+
     @Transactional
     public WebApiNodeResponse updateTenantNode(String tenantId, TenantWebApiNodeRequest request) {
 
@@ -1356,12 +1420,12 @@ public class TenantService {
     /**
      * Retrieves availability metrics for a node's services.
      *
-     * @param id         the tenants identifier
-     * @param date       optional specific date (YYYY-MM-DD)
-     * @param startTime  optional start time (W3C format)
-     * @param endTime    optional end time (W3C format)
-     * @param startDate  optional start date (YYYY-MM-DD)
-     * @param endDate    optional end date (YYYY-MM-DD)
+     * @param id          the tenants identifier
+     * @param date        optional specific date (YYYY-MM-DD)
+     * @param startTime   optional start time (W3C format)
+     * @param endTime     optional end time (W3C format)
+     * @param startDate   optional start date (YYYY-MM-DD)
+     * @param endDate     optional end date (YYYY-MM-DD)
      * @param granularity optional aggregation level (daily or monthly)
      * @return availability results for the node's services
      */
@@ -1376,7 +1440,7 @@ public class TenantService {
     /**
      * Retrieves status information for a node's services.
      *
-     * @param id         the tenants identifier
+     * @param id        the tenants identifier
      * @param startTime optional start time (W3C format)
      * @param endTime   optional end time (W3C format)
      * @param history   optional flag to include full status history

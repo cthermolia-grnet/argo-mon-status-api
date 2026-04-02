@@ -4,5 +4,6 @@ public enum EventName {
         INIT_AMS,
         INIT_MONGO,
         INIT_COMPUTE_ENGINE,
-        CHECK_READINESS
+        CHECK_READINESS,
+        INIT_TOPOLOGY_CONNECTOR
 }

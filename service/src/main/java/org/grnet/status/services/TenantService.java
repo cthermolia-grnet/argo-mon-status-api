@@ -672,12 +672,13 @@ public class TenantService {
      * @param request tenant status request
      * @return tenant status response
      */
+    @Transactional
     public TenantStatusFullResponse updateTenantJobsInternal(String id, @Valid TenantStatusDto request) {
 
         var tenant = tenantRepository.findById(id);
 
         var existingStatus = TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
-        var isComputeEngineCompleted=isComputeEngineCompleted( request);
+        var isComputeEngineCompleted = isComputeEngineCompleted(request);
         request.jobs = mergeJobs(existingStatus.jobs, request.jobs);
 
         var updatedStatusJson = TenantMapper.INSTANCE.mergeJobsIntoStatus(tenant.getStatus(), request);
@@ -719,7 +720,7 @@ public class TenantService {
         }
     }
 
-    private boolean isComputeEngineCompleted( TenantStatusDto request) {
+    private boolean isComputeEngineCompleted(TenantStatusDto request) {
         return request.jobs.stream()
                 .anyMatch(j -> EventName.INIT_COMPUTE_ENGINE.name().equals(j.name) &&
                         EventStatus.COMPLETED.name().equals(j.getStatus()));

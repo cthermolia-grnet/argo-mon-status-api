@@ -101,13 +101,21 @@ public class StatusPageService {
 
         apiServerUrl = apiServerUrl.replaceAll("/+$", "");
 
-        // --- handle logo
-        var logo = request.config.theming.logo;
-        if (logo != null && logo.startsWith("data:image/")) {
+        // handle logo only for theme_1
+        var theming = request.config.theming;
+        var logo = theming.logo;
+
+        if ("theme_1".equalsIgnoreCase(theming.option)
+                && logo != null
+                && logo.startsWith("data:image/")) {
+
             imageUploadUtil.validateBase64Image(logo);
             var savedPath = imageUploadUtil.saveBase64Image(baseUploadLogoDir, logo, entity.getId(), "/logos/");
             var fullUrl = apiServerUrl + savedPath;
             entity.setConfig(updateLogo(entity.getConfig(), fullUrl));
+
+        } else if ("theme_2".equalsIgnoreCase(theming.option)) {
+            entity.setConfig(removeLogo(entity.getConfig()));
         }
 
         return StatusPageMapper.INSTANCE.entityToDto(entity);
@@ -140,22 +148,30 @@ public class StatusPageService {
         apiServerUrl = apiServerUrl.replaceAll("/+$", "");
 
 
-        // --- Handle logo *after* mapper to avoid overwrite ---
-        var logo = request.config.theming.logo;
+        // Handle logo after mapper to avoid overwrite ---
+        var theming = request.config.theming;
+        var logo = theming.logo;
 
-        if (logo != null && logo.startsWith("data:image/")) {
-            imageUploadUtil.validateBase64Image(logo);
-            imageUploadUtil.deleteImageIfExists(baseUploadLogoDir, statusPageId);
-            var savedPath = imageUploadUtil.saveBase64Image(baseUploadLogoDir, logo, entity.getId(), "/logos/");
-            var fullUrl = apiServerUrl + savedPath;
-            entity.setConfig(updateLogo(entity.getConfig(), fullUrl));
-
-        } else if (logo == null || logo.isBlank()) {
+        if ("theme_2".equalsIgnoreCase(theming.option)) {
             imageUploadUtil.deleteImageIfExists(baseUploadLogoDir, entity.getId());
             entity.setConfig(removeLogo(entity.getConfig()));
 
-        } else {
-            entity.setConfig(updateLogo(entity.getConfig(), logo));
+        } else if ("theme_1".equalsIgnoreCase(theming.option)) {
+
+            if (logo != null && logo.startsWith("data:image/")) {
+                imageUploadUtil.validateBase64Image(logo);
+                imageUploadUtil.deleteImageIfExists(baseUploadLogoDir, entity.getId());
+                var savedPath = imageUploadUtil.saveBase64Image(baseUploadLogoDir, logo, entity.getId(), "/logos/");
+                var fullUrl = apiServerUrl + savedPath;
+                entity.setConfig(updateLogo(entity.getConfig(), fullUrl));
+
+            } else if (logo == null || logo.isBlank()) {
+                imageUploadUtil.deleteImageIfExists(baseUploadLogoDir, entity.getId());
+                entity.setConfig(removeLogo(entity.getConfig()));
+
+            } else {
+                entity.setConfig(updateLogo(entity.getConfig(), logo));
+            }
         }
 
         return StatusPageMapper.INSTANCE.entityToDto(entity);
@@ -470,9 +486,25 @@ public class StatusPageService {
 
         var theming = config.theming;
 
-        // Validate logo (new Base64 upload or existing HTTPS URL) ---
-        if (theming.logo != null && !theming.logo.isBlank()) {
-            String logo = theming.logo.trim();
+        // Validate theme option
+        var validThemeOption = Set.of("theme_1", "theme_2");
+        if (!validThemeOption.contains(theming.option)) {
+            throw new IllegalArgumentException("Validating Theme... Invalid option type: " + theming.option);
+        }
+
+        // theme_2 does not support logo
+        if ("theme_2".equalsIgnoreCase(theming.option)
+                && theming.logo != null
+                && !theming.logo.isBlank()) {
+            throw new IllegalArgumentException("Validating Theme... Logo is not supported for theme_2.");
+        }
+
+        // Validate logo (new Base64 upload or existing HTTPS URL) if theme_1
+        if ("theme_1".equalsIgnoreCase(theming.option)
+                && theming.logo != null
+                && !theming.logo.isBlank()) {
+
+            var logo = theming.logo.trim();
 
             if (logo.startsWith("data:image/")) {
                 if (!logo.contains("base64,")) {

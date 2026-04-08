@@ -13,6 +13,17 @@ public class StatusPageThemingDto {
     @Schema(
             type = SchemaType.STRING,
             implementation = String.class,
+            description = "Theme option",
+            example = "theme_1"
+    )
+    @JsonProperty("option")
+    @NotNull(message = "option must not be null")
+    @Valid
+    public String option;
+
+    @Schema(
+            type = SchemaType.STRING,
+            implementation = String.class,
             description = "Logo for the status page — can be a Base64 data URI or HTTPS URL",
             example = "data:image/png;base64,iVBORw0KGgoAAA... or https://example.com/logo.png"
     )

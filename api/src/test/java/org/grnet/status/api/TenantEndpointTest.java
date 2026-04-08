@@ -21,11 +21,7 @@ import org.grnet.status.dtos.statuspage.*;
 import org.grnet.status.dtos.tenant.*;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
-import org.grnet.status.dtos.tenantproject.TenantProjectDeleteDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
-import org.grnet.status.dtos.topology.EndpointTopologyDto;
-import org.grnet.status.dtos.topology.GroupTopologyDto;
-import org.grnet.status.dtos.topology.ServiceTypeDto;
 import org.grnet.status.services.clients.AmsClient;
 import org.grnet.status.services.clients.AmsClientFactory;
 import org.grnet.status.services.clients.ArgoWebApiClient;
@@ -734,6 +730,7 @@ public class TenantEndpointTest extends KeycloakTest {
         group1.list = List.of(atland, arnes);
 
         var theming = new StatusPageThemingDto();
+        theming.option = "theme_1";
         theming.logo = "";
         theming.color = "#ffffff";
         theming.status = new StatusPageThemingStatusDto();
@@ -780,6 +777,7 @@ public class TenantEndpointTest extends KeycloakTest {
         config.description = "Updated description";
         config.groups = List.of(group1);
         config.theming = theming;
+        config.theming.option = "theme_2";
 
         req.config = config;
         return req;

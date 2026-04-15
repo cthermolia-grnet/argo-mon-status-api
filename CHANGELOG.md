@@ -118,6 +118,8 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#109](https://github.com/ARGOeu/argo-mon-status-api/pull/109) ARGO-5446 Validate tenant initialization when x-tenant-id header is used
 - [#111](https://github.com/ARGOeu/argo-mon-status-api/pull/111) ARGO-5470 DELETE topology if already exists while trying to recreate
 - [#119](https://github.com/ARGOeu/argo-mon-status-api/pull/119) ARGO-5495 INIT_COMPUTE_ENGINE status not set to completed
+- [#121](https://github.com/ARGOeu/argo-mon-status-api/pull/121) ARGO-5504: Trigger INIT_TOPOLOGY_CONNECTOR after compute engine completion (fix)
+
 ### Removed
 
 -[#15](https://github.com/ARGOeu/argo-mon-status-api/pull/15) ARGO-5183 Remove User DB & Update Keycloak Scope

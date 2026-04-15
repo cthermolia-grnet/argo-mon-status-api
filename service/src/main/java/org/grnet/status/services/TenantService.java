@@ -29,7 +29,6 @@ import org.grnet.status.dtos.tenant.node.WebApiNodeResponse;
 import org.grnet.status.dtos.tenant.metadata.InstanceDto;
 import org.grnet.status.dtos.tenant.metadata.TenantMetadata;
 import org.grnet.status.dtos.tenant.node.WebApiNodeStatusResponse;
-import org.grnet.status.dtos.tenant.node.WebApiNodeUptimeResponse;
 import org.grnet.status.dtos.tenant.status.EventStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
@@ -49,7 +48,6 @@ import org.grnet.status.services.clients.WebApiService;
 import org.grnet.status.services.utils.ImageUploadUtil;
 
 import java.io.IOException;
-import java.sql.SQLOutput;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
@@ -693,7 +691,7 @@ public class TenantService {
             response.name = tenant.name;
             response.status = statusDto;
 
-            // 🚀 Async notification
+            // Async notification
             if (isComputeEngineCompleted) {
                 var alert = buildAlert(
                         EventName.INIT_TOPOLOGY_CONNECTOR,
@@ -703,14 +701,12 @@ public class TenantService {
 
                 CompletableFuture.runAsync(() -> {
                     try {
-                        notifyAms(id, alert);
-                        System.out.println("NOTIFY INIT CONNECTOR");
+                        notifyAmsInitConnector(id, alert);
                     } catch (Exception ex) {
                         Log.error("AMS notification failed for tenant {}", id, ex);
-
-                        // 👉 optional: persist failure / retry queue
                     }
                 });
+
             }
 
             return response;
@@ -972,6 +968,7 @@ public class TenantService {
      * @param alert alert request
      * @return tenant status response
      */
+    @Transactional
     public TenantStatusDto notifyAmsInitConnector(String id, AlertDefinitionRequest alert) {
         var now = Instant.now();
         var tenant = tenantRepository.findById(id);

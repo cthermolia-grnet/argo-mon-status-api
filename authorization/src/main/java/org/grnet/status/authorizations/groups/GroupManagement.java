@@ -46,7 +46,7 @@ public interface GroupManagement {
 
     default void collectGroupRecursive(Group group, List<PartialGroup> groups) {
 
-        groups.add(new PartialGroup(group.id, group.name,group.path));
+        groups.add(new PartialGroup(group.id, group.name, group.path, group.groupRoles));
 
         if (group.extraSubGroups != null) {
             for (Group child : group.extraSubGroups) {

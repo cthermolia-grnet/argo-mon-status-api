@@ -2,6 +2,8 @@ package org.grnet.status.authorizations.dtos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Map;
+
 public class PartialGroup {
 
     @JsonProperty("id")
@@ -13,10 +15,14 @@ public class PartialGroup {
     @JsonProperty("path")
     private String path;
 
-    public PartialGroup(String id, String name, String path) {
+    @JsonProperty("group_roles")
+    private Map<String, String> groupRoles;
+
+    public PartialGroup(String id, String name, String path, Map<String, String> groupRoles) {
         this.id = id;
         this.name = name;
         this.path = path;
+        this.groupRoles = groupRoles;
     }
 
     public String getId() {
@@ -41,5 +47,13 @@ public class PartialGroup {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public Map<String, String> getGroupRoles() {
+        return groupRoles;
+    }
+
+    public void setGroupRoles(Map<String, String> groupRoles) {
+        this.groupRoles = groupRoles;
     }
 }

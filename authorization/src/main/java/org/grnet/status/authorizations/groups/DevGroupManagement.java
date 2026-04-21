@@ -534,6 +534,9 @@ public class DevGroupManagement implements GroupManagement {
                                             "id": "d1609083-213e-4f39-b9a4-28c1e66af604",
                                             "name": "members",
                                             "path": "/status-pages/members",
+                                            "groupRoles": {
+                                                        "member": "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:members:role=member"
+                                            },
                                             "attributes": {
                                                 "description": [
                                                     "Members of status-page"

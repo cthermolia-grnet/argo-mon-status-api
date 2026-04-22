@@ -699,13 +699,11 @@ public class TenantService {
                         String.valueOf(Instant.now())
                 );
 
-                CompletableFuture.runAsync(() -> {
-                    try {
-                        notifyAmsInitConnector(id, alert);
-                    } catch (Exception ex) {
-                        Log.error("AMS notification failed for tenant {}", id, ex);
-                    }
-                });
+                try {
+                    notifyAmsInitConnector(id, alert);
+                } catch (Exception ex) {
+                    Log.error("AMS notification failed for tenant {}", id, ex);
+                }
 
             }
 

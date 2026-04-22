@@ -32,17 +32,17 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#9](https://github.com/ARGOeu/argo-mon-status-api/pull/9) ARGO-5158 Implement UserEndpoint for user registration and profile management
 - [#10](https://github.com/ARGOeu/argo-mon-status-api/pull/10) ARGO-5162 Implement Logo Upload Support for Status Pages
 - [#11](https://github.com/ARGOeu/argo-mon-status-api/pull/11) ARGO-5166 Implement entitlement-based access control for Status Pages API
-- [#14](https://github.com/ARGOeu/argo-mon-status-api/pull/14) ARGO-5182: Implement Project Metadata Management (CRUD) in Status Pages API
+- [#14](https://github.com/ARGOeu/argo-mon-status-api/pull/14) ARGO-5182 Implement Project Metadata Management (CRUD) in Status Pages API
 - [#24](https://github.com/ARGOeu/argo-mon-status-api/pull/24) ARGO-5178 ARGO-5179 ARGO-5177 Create/Read/Update Tenant
 - [#13](https://github.com/ARGOeu/argo-mon-status-api/pull/13) ARGO-51176 Delete tenant
 - [#23](https://github.com/ARGOeu/argo-mon-status-api/pull/23) ARGO-5188 Get List of Tenants
-- [#31](https://github.com/ARGOeu/argo-mon-status-api/pull/31) ARGO-5199: Add search,sort and order and unique name validation for Projects
+- [#31](https://github.com/ARGOeu/argo-mon-status-api/pull/31) ARGO-5199 Add search,sort and order and unique name validation for Projects
 - [#33](https://github.com/ARGOeu/argo-mon-status-api/pull/33) ARGO-5174 Add Contacts to tenant
 - [#34](https://github.com/ARGOeu/argo-mon-status-api/pull/34) ARGO-5206 Assign Multiple Projects to a Tenant & Tenant–Project Managment
 - [#35](https://github.com/ARGOeu/argo-mon-status-api/pull/35) ARGO-5173 Add infrastracture related metadata to tenant
 - [#39](https://github.com/ARGOeu/argo-mon-status-api/pull/39) ARGO-5225 Implement Keycloak AGM Group Management Integration for Tenants
 - [#40](https://github.com/ARGOeu/argo-mon-status-api/pull/40) ARGO-5218 ARGO-5219 Add Tenant Status Field to Store Background Job Execution State/Implement PUT /v1/tenant/{tenantId}/status Endpoint for Updating Tenant Status #40
-- [#42](https://github.com/ARGOeu/argo-mon-status-api/pull/42/) ARGO-5223: Implement tenants list endpoint with role-based filtering for admin and viewer roles
+- [#42](https://github.com/ARGOeu/argo-mon-status-api/pull/42/) ARGO-5223 Implement tenants list endpoint with role-based filtering for admin and viewer roles
 - [#44](https://github.com/ARGOeu/argo-mon-status-api/pull/44) ARGO-5229 Expose user group memberships and roles in user profile
 - [#46](https://github.com/ARGOeu/argo-mon-status-api/pull/46) ARGO-5243 Design & Implement Group Membership Endpoints Using AGM
 - [#48](https://github.com/ARGOeu/argo-mon-status-api/pull/48) ARGO-5245 Add Admin Endpoint to Create Tenant Group and Expose Group Status
@@ -75,10 +75,10 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#104](https://github.com/ARGOeu/argo-mon-status-api/pull/104) ARGO-5401 Remove endpoints from Admin Resource that are common with Tenant Resource
 - [#106](https://github.com/ARGOeu/argo-mon-status-api/pull/106) ARGO-5419 ARGO-5432 ARGO-5433 CRUD topology
 - [#108](https://github.com/ARGOeu/argo-mon-status-api/pull/108) ARGO-5443 Support node info in tenants and set reports as default
-- [#112](https://github.com/ARGOeu/argo-mon-status-api/pull/112) ARGO-5461: Sync Web API Tenants to Local DB (Dev Environment Only)
-- [#115](https://github.com/ARGOeu/argo-mon-status-api/pull/115) ARGO-5477: Support force parameter when creating new topology items
+- [#112](https://github.com/ARGOeu/argo-mon-status-api/pull/112) ARGO-5461 Sync Web API Tenants to Local DB (Dev Environment Only)
+- [#115](https://github.com/ARGOeu/argo-mon-status-api/pull/115) ARGO-5477 Support force parameter when creating new topology items
 - [#118](https://github.com/ARGOeu/argo-mon-status-api/pull/118) ARGO-5491 Status-api generate an INIT_CONNECTOR event
-- [#120](https://github.com/ARGOeu/argo-mon-status-api/pull/120) ARGO-5496: Add option for status page theming configuration
+- [#120](https://github.com/ARGOeu/argo-mon-status-api/pull/120) ARGO-5496 Add option for status page theming configuration
 
 ### Fix
 
@@ -103,22 +103,23 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#72](https://github.com/ARGOeu/argo-mon-status-api/pull/72) ARGO-5333 Prevent db_conf.database Override on Tenant Update & Consolidate Web API Update Call
 - [#75](https://github.com/ARGOeu/argo-mon-status-api/pull/75) ARGO-5337 Use voperson_id as username
 - [#73](https://github.com/ARGOeu/argo-mon-status-api/pull/70) ARGO-5336 Enable Trust-All TLS Configuration for argo-web-api REST Client in Dev Profile
-- [#77](https://github.com/ARGOeu/argo-mon-status-api/pull/77) ARGO-5319: Make the web-api error better for users
+- [#77](https://github.com/ARGOeu/argo-mon-status-api/pull/77) ARGO-5319 Make the web-api error better for users
 - [#78](https://github.com/ARGOeu/argo-mon-status-api/pull/78) ARGO-5340 Improve invitation links and async group assignment on accept
 - [#79](https://github.com/ARGOeu/argo-mon-status-api/pull/79) ARGO-5348 Fix report id to fetch report
-- [#80](https://github.com/ARGOeu/argo-mon-status-api/pull/80) ARGO-5349: Fix add user to tenant group via invitation
+- [#80](https://github.com/ARGOeu/argo-mon-status-api/pull/80) ARGO-5349 Fix add user to tenant group via invitation
 - [#87](https://github.com/ARGOeu/argo-mon-status-api/pull/87) ARGO-5366 Fix @POST to @GET to fetch reports
 - [#90](https://github.com/ARGOeu/argo-mon-status-api/pull/90) ARGO-5368 Fix Filter Tags to tenant's report
-- [#92](https://github.com/ARGOeu/argo-mon-status-api/pull/92) ARGO-5372: List tenant status pages based on tenant role
+- [#92](https://github.com/ARGOeu/argo-mon-status-api/pull/92) ARGO-5372 List tenant status pages based on tenant role
 - [#99](https://github.com/ARGOeu/argo-mon-status-api/pull/99) ARGO-5387 Improve error handling (Group Management + Invitations)
 - [#100](https://github.com/ARGOeu/argo-mon-status-api/pull/100) ARGO-5391 FIX "id to load is required for loading" error when accessing tenant admin the v1/tenants/contact-types
 - [#101](https://github.com/ARGOeu/argo-mon-status-api/pull/101) ARGO-5393 Improve API error message when required path parameter is missing
 - [#105](https://github.com/ARGOeu/argo-mon-status-api/pull/105) ARGO-5414 Add JavaDoc descriptions to service and repository methods
-- [#107](https://github.com/ARGOeu/argo-mon-status-api/pull/107) ARGO-5431: Status-api returns 502 in reports when a tenant is not fully ready
+- [#107](https://github.com/ARGOeu/argo-mon-status-api/pull/107) ARGO-5431 Status-api returns 502 in reports when a tenant is not fully ready
 - [#109](https://github.com/ARGOeu/argo-mon-status-api/pull/109) ARGO-5446 Validate tenant initialization when x-tenant-id header is used
 - [#111](https://github.com/ARGOeu/argo-mon-status-api/pull/111) ARGO-5470 DELETE topology if already exists while trying to recreate
 - [#119](https://github.com/ARGOeu/argo-mon-status-api/pull/119) ARGO-5495 INIT_COMPUTE_ENGINE status not set to completed
-- [#121](https://github.com/ARGOeu/argo-mon-status-api/pull/121) ARGO-5504: Trigger INIT_TOPOLOGY_CONNECTOR after compute engine completion (fix)
+- [#121](https://github.com/ARGOeu/argo-mon-status-api/pull/121) ARGO-5504 Trigger INIT_TOPOLOGY_CONNECTOR after compute engine completion (fix)
+- [#123](https://github.com/ARGOeu/argo-mon-status-api/pull/123) ARGO-5514 INIT_COMPUTE_ENGINE remains IN_PROGRESS after completion and event trigger
 
 ### Removed
 

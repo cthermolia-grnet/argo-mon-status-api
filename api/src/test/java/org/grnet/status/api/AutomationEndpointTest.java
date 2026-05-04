@@ -1,9 +1,14 @@
 package org.grnet.status.api;
 
 import io.quarkus.test.InjectMock;
+import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.grnet.endpoint.scanner.runtime.entities.RoleEndpoint;
+import org.grnet.endpoint.scanner.runtime.entities.RoleEndpointRepository;
+import org.grnet.endpoint.scanner.runtime.entitlements.Entitlement;
 import org.grnet.status.dtos.Status;
 import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.dtos.ams.PublishResponse;
@@ -24,6 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -43,6 +49,13 @@ public class AutomationEndpointTest extends KeycloakTest {
     @InjectMock
     @RestClient
     ArgoWebApiClient argoWebApiClient;
+
+    @Inject
+    TestEntitlementProvider entitlementProvider;
+
+    @Inject
+    RoleEndpointRepository roleEndpointRepository;
+
     @BeforeEach
     public void mockArgoClient() throws Exception {
 
@@ -71,6 +84,53 @@ public class AutomationEndpointTest extends KeycloakTest {
                 .thenReturn(resp);
     }
 
+    // -------------------------------------------------------------------------
+    // SETUP ROLE REPOSITORY
+    // -------------------------------------------------------------------------
+    @BeforeEach
+    void setupRepo() {
+        TestRoleEndpointRepository testRepo = new TestRoleEndpointRepository();
+        QuarkusMock.installMockForType(testRepo, RoleEndpointRepository.class);
+        this.roleEndpointRepository = testRepo;
+    }
+
+    // -------------------------------------------------------------------------
+    // RESET STATE
+    // -------------------------------------------------------------------------
+    @BeforeEach
+    void reset() {
+        entitlementProvider.reset();
+        ((TestRoleEndpointRepository) roleEndpointRepository).reset();
+    }
+
+    // -------------------------------------------------------------------------
+    // ENTITLEMENTS
+    // -------------------------------------------------------------------------
+    private void mockSuperAdmin() {
+        entitlementProvider.setSuperAdmin(true);
+        entitlementProvider.setEntitlements(List.of());
+    }
+
+    private void mockAutomation() {
+        entitlementProvider.setSuperAdmin(false);
+        entitlementProvider.setEntitlements(List.of(
+                entitlement("automation")
+        ));
+    }
+
+
+    private Entitlement entitlement(String role) {
+        String raw = "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:"
+                + role + ":role=member";
+
+        return new Entitlement(
+                "status-pages",
+                List.of("status-pages", role),
+                role,
+                raw
+        );
+    }
+
 
     @BeforeEach
     public void cleanUp() {
@@ -81,7 +141,7 @@ public class AutomationEndpointTest extends KeycloakTest {
     public void updateTenantStatus() {
 
         currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
-
+        mockSuperAdmin();
         var request = new TenantRequestDto();
         var tenantInfo = new TenantInfoDto();
         tenantInfo.name = "TENANT-TEST";
@@ -120,6 +180,18 @@ public class AutomationEndpointTest extends KeycloakTest {
         job.start = Instant.parse("2025-10-22T12:44:48Z");
         job.end = Instant.parse("2025-10-22T12:44:48Z");
         statusReq.jobs.add(job);
+
+        mockAutomation();
+        // IMPORTANT: allow interceptor access
+        ((TestRoleEndpointRepository) roleEndpointRepository).set(List.of(
+                new RoleEndpoint(
+                        1L,
+                        "automation",
+                        "automation",
+                        "PATCH_/v1/automation/tenants/{id}/status",
+                        LocalDateTime.now()
+                )
+        ));
 
         var updated = given()
                 .auth().oauth2(automationToken)

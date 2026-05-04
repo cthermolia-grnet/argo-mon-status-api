@@ -192,7 +192,64 @@ Once logged in, copy the **Access Token** and include it in API requests.
 
 ---
 
+## Configure Authentication for Local Builds
+
+ARGO Mon Status API depends on the quarkus-auth library, which is distributed through GitHub Packages.
+
+Although the package is public, GitHub Packages Maven registry requires authentication in order to download dependencies.
+
+To configure access locally, follow these steps:
+
+1. Create or update Maven settings
+
+Create or edit the following file:
+
+~/.m2/settings.xml
+
+Add the following configuration:
+
+<settings>
+    <servers>
+        <server>
+            <id>github</id>
+            <username>YOUR_GITHUB_USERNAME</username>
+            <password>YOUR_GITHUB_PERSONAL_ACCESS_TOKEN</password>
+        </server>
+    </servers>
+</settings>
+2. Create a GitHub Personal Access Token
+
+Go to:
+
+GitHub Personal Access Tokens
+
+Create a token with the following scope:
+
+read:packages
+
+Optionally, include:
+
+repo
+
+if you need access to private repositories.
+
+3. Use the token in Maven settings
+
+Replace:
+
+YOUR_GITHUB_PERSONAL_ACCESS_TOKEN
+
+with the generated token value in your settings.xml file.
+
+4. Build the project
+
+You should now be able to build the project successfully:
+
+mvn clean install
+
 ## License & Credits
 
 ARGO Mon Status Pages is a service developed and maintained by **GRNET**.  
 Distributed under the **Apache 2.0 License**.
+
+

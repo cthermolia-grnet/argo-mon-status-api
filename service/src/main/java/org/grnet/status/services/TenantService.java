@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 import jakarta.persistence.PersistenceException;
 import jakarta.transaction.Transactional;
@@ -13,10 +14,10 @@ import jakarta.ws.rs.ServiceUnavailableException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.grnet.status.authorizations.dtos.GroupUserResponse;
-import org.grnet.status.authorizations.groups.GroupManagement;
-import org.grnet.status.authorizations.service.AccessControlService;
-import org.grnet.status.authorizations.service.AuthGroupSetupService;
+import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.AuthGroupManagement;
+import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.GroupManagement;
+import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.GroupUserResponse;
+import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.UserGroupInfoDto;
 import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
@@ -42,6 +43,7 @@ import org.grnet.status.entities.Page;
 import org.grnet.status.entities.PageQueryImpl;
 import org.grnet.status.entities.Tenant;
 import org.grnet.status.enums.*;
+import org.grnet.status.enums.resources.TenantResource;
 import org.grnet.status.exceptions.CustomRuntimeException;
 import org.grnet.status.mappers.TenantMapper;
 import org.grnet.status.repositories.ContactRepository;
@@ -79,12 +81,12 @@ public class TenantService {
     WebApiService webApiService;
 
     @Inject
-    GroupManagement groupManagement;
+    AuthGroupManagement groupManagement;
 
     @Inject
     GroupManagementService groupManagementService;
 
-    @ConfigProperty(name = "api.auth.entitlements.parent.group")
+    @ConfigProperty(name = "api.auth.entitlements.parent-group")
     String namespace;
 
     @Inject
@@ -452,8 +454,7 @@ public class TenantService {
             return getTenantsByPageAndSize(page, size, uriInfo, search, sort, order);
         }
 
-        var allowedTenantIds = accessControlService.resolveAccessibleGroupsByName("tenants");
-
+        var allowedTenantIds = accessControlService.resolveAccessibleGroupsByName("tenant_admin", TenantResource.TENANT.resourceName());
         var tenants = tenantRepository.fetchTenantsByIdsAndPageAndSize(allowedTenantIds, page, size, search, sort, order);
 
         var tenantList = new ArrayList<TenantResponseDto>();
@@ -881,13 +882,22 @@ public class TenantService {
                 .stream()
                 .map(g -> g.user)
                 .map(gu -> {
+                    List<UserGroupInfoDto> list= new ArrayList();
+                    if (gu.attributes != null && gu.attributes.getLocalEntitlements() != null) {
+
+                        list = CDI.current()
+                                .select(UserEntitlementsService.class)
+                                .get()
+                                .parseLocalEntitlements(gu.attributes.getLocalEntitlements(), "tenant_admin", TenantResource.TENANT.resourceName());
+                    }
+
                     var user = new GroupUserResponse();
                     user.id = gu.id;
                     user.email = gu.email;
                     user.username = gu.username;
                     user.firstName = gu.firstName;
                     user.lastName = gu.lastName;
-                    user.tenants = gu.getTenants();
+                    user.tenants = list;
                     return user;
                 })
                 .collect(Collectors.toList());

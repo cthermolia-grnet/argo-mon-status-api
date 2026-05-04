@@ -3,7 +3,7 @@ package org.grnet.status.dtos.user;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.grnet.status.authorizations.dtos.UserGroupInfoDto;
+import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.UserGroupInfoDto;
 
 import java.util.List;
 

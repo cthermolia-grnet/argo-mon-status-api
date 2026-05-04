@@ -22,12 +22,15 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.grnet.status.authorizations.interceptors.CheckEntitlements;
+import org.grnet.endpoint.scanner.runtime.ParamRef;
+import org.grnet.endpoint.scanner.runtime.ParamType;
+import org.grnet.endpoint.scanner.runtime.SecuredEndpoint;
 import org.grnet.status.constraints.NotFoundEntity;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationActionResponse;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
+import org.grnet.status.enums.resources.TenantResource;
 import org.grnet.status.repositories.TenantInvitationRepository;
 import org.grnet.status.services.TenantInvitationService;
 import org.grnet.status.util.Utility;
@@ -46,7 +49,6 @@ import static org.eclipse.microprofile.openapi.annotations.enums.ParameterIn.QUE
         bearerFormat = "JWT",
         in = SecuritySchemeIn.HEADER)
 @Tag(name = "User")
-@CheckEntitlements(group = "members")
 public class TenantInvitationEndpoint {
 
     @Inject
@@ -93,7 +95,7 @@ public class TenantInvitationEndpoint {
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(roles = {"member"})
+    @SecuredEndpoint(bypass = true ) //this need to change to create InvitationSource.class
     public Response getInvitationById(
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantInvitationRepository.class, message = "There is no Invitation with the following id: ")
@@ -149,7 +151,16 @@ public class TenantInvitationEndpoint {
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(roles = {"member"})
+    @SecuredEndpoint(bypass = true)
+//            params = {
+//
+//                    @ParamRef(
+//                            param = "id",
+//                            type = ParamType.PATH,
+//                            referTo= TenantResource.class
+//                    )
+//            }
+    //need to change to InvitationResource.class
     public Response respond(
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantInvitationRepository.class, message = "There is no Invitation with the following id: ") String id,
@@ -197,7 +208,7 @@ public class TenantInvitationEndpoint {
     @SecurityRequirement(name = "Authentication")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(roles = {"member"})
+    @SecuredEndpoint(bypass = true)
     public Response getInvite(
             @Parameter(name = "page", in = QUERY,
                     description = "Page number. Must be >= 1.")

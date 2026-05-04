@@ -16,15 +16,13 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.grnet.status.authorizations.interceptors.CheckEntitlements;
+import org.grnet.endpoint.scanner.runtime.SecuredEndpoint;
 import org.grnet.status.constraints.NotFoundEntity;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
 import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.services.TenantService;
-
-import java.io.IOException;
 
 @Path("/v1/automation")
 @Authenticated
@@ -34,7 +32,6 @@ import java.io.IOException;
         scheme = "bearer",
         bearerFormat = "JWT",
         in = SecuritySchemeIn.HEADER)
-@CheckEntitlements(group = "automation", superAdminBypass = false)
 public class AutomationEndpoint {
 
     @Inject
@@ -76,8 +73,8 @@ public class AutomationEndpoint {
                     implementation = InformativeResponse.class)))
     @PATCH
     @Path("/tenants/{id}/status")
-    @CheckEntitlements(roles = {"admin"})
     @Produces(MediaType.APPLICATION_JSON)
+    @SecuredEndpoint
     public Response updateStatus(@PathParam("id")
                                  @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
                                  TenantStatusDto request) {
@@ -123,8 +120,8 @@ public class AutomationEndpoint {
 
     @GET
     @Path("/tenants/{id}/status")
-    @CheckEntitlements(roles = {"admin"})
     @Produces(MediaType.APPLICATION_JSON)
+    @SecuredEndpoint
     public Response getTenantStatus(@Parameter(
             description = "The ID of the tenant to retrieve status.",
             required = true,

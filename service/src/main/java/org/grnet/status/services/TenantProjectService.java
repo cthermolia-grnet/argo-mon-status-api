@@ -6,16 +6,13 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
-import org.grnet.status.authorizations.dtos.GroupUserResponse;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.project.ProjectResponseDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectDeleteDto;
-import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
 import org.grnet.status.dtos.tenantproject.TenantProjectDto;
-import org.grnet.status.entities.Page;
-import org.grnet.status.entities.PageQueryImpl;
+import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
 import org.grnet.status.entities.Project;
 import org.grnet.status.entities.Tenant;
 import org.grnet.status.entities.TenantProjectJunction;
@@ -28,7 +25,6 @@ import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.util.Utility;
 
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Service responsible for managing tenant to project assignments.

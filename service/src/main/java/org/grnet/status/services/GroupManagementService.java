@@ -2,17 +2,18 @@ package org.grnet.status.services;
 
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.grnet.status.authorizations.dtos.GroupUser;
-import org.grnet.status.authorizations.dtos.GroupUserResponse;
-import org.grnet.status.authorizations.dtos.PartialGroup;
-import org.grnet.status.authorizations.groups.GroupManagement;
-import org.grnet.status.authorizations.groups.GroupMembersResponse;
+
+import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.AuthGroupManagement;
+import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.GroupManagement;
+import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.*;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.entities.Page;
 import org.grnet.status.entities.PageQueryImpl;
+import org.grnet.status.enums.resources.TenantResource;
 import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.util.Utility;
 
@@ -27,7 +28,7 @@ import java.util.List;
 public class GroupManagementService {
 
     @Inject
-    GroupManagement groupManagement;
+    AuthGroupManagement groupManagement;
 
     @Inject
     TenantRepository tenantRepository;
@@ -38,13 +39,13 @@ public class GroupManagementService {
     @Inject
     MailerService mailerService;
 
-    @ConfigProperty(name = "api.auth.entitlements.parent.group")
+    @ConfigProperty(name = "api.auth.entitlements.parent-group")
     String parentGroup;
 
     @ConfigProperty(name = "api.ui.url")
     String uiBaseUrl;
 
-    @ConfigProperty(name = "api.auth.entitlements.parent.group")
+    @ConfigProperty(name = "api.auth.entitlements.parent-group")
     String namespace;
 
     /**
@@ -66,6 +67,17 @@ public class GroupManagementService {
                 .stream()
                 .map(g->g.user)
                 .map(gu -> {
+
+                    List<UserGroupInfoDto> list= new ArrayList();
+                    if (gu.attributes != null && gu.attributes.getLocalEntitlements() != null) {
+
+                        list = CDI.current()
+                                .select(UserEntitlementsService.class)
+                                .get()
+                                .parseLocalEntitlements(gu.attributes.getLocalEntitlements(), "tenant_admin", TenantResource.TENANT.resourceName());
+                    }
+
+
                     var user = new GroupUserResponse();
                     user.id = gu.id;
                     user.email = gu.email;
@@ -73,7 +85,7 @@ public class GroupManagementService {
                     user.firstName = gu.firstName;
                     user.lastName = gu.lastName;
                     user.uid = gu.getUid();
-                    user.tenants = gu.getTenants();
+                    user.tenants = list;
                     return user;
                 })
                 .toList();

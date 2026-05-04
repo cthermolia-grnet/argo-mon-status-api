@@ -116,8 +116,13 @@ public interface TenantMapper {
         dtoInfo.website = webApiGetResponse.getData().get(0).getInfo().getWebsite();
         dtoInfo.description = webApiGetResponse.getData().get(0).getInfo().getDescription();
         dtoInfo.image = webApiGetResponse.getData().get(0).getInfo().getImage();
-        dtoInfo.createdAt = Instant.from(DATE_TIME_FMT.parse(webApiGetResponse.getData().get(0).getInfo().getCreated()));
-        dtoInfo.updatedAt = Instant.from(DATE_TIME_FMT.parse(webApiGetResponse.getData().get(0).getInfo().getUpdated()));
+        dtoInfo.createdAt = webApiGetResponse.getData().get(0).getInfo().getCreated() != null
+                ? Instant.from(DATE_TIME_FMT.parse(webApiGetResponse.getData().get(0).getInfo().getCreated()))
+                : null;
+        dtoInfo.updatedAt = webApiGetResponse.getData().get(0).getInfo().getUpdated() != null
+                ? Instant.from(DATE_TIME_FMT.parse(webApiGetResponse.getData().get(0).getInfo().getUpdated()))
+                : null;
+
         dto.info = dtoInfo;
         dto.updatedBy = tenant.updatedBy;
         dto.metadata = mapMetadataObject(tenant.getMetadata());
@@ -273,8 +278,13 @@ public interface TenantMapper {
         dtoInfo.website = info.getWebsite();
         dtoInfo.description = info.getDescription();
         dtoInfo.image = info.getImage();
-        dtoInfo.createdAt = Instant.from(DATE_TIME_FMT.parse(info.getCreated()));
-        dtoInfo.updatedAt = Instant.from(DATE_TIME_FMT.parse(info.getUpdated()));
+
+        dtoInfo.createdAt = info.getCreated() != null
+                ? Instant.from(DATE_TIME_FMT.parse(info.getCreated()))
+                : null;
+        dtoInfo.updatedAt = info.getUpdated() != null
+                ? Instant.from(DATE_TIME_FMT.parse(info.getUpdated()))
+                : null;
         dto.info = dtoInfo;
         return dto;
     }

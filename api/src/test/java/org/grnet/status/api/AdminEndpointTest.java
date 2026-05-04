@@ -2,30 +2,38 @@ package org.grnet.status.api;
 
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
+import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.GroupUserResponse;
+import org.grnet.endpoint.scanner.runtime.entities.RoleEndpointRepository;
+import org.grnet.endpoint.scanner.runtime.entitlements.Entitlement;
 import org.grnet.status.api.endpoints.AdminEndpoint;
-import org.grnet.status.authorizations.service.AuthGroupSetupService;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.Status;
 import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.dtos.ams.PublishResponse;
-import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.project.ProjectRequestDto;
 import org.grnet.status.dtos.project.ProjectResponseDto;
 import org.grnet.status.dtos.project.ProjectUpdateDto;
-import org.grnet.status.dtos.tenant.*;
+import org.grnet.status.dtos.tenant.ContactDto;
+import org.grnet.status.dtos.tenant.TenantInfoDto;
+import org.grnet.status.dtos.tenant.TenantRequestDto;
+import org.grnet.status.dtos.tenant.TenantResponseDto;
 import org.grnet.status.dtos.tenant.status.EventStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
-import org.grnet.status.dtos.tenantproject.TenantProjectDeleteDto;
-import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
-import org.grnet.status.services.clients.*;
+import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
 import org.grnet.status.enums.EventStatus;
 import org.grnet.status.enums.TenantJobEvent;
+import org.grnet.status.services.AuthGroupSetupService;
+import org.grnet.status.services.GroupManagementService;
+import org.grnet.status.services.clients.AmsClient;
+import org.grnet.status.services.clients.AmsClientFactory;
 import org.grnet.status.services.clients.ArgoWebApiClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -47,6 +56,9 @@ import static org.mockito.Mockito.*;
 public class AdminEndpointTest extends KeycloakTest {
 
     @InjectMock
+    GroupManagementService groupManagementService;
+
+    @InjectMock
     AuthGroupSetupService authGroupSetupService;
     @InjectMock
     AmsClientFactory amsClientFactory;
@@ -56,6 +68,61 @@ public class AdminEndpointTest extends KeycloakTest {
 
     private String currentMockId;
 
+    @Inject
+    TestEntitlementProvider entitlementProvider;
+
+    @Inject
+    RoleEndpointRepository roleEndpointRepository;
+
+    @BeforeEach
+    void setupRepo() {
+        TestRoleEndpointRepository testRepo = new TestRoleEndpointRepository();
+
+        QuarkusMock.installMockForType(testRepo, RoleEndpointRepository.class);
+
+        this.roleEndpointRepository = testRepo;
+    }
+
+    @BeforeEach
+    void reset() {
+        entitlementProvider.reset();
+        ((TestRoleEndpointRepository) roleEndpointRepository).reset();
+    }
+
+    private void mockSuperAdmin() {
+        entitlementProvider.setSuperAdmin(true);
+        entitlementProvider.setEntitlements(List.of());
+    }
+
+    private void mockTenantAdmin() {
+        entitlementProvider.setSuperAdmin(false);
+        entitlementProvider.setEntitlements(List.of(
+                entitlement(currentMockId, "tenant_admin")
+        ));
+    }
+
+    private void mockTenantViewer() {
+        entitlementProvider.setSuperAdmin(false);
+        entitlementProvider.setEntitlements(List.of(
+                entitlement(currentMockId, "tenant_viewer")
+        ));
+    }
+
+    private Entitlement entitlement(String tenantId, String role) {
+        String raw =
+                "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:"
+                        + role
+                        + ":TENANT:"
+                        + tenantId
+                        + ":role=member";
+
+        return new Entitlement(
+                "status-pages",
+                List.of("status-pages", role, "TENANT", tenantId),
+                role,
+                raw
+        );
+    }
 
     @BeforeEach
     public void mockGroupAsyncService() {
@@ -143,7 +210,7 @@ public class AdminEndpointTest extends KeycloakTest {
     @Test
     public void createTenant() {
         currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
-
+        mockSuperAdmin();
         var request = createTenant("LOCALTENANT");
 
         assertEquals(request.info.name, request.info.name);
@@ -155,7 +222,7 @@ public class AdminEndpointTest extends KeycloakTest {
     public void deleteTenant() {
 
         currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
-
+        mockSuperAdmin();
         var request = createTenant("LOCALTENANT");
 
         var response1 = given()
@@ -177,11 +244,11 @@ public class AdminEndpointTest extends KeycloakTest {
     public void deleteTenantForbidden() {
 
         currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
-
+        mockSuperAdmin();
         var request = createTenant("LOCALTENANT");
 
         //var webApi = new ArgoWebApiRequest();
-
+        mockTenantViewer();
         var error = given()
                 .auth().oauth2(tenantViewer)
                 .contentType(ContentType.JSON)
@@ -202,7 +269,7 @@ public class AdminEndpointTest extends KeycloakTest {
     public void deleteTenantNotExisting() {
 
         currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
-
+        mockSuperAdmin();
         var error = given()
                 .auth().oauth2(adminToken)
                 .contentType(ContentType.JSON)
@@ -220,7 +287,7 @@ public class AdminEndpointTest extends KeycloakTest {
     @Test
     public void testAssignMultipleProjects() {
         currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
-
+        mockSuperAdmin();
         var request = createTenant("LOCALTENANT");
 
         // Create two projects
@@ -264,7 +331,7 @@ public class AdminEndpointTest extends KeycloakTest {
         var req = new TenantProjectRequestDto();
         req.tenantId = "tenant-not-exist";
         req.projectIds = List.of("proj-not-exist");
-
+        mockSuperAdmin();
         var error = given()
                 .auth().oauth2(adminToken)
                 .contentType(ContentType.JSON)
@@ -298,7 +365,7 @@ public class AdminEndpointTest extends KeycloakTest {
 
         request.info = tenantInfo;
         request.contacts = Collections.singletonList(tenantContact);
-
+        mockSuperAdmin();
 
         var created = given()
                 .auth().oauth2(adminToken)
@@ -342,7 +409,7 @@ public class AdminEndpointTest extends KeycloakTest {
     @Test
     public void testCreateProject() {
         var req = buildCreateRequest();
-
+        mockSuperAdmin();
         var created = given()
                 .auth().oauth2(adminToken)
                 .contentType(ContentType.JSON)
@@ -360,7 +427,7 @@ public class AdminEndpointTest extends KeycloakTest {
     @Test
     public void testGetProject() {
         var req = buildCreateRequest();
-
+        mockSuperAdmin();
         var created = given()
                 .auth().oauth2(adminToken)
                 .contentType(ContentType.JSON)
@@ -386,7 +453,7 @@ public class AdminEndpointTest extends KeycloakTest {
     @Test
     public void testUpdateProject() {
         var req = buildCreateRequest();
-
+        mockSuperAdmin();
         var created = given()
                 .auth()
                 .oauth2(adminToken)
@@ -420,7 +487,7 @@ public class AdminEndpointTest extends KeycloakTest {
     @Test
     public void testDeleteProject() {
         var req = buildCreateRequest();
-
+        mockSuperAdmin();
         var created = given()
                 .auth().oauth2(adminToken)
                 .contentType(ContentType.JSON)
@@ -442,8 +509,29 @@ public class AdminEndpointTest extends KeycloakTest {
         assertEquals(200, response.code);
         assertEquals("Project has been successfully deleted.", response.message);
     }
+
     @Test
     public void superAdminFetchAllMembers() {
+
+        mockSuperAdmin();
+
+        var fakeUsers = List.of(
+                createFakeUser("1", "user1"),
+                createFakeUser("2", "user2"),
+                createFakeUser("3", "user3"),
+                createFakeUser("4", "user4"),
+                createFakeUser("5", "user5")
+        );
+
+        var fakePageableResponse = createFakePageableResponse(fakeUsers);
+
+        when(groupManagementService.getAllMembers(
+                eq("members"),
+                any(),
+                eq(0),
+                eq(5),
+                any()
+        )).thenReturn(fakePageableResponse);
 
         var response = given()
                 .auth().oauth2(adminToken)
@@ -458,6 +546,29 @@ public class AdminEndpointTest extends KeycloakTest {
 
         assertNotNull(response.getContent());
         assertEquals(5, response.getContent().size());
+    }
+
+    private AdminEndpoint.PageableGroupUserResponse createFakePageableResponse(List<GroupUserResponse> users) {
+        var response = new AdminEndpoint.PageableGroupUserResponse();
+        response.setContent(users);
+        response.setSizeOfPage(5);
+        response.setNumberOfPage(1);
+        response.setTotalElements(5L);
+        response.setTotalPages(1);
+        response.setLinks(List.of());
+        return response;
+    }
+
+    private GroupUserResponse createFakeUser(String id, String username) {
+        var user = new GroupUserResponse();
+        user.id = id;
+        user.username = username;
+        user.firstName = "First_" + username;
+        user.lastName = "Last_" + username;
+        user.email = username + "@test.com";
+        user.uid = "uid_" + id;
+        user.tenants = List.of(); // ή fake tenants αν χρειαστεί
+        return user;
     }
 
     private TenantResponseDto createTenant(String tenantName) {

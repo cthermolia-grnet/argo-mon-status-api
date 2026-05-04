@@ -16,6 +16,11 @@
     <name>status-api</name>
     <version>${revision}</version>
     <dependencies>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-test-security</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- Quarkus core runtime -->
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -92,14 +97,10 @@
             <artifactId>status-util</artifactId>
             <version>${revision}</version>
         </dependency>
+
         <dependency>
             <groupId>org.grnet</groupId>
             <artifactId>status-handlers</artifactId>
-            <version>${revision}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.grnet</groupId>
-            <artifactId>status-authorizations</artifactId>
             <version>${revision}</version>
         </dependency>
 

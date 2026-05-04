@@ -20,7 +20,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.grnet.status.authorizations.interceptors.CheckEntitlements;
+import org.grnet.endpoint.scanner.runtime.SecuredEndpoint;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.user.UserProfileDto;
 import org.grnet.status.services.GroupManagementService;
@@ -38,7 +38,6 @@ import static org.eclipse.microprofile.openapi.annotations.enums.ParameterIn.QUE
         scheme = "bearer",
         bearerFormat = "JWT",
         in = SecuritySchemeIn.HEADER)
-@CheckEntitlements(group = "members")
 public class UserEndpoint {
 
     @Inject
@@ -98,7 +97,7 @@ public class UserEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/profile")
-    @CheckEntitlements(byPassAuthorization = true)
+    @SecuredEndpoint(bypass = true)
     public Response profile() {
 
         var response = userService.getUserProfile(utility.getUserUniqueIdentifier());
@@ -151,7 +150,8 @@ public class UserEndpoint {
     @POST
     @Path("/registration")
     @Produces(MediaType.APPLICATION_JSON)
-    @CheckEntitlements(byPassAuthorization = true)
+
+    @SecuredEndpoint(bypass = true)
     public Response registerMember() {
 
         groupManagementService.addMember("members", utility.getUsername());
@@ -207,7 +207,6 @@ public class UserEndpoint {
     @SecurityRequirement(name = "Authentication")
     @GET
     @Path("/pages")
-    @CheckEntitlements(roles = {"member"})
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAllStatusPagesForUser(
             @Parameter(name = "search", in = QUERY,

@@ -2758,7 +2758,10 @@
           "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenants:LOCALTENANT:role=admin",
           "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenants:TENANT-TEST:role=admin",
           "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenants:TENANTB:role=admin",
-          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:members:role=member"
+          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:members:role=member",
+          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenant_admin:TENANT:e1ab046c-8544-47e6-bd8f-e8aa8b83acb3:members:role=member"
+
+
         ]
       },
 
@@ -2791,7 +2794,9 @@
           "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenants:LOCALTENANT:role=viewer",
           "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenants:TENANT-TEST:role=viewer",
           "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenants:TENANTB:role=viewer",
-          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:members:role=member"
+          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:members:role=member",
+
+          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenant_viewer:TENANT:e1ab046c-8544-47e6-bd8f-e8aa8b83acb3:members:role=member"
 
         ]
       },

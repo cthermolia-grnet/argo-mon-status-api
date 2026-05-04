@@ -2,7 +2,6 @@ package org.grnet.status.api.endpoints;
 
 import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -19,7 +18,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.grnet.status.authorizations.interceptors.CheckEntitlements;
+import org.grnet.endpoint.scanner.runtime.SecuredEndpoint;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.encrypt.EncryptRequestDto;
 import org.grnet.status.dtos.encrypt.EncryptResponseDto;
@@ -34,7 +33,6 @@ import org.grnet.status.services.ReportService;
         scheme = "bearer",
         bearerFormat = "JWT",
         in = SecuritySchemeIn.HEADER)
-@CheckEntitlements(group = "members")
 public class ReportEndpoint {
 
     @Inject
@@ -88,7 +86,7 @@ public class ReportEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/encrypt")
-    @CheckEntitlements(roles = {"member"})
+    @SecuredEndpoint
     public Response encrypt(EncryptRequestDto request) {
 
         var response = reportService.encrypt(request);

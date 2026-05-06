@@ -20,6 +20,7 @@ import org.grnet.status.authorizations.service.AuthGroupSetupService;
 import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
+import org.grnet.status.dtos.report.WebApiReportResponse;
 import org.grnet.status.dtos.tenant.ContactDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
@@ -34,6 +35,8 @@ import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiNodeRequest;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
+import org.grnet.status.dtos.topology.FeedTopologyDto;
+import org.grnet.status.dtos.topology.WebApiFeedsTopologyResponse;
 import org.grnet.status.entities.Contact;
 import org.grnet.status.entities.Page;
 import org.grnet.status.entities.PageQueryImpl;
@@ -676,7 +679,6 @@ public class TenantService {
         var tenant = tenantRepository.findById(id);
 
         var existingStatus = TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
-        var isComputeEngineCompleted = isComputeEngineCompleted(request);
         request.jobs = mergeJobs(existingStatus.jobs, request.jobs);
 
         var updatedStatusJson = TenantMapper.INSTANCE.mergeJobsIntoStatus(tenant.getStatus(), request);
@@ -691,33 +693,11 @@ public class TenantService {
             response.name = tenant.name;
             response.status = statusDto;
 
-            // Async notification
-            if (isComputeEngineCompleted) {
-                var alert = buildAlert(
-                        EventName.INIT_TOPOLOGY_CONNECTOR,
-                        tenant,
-                        String.valueOf(Instant.now())
-                );
-
-                try {
-                    notifyAmsInitConnector(id, alert);
-                } catch (Exception ex) {
-                    Log.error("AMS notification failed for tenant {}", id, ex);
-                }
-
-            }
-
             return response;
 
         } catch (Exception dbException) {
             throw new RuntimeException("Updating Tenant's Status.. DB update failed: " + dbException.getMessage());
         }
-    }
-
-    private boolean isComputeEngineCompleted(TenantStatusDto request) {
-        return request.jobs.stream()
-                .anyMatch(j -> EventName.INIT_COMPUTE_ENGINE.name().equals(j.name) &&
-                        EventStatus.COMPLETED.name().equals(j.getStatus()));
     }
 
     /**
@@ -1447,6 +1427,72 @@ public class TenantService {
         var tenant = tenantRepository.findById(id);
 
         return webApiService.retrieveNodeStatus(tenant.name, startTime, endTime, history);
+    }
+
+    /**
+     * Retrieves the configured feed topology for the specified tenant.
+     *
+     * @param tenantId tenant identifier
+     * @return feed topology configuration
+     */
+    public FeedTopologyDto getFeedTopology(String tenantId) {
+
+        var webApiResponse = webApiService.retrieveFeedTopologyWebApi(tenantId);
+
+        if (webApiResponse == null
+                || webApiResponse.data == null
+                || webApiResponse.data.isEmpty()) {
+            return null;
+        }
+
+        return webApiResponse.data.get(0);
+    }
+
+    /**
+     * Updates the feed topology for the specified tenant and triggers
+     * topology connector initialization notification.
+     *
+     * @param tenantId tenant identifier
+     * @param request  feed topology request
+     * @return update status response
+     */
+    @Transactional
+    public WebApiFeedsTopologyResponse updateFeedTopology(String tenantId, FeedTopologyDto request) {
+
+        var tenant = tenantRepository.findById(tenantId);
+        var response = webApiService.updateFeedTopologyWebApi(tenant.id, request);
+
+        notifyAmsInitTopologyConnector(tenantId);
+
+        return response;
+    }
+
+
+    /**
+     * Sends topology connector initialization notification for the specified tenant.
+     *
+     * @param tenantId tenant identifier
+     * @return tenant status response
+     */
+    @Transactional
+    public TenantStatusDto notifyAmsInitTopologyConnector(String tenantId) {
+
+        var tenant = tenantRepository.findById(tenantId);
+
+        if (tenant == null) {
+            throw new WebApplicationException(
+                    "Notifying Messaging Service... Tenant with id: " + tenantId + " not found",
+                    404
+            );
+        }
+
+        var alert = buildAlert(
+                EventName.INIT_TOPOLOGY_CONNECTOR,
+                tenant,
+                String.valueOf(Instant.now())
+        );
+
+        return notifyAmsInitConnector(tenantId, alert);
     }
 
 

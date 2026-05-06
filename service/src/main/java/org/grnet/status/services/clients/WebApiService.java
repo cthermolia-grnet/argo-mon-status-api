@@ -8,13 +8,14 @@ import jakarta.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.Status;
-import org.grnet.status.dtos.argo.ArgoWebApiErrorResponse;
 import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
 import org.grnet.status.dtos.tenant.node.*;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiNodeRequest;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
+import org.grnet.status.dtos.topology.FeedTopologyDto;
+import org.grnet.status.dtos.topology.WebApiFeedsTopologyResponse;
 import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.services.ReportService;
 import org.jboss.logging.Logger;
@@ -214,6 +215,49 @@ public class WebApiService {
             Log.error(e.getMessage(), e);
             throw new WebApplicationException(
                     "Retrieving Node Status... node with name " + nodeName + " failed in Argo Web Api", status
+            );
+        }
+    }
+
+    public WebApiFeedsTopologyResponse retrieveFeedTopologyWebApi(String tenantId) {
+        try {
+            return argoWebApiClient.getFeedTopology(accessToken, tenantId);
+        } catch (RuntimeException e) {
+            int status = 500;
+
+            if (e instanceof WebApplicationException) {
+                status = ((WebApplicationException) e).getResponse().getStatus();
+            }
+
+            if (status == 404) {
+                throw new WebApplicationException(
+                        "Retrieving Feed Topology... topology feed has not been configured for tenant with id: " + tenantId,
+                        404
+                );
+            }
+
+            Log.error(e.getMessage(), e);
+            throw new WebApplicationException(
+                    "Retrieving Feed Topology... failed to retrieve topology feed for tenant with id: " + tenantId + " from Argo Web Api",
+                    status
+            );
+        }
+    }
+
+    public WebApiFeedsTopologyResponse updateFeedTopologyWebApi(String tenantId, FeedTopologyDto request) {
+        try {
+            return argoWebApiClient.updateFeedTopology(accessToken, tenantId, request);
+        } catch (RuntimeException e) {
+            int status = 500;
+
+            if (e instanceof WebApplicationException) {
+                status = ((WebApplicationException) e).getResponse().getStatus();
+            }
+
+            Log.error(e.getMessage(), e);
+            throw new WebApplicationException(
+                    "Updating Feed Topology... failed to update topology feed for tenant with id: " + tenantId + " in Argo Web Api",
+                    status
             );
         }
     }

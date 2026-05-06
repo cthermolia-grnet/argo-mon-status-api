@@ -21,7 +21,6 @@ public class TenantMetadata {
     )
     @JsonProperty("instance")
     @Valid
-   // @NotNull(message = "instance can not be null")
     public InstanceDto instance=new InstanceDto();
 
     @Schema(
@@ -29,9 +28,8 @@ public class TenantMetadata {
             implementation = InternalListDto.class,
             description = "Internal list configuration"
     )
-    @JsonProperty("internalLists")  // match the JSON field exactly
-    @Valid      // <-- THIS IS REQUIRED for nested validation
-    //@NotNull(message = "internal list can not be null")
+    @JsonProperty("internalLists")
+    @Valid
     public List<InternalListDto> internalLists=new ArrayList<>();
 
     @Schema(
@@ -41,7 +39,6 @@ public class TenantMetadata {
     )
     @JsonProperty("auth_metadata")
     @Valid
-    //@NotNull(message = "auth metadata can not be null")
     public AuthMetadataDto authMetadata=new AuthMetadataDto();
 
 }

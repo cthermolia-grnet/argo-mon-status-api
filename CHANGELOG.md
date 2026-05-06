@@ -79,6 +79,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#115](https://github.com/ARGOeu/argo-mon-status-api/pull/115) ARGO-5477 Support force parameter when creating new topology items
 - [#118](https://github.com/ARGOeu/argo-mon-status-api/pull/118) ARGO-5491 Status-api generate an INIT_CONNECTOR event
 - [#120](https://github.com/ARGOeu/argo-mon-status-api/pull/120) ARGO-5496 Add option for status page theming configuration
+- [#126](https://github.com/ARGOeu/argo-mon-status-api/pull/126) ARGO-5528 Implement topology feed management for tenant connectors
 
 ### Fix
 

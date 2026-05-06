@@ -19,6 +19,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
@@ -52,9 +53,7 @@ import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
 import org.grnet.status.dtos.tenant.node.*;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
-import org.grnet.status.dtos.topology.EndpointTopologyDto;
-import org.grnet.status.dtos.topology.GroupTopologyDto;
-import org.grnet.status.dtos.topology.ServiceTypeDto;
+import org.grnet.status.dtos.topology.*;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiNodeRequest;
 import org.grnet.status.repositories.StatusPageRepository;
 import org.grnet.status.repositories.TenantInvitationRepository;
@@ -596,7 +595,7 @@ public class TenantEndpoint {
 
     @Tag(name = "Tenant")
     @Operation(
-            summary = "Revoke an invitation invitation.",
+            summary = "Revoke an invitation.",
             description = "Revoke an invitation."
     )
     @APIResponse(
@@ -1790,6 +1789,145 @@ public class TenantEndpoint {
             TenantWebApiNodeRequest request) {
 
         var response = tenantService.updateTenantNode(id, request);
+
+        return Response.ok(response).build();
+    }
+
+    @Tag(name = "Tenant")
+    @Operation(
+            summary = "Update Tenant's feed topology information.",
+            description = "Updates the tenant topology feed configuration."
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "Tenant feed topology updated successfully.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Tenant's Readiness not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @PUT
+    @Path("/{id}/feeds/topology")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response updateTenantFeedTopology(
+            @Parameter(
+                    description = "The ID of the tenant to check readiness.",
+                    required = true,
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
+            @RequestBody(
+                    required = true,
+                    description = "Feed topology configuration. The tenant database configuration must be completed before this request is executed.",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = FeedTopologyDto.class),
+                            examples = {
+                                    @ExampleObject(
+                                            name = "EOSC service catalog",
+                                            value = """
+                                        {
+                                          "type": "eosc-service-catalog",
+                                          "feed_service_groups": "https://somewhere2.foo.bar/service_groups",
+                                          "feed_service_endpoints": "https://somewhere2.foo.bar/service_endpoints",
+                                          "feed_service_endpoints_extensions": "https://somewhere2.foo.bar/service_endpoints_extensions"
+                                        }
+                                        """
+                                    ),
+                                    @ExampleObject(
+                                            name = "CSV",
+                                            value = """
+                                        {
+                                          "type": "CSV",
+                                          "feed_url": "https://docs.google.com/spreadsheets/d/1xiptZgYG2bn78hwBCEP7esTDyfMvvEXFLfJY2HblfI8/export?gid=0&format=csv",
+                                          "paginated": "false",
+                                          "fetch_type": [
+                                            "ServiceGroups"
+                                          ],
+                                          "uid_endpoints": ""
+                                        }
+                                        """
+                                    )
+                            }
+                    )
+            )
+            @Valid @NotNull(message = "The request body is empty.")
+            FeedTopologyDto request) {
+
+        var feedTopologyResponse = tenantService.updateFeedTopology(id, request);
+
+        var response  = new InformativeResponse();
+        response.code = Integer.parseInt(feedTopologyResponse.status.getCode());
+        response.message = feedTopologyResponse.status.getMessage();
+
+        return Response.ok(response).build();
+    }
+
+    @Tag(name = "Tenant")
+    @Operation(
+            summary = "Retrieve Tenant's feed topology information.",
+            description = "Returns the feed topology configuration for the specified tenant."
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "Tenant feed topology retrieved successfully.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = FeedTopologyDto.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Tenant not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @GET
+    @Path("/{id}/feeds/topology")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"viewer", "admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response getTenantFeedTopology(
+            @Parameter(
+                    description = "The ID of the tenant.",
+                    required = true,
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id) {
+
+        var response = tenantService.getFeedTopology(id);
 
         return Response.ok(response).build();
     }

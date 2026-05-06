@@ -362,4 +362,19 @@ public interface ArgoWebApiClient {
             @QueryParam("end_time") String endTime,
             @QueryParam("history") Boolean history
     );
+
+    @GET
+    @Path("/api/v2/feeds/topology")
+    WebApiFeedsTopologyResponse getFeedTopology(
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId
+    ) throws WebApplicationException, ProcessingException;
+
+    @PUT
+    @Path("/api/v2/feeds/topology")
+    WebApiFeedsTopologyResponse updateFeedTopology(
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId,
+            FeedTopologyDto request
+    ) throws WebApplicationException, ProcessingException;
 }

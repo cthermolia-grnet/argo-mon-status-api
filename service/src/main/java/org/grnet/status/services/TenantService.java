@@ -20,7 +20,6 @@ import org.grnet.status.authorizations.service.AuthGroupSetupService;
 import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
-import org.grnet.status.dtos.report.WebApiReportResponse;
 import org.grnet.status.dtos.tenant.ContactDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
 import org.grnet.status.dtos.tenant.TenantResponseDto;
@@ -286,14 +285,6 @@ public class TenantService {
                     "Deleting Tenant... Failed to delete tenant from Argo Web Api",
                     e.getResponse().getStatus()
             );
-        } catch (JsonProcessingException e) {
-
-            Log.error("JSON processing error while deleting tenant {}", id, e);
-
-            throw new WebApplicationException(
-                    "Deleting Tenant.. Internal error while processing tenant data.",
-                    500
-            );
         } catch (Exception e) {
 
             Log.error("Unexpected error while deleting tenant {}", id, e);
@@ -325,12 +316,7 @@ public class TenantService {
                 });
 
                 imageUploadUtil.deleteImageIfExists(baseUploadTenantsImagesDir, t.name);
-                try {
-                    webApiService.deleteTenant(id);
-                } catch (JsonProcessingException e) {
-                    Log.error(e.getMessage(), e);
-                    throw new RuntimeException("Deleting Tenant... Failed to delete tenant with id: " + t.id + " from Argo Web Api");
-                }
+                webApiService.deleteTenant(id);
 
             } catch (RuntimeException e) {
 
@@ -1352,17 +1338,9 @@ public class TenantService {
         try {
             return webApiService.retrieveTenantReadinessWebApi(tenant.id);
 
-        } catch (JsonProcessingException e) {
-
-            Log.error("Invalid JSON received while checking readiness for tenant {}", id, e);
-
-            throw new WebApplicationException(
-                    "Checking Readiness... " + "Failed to check tenant readiness due to invalid response from Argo Web Api",
-                    502  // Bad Gateway (external system problem)
-            );
-
         } catch (WebApplicationException e) {
             Log.error("Argo Web Api error while checking readiness for tenant {}", id, e);
+
             throw new WebApplicationException(
                     "Checking readiness... " + "Argo Web Api error while checking tenant readiness",
                     e.getResponse().getStatus()
@@ -1467,9 +1445,14 @@ public class TenantService {
     public WebApiFeedsTopologyResponse updateFeedTopology(String tenantId, FeedTopologyDto request) {
 
         var tenant = tenantRepository.findById(tenantId);
+
         var response = webApiService.updateFeedTopologyWebApi(tenant.id, request);
 
-        notifyAmsInitTopologyConnector(tenantId);
+        try {
+            notifyAmsInitTopologyConnector(tenantId);
+        } catch (Exception e) {
+            Log.error("Failed to notify AMS for topology connector initialization", e);
+        }
 
         return response;
     }

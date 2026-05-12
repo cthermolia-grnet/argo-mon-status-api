@@ -1,22 +1,46 @@
 package org.grnet.status.dtos.argo;
 
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.List;
 
-@Schema(name = "ArgoWebApiErrorResponse", description = "Represents an error response returned by Argo Web API.")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ArgoWebApiErrorResponse {
 
-    @Schema(
-            type = SchemaType.STRING,
-            implementation = String.class,
-            description = "Error message",
-            example = "Node report not set")
-    public String message;
+    public Status status;
 
-    @Schema(
-            type = SchemaType.STRING,
-            implementation = String.class,
-            description = "Error code",
-            example = "404")
-    public int code;
+    public List<Error> errors;
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Status {
+        public String message;
+        public String code;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Error {
+        public String message;
+        public String code;
+        public String details;
+    }
+
+    public String extractMessage() {
+
+        if (errors != null && !errors.isEmpty()
+                && errors.get(0).details != null
+                && !errors.get(0).details.isBlank()) {
+            return errors.get(0).details;
+        }
+
+        if (status != null && status.message != null && !status.message.isBlank()) {
+            return status.message;
+        }
+
+        if (errors != null && !errors.isEmpty()
+                && errors.get(0).message != null
+                && !errors.get(0).message.isBlank()) {
+            return errors.get(0).message;
+        }
+
+        return "Argo Web Api request failed";
+    }
 }

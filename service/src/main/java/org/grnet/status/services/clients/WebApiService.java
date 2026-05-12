@@ -1,13 +1,13 @@
 package org.grnet.status.services.clients;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import io.quarkus.logging.Log;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.Status;
+import org.grnet.status.dtos.argo.ArgoWebApiErrorResponse;
 import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
 import org.grnet.status.dtos.tenant.node.*;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
@@ -17,247 +17,520 @@ import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
 import org.grnet.status.dtos.topology.FeedTopologyDto;
 import org.grnet.status.dtos.topology.WebApiFeedsTopologyResponse;
 import org.grnet.status.repositories.TenantRepository;
-import org.grnet.status.services.ReportService;
 import org.jboss.logging.Logger;
 
 @ApplicationScoped
 public class WebApiService {
+
     @ConfigProperty(name = "web.api.access.token")
     String accessToken;
+
     @Inject
     @RestClient
     ArgoWebApiClient argoWebApiClient;
+
     @Inject
     TenantRepository tenantRepository;
 
-    private static final Logger LOG = Logger.getLogger(ReportService.class);
+    private static final Logger LOG = Logger.getLogger(WebApiService.class);
 
-    public TenantWebApiGetResponse retrieveTenantWebApi(String id) throws JsonProcessingException {
-        TenantWebApiGetResponse webApiResponse = null;
+    public TenantWebApiGetResponse retrieveTenantWebApi(String id) {
+
         try {
-
-            //  var client = produceClient();
             return argoWebApiClient.getTenant(accessToken, id);
 
+        } catch (WebApplicationException e) {
+
+            int status = e.getResponse().getStatus();
+
+            logArgoError(e, "Retrieving Tenant", id);
+
+            throw new WebApplicationException(
+                    "Retrieving Tenant... tenant with id: " + id + " failed in Argo Web Api",
+                    status
+            );
+
         } catch (RuntimeException e) {
-            int status = 500; // default fallback
-            if (e instanceof WebApplicationException) {
-                status = ((WebApplicationException) e).getResponse().getStatus();
-            }
 
-            Log.error(e.getMessage(),e);
-           throw new WebApplicationException("Retrieving Tenants... tenant with id " + id + " failed in Argo Web Api",status);
+            LOG.errorf(e,
+                    "Retrieving Tenant failed in Argo Web Api. tenantId=%s",
+                    id
+            );
 
+            throw new WebApplicationException(
+                    "Retrieving Tenant... tenant with id: " + id + " failed in Argo Web Api",
+                    500
+            );
         }
     }
 
-    public void deleteTenant(String tenantId) throws JsonProcessingException {
+    public void deleteTenant(String tenantId) {
 
         try {
-            //  var client = produceClient();
+
             argoWebApiClient.deleteTenant(tenantId, accessToken);
-        } catch (Exception rollbackEx) {
-            // Log rollback failure, but do not mask original exception
-            System.err.println("Rollback failed for tenant id " + tenantId + ": " + rollbackEx.getMessage());
+
+        } catch (WebApplicationException e) {
+
+            int status = e.getResponse().getStatus();
+
+            logArgoError(e, "Deleting Tenant", tenantId);
+
+            throw new WebApplicationException(
+                    "Deleting Tenant... failed to delete tenant with id: " + tenantId + " from Argo Web Api",
+                    status
+            );
+
+        } catch (RuntimeException e) {
+
+            LOG.errorf(e,
+                    "Deleting Tenant failed in Argo Web Api. tenantId=%s",
+                    tenantId
+            );
+
+            throw new WebApplicationException(
+                    "Deleting Tenant... failed to delete tenant with id: " + tenantId + " from Argo Web Api",
+                    500
+            );
         }
     }
 
     public TenantWebApiCreateResponse createTenantInWebApi(TenantWebApiRequest webApiRequest) {
+
         try {
-            // var client = produceClient();
+
             return argoWebApiClient.createTenant(accessToken, webApiRequest);
+
         } catch (WebApplicationException e) {
 
-            WebApplicationException wae = (WebApplicationException) e;
-            int status = wae.getResponse().getStatus();
-            var message = wae.getMessage();
+            int status = e.getResponse().getStatus();
+
+            logArgoError(e, "Creating Tenant", webApiRequest.info.name);
+
+            var message = e.getMessage();
+
             if (status == 409) {
+
                 var optTenant = tenantRepository.fetchTenantByName(webApiRequest.info.name);
+
                 if (optTenant.isPresent()) {
-                    message ="Creating Tenant... Tenant already exists in Argo Monitoring Status with id" + optTenant.get().id;
+
+                    message = "Creating Tenant... Tenant already exists in Argo Monitoring Status with id: "
+                            + optTenant.get().id;
+
                 } else {
-                    message ="Creating Tenant... Tenant exists in Argo Web Api but not in Argo Monitoring Status";
+
+                    message = "Creating Tenant... Tenant exists in Argo Web Api but not in Argo Monitoring Status";
                 }
             }
+
             throw new WebApplicationException(message, status);
+
+        } catch (RuntimeException e) {
+
+            LOG.errorf(e,
+                    "Creating Tenant failed in Argo Web Api. tenantName=%s",
+                    webApiRequest.info.name
+            );
+
+            throw new WebApplicationException(
+                    "Creating Tenant... failed in Argo Web Api",
+                    500
+            );
         }
     }
 
     public Status updateTenantWebApi(TenantWebApiRequest webApiRequest, String id) {
+
         try {
 
-            // var client = produceClient();
-            //return client.updateTenant(id, accessToken, webApiRequest);
             argoWebApiClient.updateTenantInfo(id, accessToken, webApiRequest);
+
             argoWebApiClient.updateTenantTopology(id, accessToken, webApiRequest);
 
             var tenantNode = new TenantWebApiNodeRequest();
             tenantNode.node = webApiRequest.node;
+
             updateTenantNodeWebApi(id, tenantNode);
 
             return argoWebApiClient.updateTenantDBConf(id, accessToken, webApiRequest);
-        } catch (Exception e) {
-            throw new WebApplicationException("Updating Tenant... Failed to update tenant with id: " + id +" in Argo Web Api", 502);
+
+        } catch (WebApplicationException e) {
+
+            int status = e.getResponse().getStatus();
+
+            logArgoError(e, "Updating Tenant", id);
+
+            throw new WebApplicationException(
+                    "Updating Tenant... failed to update tenant with id: " + id + " in Argo Web Api",
+                    status
+            );
+
+        } catch (RuntimeException e) {
+
+            LOG.errorf(e,
+                    "Updating Tenant failed in Argo Web Api. tenantId=%s",
+                    id
+            );
+
+            throw new WebApplicationException(
+                    "Updating Tenant... failed to update tenant with id: " + id + " in Argo Web Api",
+                    500
+            );
         }
     }
 
-    public WebApiNodeResponse updateTenantNodeWebApi(String tenantId, TenantWebApiNodeRequest request) {
+    public WebApiNodeResponse updateTenantNodeWebApi(String tenantId,
+                                                     TenantWebApiNodeRequest request) {
 
         LOG.info("Updating Tenant Node...");
         LOG.infof("REQUEST NODE VALUE = %s", request == null ? null : request.node);
 
         try {
-            if (Boolean.TRUE.equals(request.node)) {
+
+            if (request != null && Boolean.TRUE.equals(request.node)) {
+
                 LOG.info("NODE IS TRUE");
+
                 return argoWebApiClient.setTenantNode(tenantId, accessToken);
             }
 
             LOG.info("NODE IS NULL");
+
             return argoWebApiClient.unsetTenantNode(tenantId, accessToken);
 
-        } catch (Exception e) {
-            LOG.error("Failed updating tenant node", e);
+        } catch (WebApplicationException e) {
+
+            int status = e.getResponse().getStatus();
+
+            logArgoError(e, "Updating Tenant Node", tenantId);
+
             throw new WebApplicationException(
-                    "Updating Tenant's Node information... Failed to update tenant with id: " + tenantId + " in Argo Web Api",
-                    502
+                    "Updating Tenant Node... failed to update tenant node for tenant with id: "
+                            + tenantId + " in Argo Web Api",
+                    status
+            );
+
+        } catch (RuntimeException e) {
+
+            LOG.errorf(e,
+                    "Updating Tenant Node failed in Argo Web Api. tenantId=%s",
+                    tenantId
+            );
+
+            throw new WebApplicationException(
+                    "Updating Tenant Node... failed to update tenant node for tenant with id: "
+                            + tenantId + " in Argo Web Api",
+                    500
             );
         }
     }
 
+    public WebApiTenantReadiness retrieveTenantReadinessWebApi(String id) {
 
-    public WebApiTenantReadiness retrieveTenantReadinessWebApi(String id) throws JsonProcessingException {
         try {
 
-            //  var client = produceClient();
-            return argoWebApiClient.getTenantReadiness(id,accessToken);
+            return argoWebApiClient.getTenantReadiness(id, accessToken);
+
+        } catch (WebApplicationException e) {
+
+            int status = e.getResponse().getStatus();
+
+            logArgoError(e, "Retrieving Tenant Readiness", id);
+
+            throw new WebApplicationException(
+                    "Retrieving Tenant Readiness... tenant with id: " + id + " failed in Argo Web Api",
+                    status
+            );
 
         } catch (RuntimeException e) {
-            int status = 500; // default fallback
-            if (e instanceof WebApplicationException) {
-                status = ((WebApplicationException) e).getResponse().getStatus();
-            }
 
-            Log.error(e.getMessage(),e);
-            throw new WebApplicationException("Retrieving Tenant's Readiness... tenant with id " + id + "failed in Argo Web Api", status);
+            LOG.errorf(e,
+                    "Retrieving Tenant Readiness failed in Argo Web Api. tenantId=%s",
+                    id
+            );
+
+            throw new WebApplicationException(
+                    "Retrieving Tenant Readiness... tenant with id: " + id + " failed in Argo Web Api",
+                    500
+            );
+        }
+    }
+
+    public TenantWebApiGetResponse retrieveTenantsWebApi() {
+
+        try {
+
+            return argoWebApiClient.getTenants(accessToken);
+
+        } catch (WebApplicationException e) {
+
+            int status = e.getResponse().getStatus();
+
+            logArgoError(e, "Retrieving Tenants", "all");
+
+            throw new WebApplicationException(
+                    "Retrieving Tenants... failed in Argo Web Api",
+                    status
+            );
+
+        } catch (RuntimeException e) {
+
+            LOG.error(e);
+
+            throw new WebApplicationException(
+                    "Retrieving Tenants... failed in Argo Web Api",
+                    500
+            );
         }
     }
 
     public void validateTenantInitialized(String tenantId, String resourceName) {
 
         LOG.info("Checking if Tenant is initialized...");
+
         var tenant = argoWebApiClient.getTenant(accessToken, tenantId);
+
         var dbConf = tenant.getData().get(0).getDb_conf();
+
         var mongodbReady = dbConf != null && !dbConf.isEmpty();
 
         if (!mongodbReady) {
-            throw new WebApplicationException(resourceName + " are not available. The tenant is still initializing.", 400);
+
+            throw new WebApplicationException(
+                    resourceName + " are not available. The tenant is still initializing.",
+                    400
+            );
         }
     }
 
-    public TenantWebApiGetResponse retrieveTenantsWebApi() throws JsonProcessingException {
+    public WebApiNodeReportResponse setNodeReportWebApi(String reportId,
+                                                        String tenantId) {
+
         try {
-            return argoWebApiClient.getTenants(accessToken);
-        } catch (RuntimeException e) {
-            int status = 500;
-            if (e instanceof WebApplicationException) {
-                status = ((WebApplicationException) e).getResponse().getStatus();
-            }
 
-            Log.error(e.getMessage(), e);
-            throw new WebApplicationException("Retrieving Tenants... failed in Argo Web Api", status);
-        }
-    }
-
-
-    /**
-     * Sets the default node report in Argo Web Api.
-     *
-     * @param reportId report identifier
-     * @return status response
-     */
-    public WebApiNodeReportResponse setNodeReportWebApi(String reportId, String tenantId) {
-        try {
             return argoWebApiClient.setNodeReport(reportId, accessToken, tenantId);
-        } catch (Exception e) {
+
+        } catch (WebApplicationException e) {
+
+            int status = e.getResponse().getStatus();
+
+            logArgoError(e, "Updating Report", reportId);
+
             throw new WebApplicationException(
-                    "Updating Report... Failed to set node report with id: " + reportId + " in Argo Web Api",
-                    502
+                    "Updating Report... failed to set node report with id: "
+                            + reportId + " in Argo Web Api",
+                    status
+            );
+
+        } catch (RuntimeException e) {
+
+            LOG.errorf(e,
+                    "Updating Report failed in Argo Web Api. reportId=%s",
+                    reportId
+            );
+
+            throw new WebApplicationException(
+                    "Updating Report... failed to set node report with id: "
+                            + reportId + " in Argo Web Api",
+                    500
             );
         }
     }
 
-    public WebApiNodeAvailabilityResponse retrieveNodeAvailability(String nodeName, String date, String startTime, String endTime, String startDate, String endDate, String granularity) {
+    public WebApiNodeAvailabilityResponse retrieveNodeAvailability(String nodeName,
+                                                                   String date,
+                                                                   String startTime,
+                                                                   String endTime,
+                                                                   String startDate,
+                                                                   String endDate,
+                                                                   String granularity) {
+
         try {
+
             return argoWebApiClient.getNodeAvailabilityCapability(
-                    accessToken, nodeName, date, startTime, endTime, startDate, endDate, granularity
+                    accessToken,
+                    nodeName,
+                    date,
+                    startTime,
+                    endTime,
+                    startDate,
+                    endDate,
+                    granularity
             );
-        } catch (RuntimeException e) {
-            var status = 500;
-            if (e instanceof WebApplicationException) {
-                status = ((WebApplicationException) e).getResponse().getStatus();
-            }
 
-            Log.error(e.getMessage(), e);
+        } catch (WebApplicationException e) {
+
+            int status = e.getResponse().getStatus();
+
+            logArgoError(e, "Retrieving Node Availability", nodeName);
+
             throw new WebApplicationException(
-                    "Retrieving Node Availability... node with name " + nodeName + " failed in Argo Web Api", status
+                    "Retrieving Node Availability... node with name: "
+                            + nodeName + " failed in Argo Web Api",
+                    status
+            );
+
+        } catch (RuntimeException e) {
+
+            LOG.errorf(e,
+                    "Retrieving Node Availability failed in Argo Web Api. nodeName=%s",
+                    nodeName
+            );
+
+            throw new WebApplicationException(
+                    "Retrieving Node Availability... node with name: "
+                            + nodeName + " failed in Argo Web Api",
+                    500
             );
         }
     }
-    public WebApiNodeStatusResponse retrieveNodeStatus(String nodeName, String startTime, String endTime, Boolean history) {
-        try {
-            return argoWebApiClient.getNodeStatus(accessToken, nodeName, startTime, endTime, history);
-        } catch (RuntimeException e) {
-            var status = 500;
-            if (e instanceof WebApplicationException) {
-                status = ((WebApplicationException) e).getResponse().getStatus();
-            }
 
-            Log.error(e.getMessage(), e);
+    public WebApiNodeStatusResponse retrieveNodeStatus(String nodeName,
+                                                       String startTime,
+                                                       String endTime,
+                                                       Boolean history) {
+
+        try {
+
+            return argoWebApiClient.getNodeStatus(
+                    accessToken,
+                    nodeName,
+                    startTime,
+                    endTime,
+                    history
+            );
+
+        } catch (WebApplicationException e) {
+
+            int status = e.getResponse().getStatus();
+
+            logArgoError(e, "Retrieving Node Status", nodeName);
+
             throw new WebApplicationException(
-                    "Retrieving Node Status... node with name " + nodeName + " failed in Argo Web Api", status
+                    "Retrieving Node Status... node with name: "
+                            + nodeName + " failed in Argo Web Api",
+                    status
+            );
+
+        } catch (RuntimeException e) {
+
+            LOG.errorf(e,
+                    "Retrieving Node Status failed in Argo Web Api. nodeName=%s",
+                    nodeName
+            );
+
+            throw new WebApplicationException(
+                    "Retrieving Node Status... node with name: "
+                            + nodeName + " failed in Argo Web Api",
+                    500
             );
         }
     }
 
     public WebApiFeedsTopologyResponse retrieveFeedTopologyWebApi(String tenantId) {
-        try {
-            return argoWebApiClient.getFeedTopology(accessToken, tenantId);
-        } catch (RuntimeException e) {
-            int status = 500;
 
-            if (e instanceof WebApplicationException) {
-                status = ((WebApplicationException) e).getResponse().getStatus();
-            }
+        try {
+
+            return argoWebApiClient.getFeedTopology(accessToken, tenantId);
+
+        } catch (WebApplicationException e) {
+
+            int status = e.getResponse().getStatus();
+
+            logArgoError(e, "Retrieving Feed Topology", tenantId);
 
             if (status == 404) {
+
                 throw new WebApplicationException(
-                        "Retrieving Feed Topology... topology feed has not been configured for tenant with id: " + tenantId,
+                        "Retrieving Feed Topology... topology feed has not been configured for tenant with id: "
+                                + tenantId,
                         404
                 );
             }
 
-            Log.error(e.getMessage(), e);
             throw new WebApplicationException(
-                    "Retrieving Feed Topology... failed to retrieve topology feed for tenant with id: " + tenantId + " from Argo Web Api",
+                    "Retrieving Feed Topology... failed to retrieve topology feed for tenant with id: "
+                            + tenantId + " from Argo Web Api",
                     status
+            );
+
+        } catch (RuntimeException e) {
+
+            LOG.errorf(e,
+                    "Retrieving Feed Topology failed in Argo Web Api. tenantId=%s",
+                    tenantId
+            );
+
+            throw new WebApplicationException(
+                    "Retrieving Feed Topology... failed to retrieve topology feed for tenant with id: "
+                            + tenantId + " from Argo Web Api",
+                    500
             );
         }
     }
 
-    public WebApiFeedsTopologyResponse updateFeedTopologyWebApi(String tenantId, FeedTopologyDto request) {
+    public WebApiFeedsTopologyResponse updateFeedTopologyWebApi(String tenantId,
+                                                                FeedTopologyDto request) {
+
         try {
+
             return argoWebApiClient.updateFeedTopology(accessToken, tenantId, request);
-        } catch (RuntimeException e) {
-            int status = 500;
 
-            if (e instanceof WebApplicationException) {
-                status = ((WebApplicationException) e).getResponse().getStatus();
-            }
+        } catch (WebApplicationException e) {
 
-            Log.error(e.getMessage(), e);
+            int status = e.getResponse().getStatus();
+
+            logArgoError(e, "Updating Feed Topology", tenantId);
+
             throw new WebApplicationException(
-                    "Updating Feed Topology... failed to update topology feed for tenant with id: " + tenantId + " in Argo Web Api",
+                    "Updating Feed Topology... failed to update topology feed for tenant with id: "
+                            + tenantId + " in Argo Web Api",
                     status
+            );
+
+        } catch (RuntimeException e) {
+
+            LOG.errorf(e,
+                    "Updating Feed Topology failed in Argo Web Api. tenantId=%s",
+                    tenantId
+            );
+
+            throw new WebApplicationException(
+                    "Updating Feed Topology... failed to update topology feed for tenant with id: "
+                            + tenantId + " in Argo Web Api",
+                    500
+            );
+        }
+    }
+
+    private void logArgoError(WebApplicationException e,
+                              String operation,
+                              String identifier) {
+
+        try {
+
+            var body = e.getResponse().readEntity(String.class);
+
+            var error = new ObjectMapper()
+                    .readValue(body, ArgoWebApiErrorResponse.class);
+
+            LOG.errorf(
+                    "%s failed in Argo Web Api. identifier=%s, status=%s, argoMessage=%s",
+                    operation,
+                    identifier,
+                    e.getResponse().getStatus(),
+                    error.extractMessage()
+            );
+
+        } catch (Exception ex) {
+
+            LOG.errorf(
+                    ex,
+                    "Failed parsing Argo Web Api error response. operation=%s, identifier=%s, status=%s",
+                    operation,
+                    identifier,
+                    e.getResponse().getStatus()
             );
         }
     }

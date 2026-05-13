@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.Status;
@@ -145,7 +146,6 @@ public class WebApiService {
         try {
 
             argoWebApiClient.updateTenantInfo(id, accessToken, webApiRequest);
-
             argoWebApiClient.updateTenantTopology(id, accessToken, webApiRequest);
 
             var tenantNode = new TenantWebApiNodeRequest();
@@ -190,14 +190,11 @@ public class WebApiService {
 
             if (request != null && Boolean.TRUE.equals(request.node)) {
 
-                LOG.info("NODE IS TRUE");
 
                 return argoWebApiClient.setTenantNode(tenantId, accessToken);
             }
-
-            LOG.info("NODE IS NULL");
-
             return argoWebApiClient.unsetTenantNode(tenantId, accessToken);
+
 
         } catch (WebApplicationException e) {
 
@@ -290,9 +287,7 @@ public class WebApiService {
         LOG.info("Checking if Tenant is initialized...");
 
         var tenant = argoWebApiClient.getTenant(accessToken, tenantId);
-
         var dbConf = tenant.getData().get(0).getDb_conf();
-
         var mongodbReady = dbConf != null && !dbConf.isEmpty();
 
         if (!mongodbReady) {
@@ -304,9 +299,16 @@ public class WebApiService {
         }
     }
 
-    public WebApiNodeReportResponse setNodeReportWebApi(String reportId,
-                                                        String tenantId) {
 
+
+
+    /**
+     * Sets the default node report in Argo Web Api.
+     *
+     * @param reportId report identifier
+     * @return status response
+     */
+    public WebApiNodeReportResponse setNodeReportWebApi(String reportId, String tenantId) {
         try {
 
             return argoWebApiClient.setNodeReport(reportId, accessToken, tenantId);
@@ -338,26 +340,14 @@ public class WebApiService {
         }
     }
 
-    public WebApiNodeAvailabilityResponse retrieveNodeAvailability(String nodeName,
-                                                                   String date,
-                                                                   String startTime,
-                                                                   String endTime,
-                                                                   String startDate,
-                                                                   String endDate,
-                                                                   String granularity) {
-
+    public WebApiNodeAvailabilityResponse retrieveNodeAvailability(String nodeName, String item,String date, String startTime, String endTime, String startDate, String endDate, String granularity) {
         try {
+            if (StringUtils.isBlank(item)) {
+                return argoWebApiClient.getNodeAvailabilityCapability(accessToken, nodeName, date, startTime, endTime, startDate, endDate, granularity);
+            }
 
-            return argoWebApiClient.getNodeAvailabilityCapability(
-                    accessToken,
-                    nodeName,
-                    date,
-                    startTime,
-                    endTime,
-                    startDate,
-                    endDate,
-                    granularity
-            );
+            return argoWebApiClient.getNodeAvailabilityCapabilityByService(
+                    accessToken, nodeName, item, date, startTime, endTime, startDate, endDate, granularity);
 
         } catch (WebApplicationException e) {
 
@@ -366,40 +356,31 @@ public class WebApiService {
             logArgoError(e, "Retrieving Node Availability", nodeName);
 
             throw new WebApplicationException(
-                    "Retrieving Node Availability... node with name: "
-                            + nodeName + " failed in Argo Web Api",
+                    "Retrieving Node Availability... node with name " + nodeName + " failed in Argo Web Api",
                     status
             );
 
         } catch (RuntimeException e) {
 
             LOG.errorf(e,
-                    "Retrieving Node Availability failed in Argo Web Api. nodeName=%s",
-                    nodeName
+                    "Retrieving Node Availability failed in Argo Web Api. nodeName=%s, item=%s",
+                    nodeName,
+                    item
             );
 
             throw new WebApplicationException(
-                    "Retrieving Node Availability... node with name: "
-                            + nodeName + " failed in Argo Web Api",
+                    "Retrieving Node Availability... node with name " + nodeName + " failed in Argo Web Api",
                     500
             );
         }
     }
-
-    public WebApiNodeStatusResponse retrieveNodeStatus(String nodeName,
-                                                       String startTime,
-                                                       String endTime,
-                                                       Boolean history) {
-
+    public WebApiNodeStatusResponse retrieveNodeStatus(String nodeName, String item, String startTime, String endTime, Boolean history) {
         try {
+            if (StringUtils.isBlank(item)) {
+                return argoWebApiClient.getNodeStatus(accessToken, nodeName, startTime, endTime, history);
+            }
 
-            return argoWebApiClient.getNodeStatus(
-                    accessToken,
-                    nodeName,
-                    startTime,
-                    endTime,
-                    history
-            );
+            return argoWebApiClient.getNodeStatusByService(accessToken, nodeName, item, startTime, endTime, history);
 
         } catch (WebApplicationException e) {
 
@@ -408,28 +389,26 @@ public class WebApiService {
             logArgoError(e, "Retrieving Node Status", nodeName);
 
             throw new WebApplicationException(
-                    "Retrieving Node Status... node with name: "
-                            + nodeName + " failed in Argo Web Api",
+                    "Retrieving Node Status... node with name " + nodeName + " failed in Argo Web Api",
                     status
             );
 
         } catch (RuntimeException e) {
 
             LOG.errorf(e,
-                    "Retrieving Node Status failed in Argo Web Api. nodeName=%s",
-                    nodeName
+                    "Retrieving Node Status failed in Argo Web Api. nodeName=%s, item=%s",
+                    nodeName,
+                    item
             );
 
             throw new WebApplicationException(
-                    "Retrieving Node Status... node with name: "
-                            + nodeName + " failed in Argo Web Api",
+                    "Retrieving Node Status... node with name " + nodeName + " failed in Argo Web Api",
                     500
             );
         }
     }
 
     public WebApiFeedsTopologyResponse retrieveFeedTopologyWebApi(String tenantId) {
-
         try {
 
             return argoWebApiClient.getFeedTopology(accessToken, tenantId);
@@ -470,9 +449,7 @@ public class WebApiService {
         }
     }
 
-    public WebApiFeedsTopologyResponse updateFeedTopologyWebApi(String tenantId,
-                                                                FeedTopologyDto request) {
-
+    public WebApiFeedsTopologyResponse updateFeedTopologyWebApi(String tenantId, FeedTopologyDto request) {
         try {
 
             return argoWebApiClient.updateFeedTopology(accessToken, tenantId, request);
@@ -534,4 +511,41 @@ public class WebApiService {
             );
         }
     }
+
+    public WebApiNodeSummaryResponse retrieveNodeSummary(String nodeName, String item, String startDate, String endDate, String granularity) {
+
+        try {
+            return argoWebApiClient.getNodeSummaryCapability(accessToken, nodeName, item, startDate, endDate, granularity);
+
+        } catch (WebApplicationException e) {
+
+            int status = e.getResponse().getStatus();
+
+            logArgoError(e, "Retrieving Node Summary", nodeName);
+
+            throw new WebApplicationException(
+                    "Retrieving Node Summary... node with name " + nodeName +
+                            " and service " + item +
+                            " failed in Argo Web Api",
+                    status
+            );
+
+        } catch (RuntimeException e) {
+
+            LOG.errorf(e,
+                    "Retrieving Node Summary failed in Argo Web Api. nodeName=%s, item=%s",
+                    nodeName,
+                    item
+            );
+
+            throw new WebApplicationException(
+                    "Retrieving Node Summary... node with name " + nodeName +
+                            " and service " + item +
+                            " failed in Argo Web Api",
+                    500
+            );
+        }
+    }
+
+
 }

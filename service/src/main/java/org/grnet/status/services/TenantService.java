@@ -29,6 +29,7 @@ import org.grnet.status.dtos.tenant.node.WebApiNodeResponse;
 import org.grnet.status.dtos.tenant.metadata.InstanceDto;
 import org.grnet.status.dtos.tenant.metadata.TenantMetadata;
 import org.grnet.status.dtos.tenant.node.WebApiNodeStatusResponse;
+import org.grnet.status.dtos.tenant.node.WebApiNodeSummaryResponse;
 import org.grnet.status.dtos.tenant.status.EventStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
@@ -1390,11 +1391,11 @@ public class TenantService {
      * @param granularity optional aggregation level (daily or monthly)
      * @return availability results for the node's services
      */
-    public WebApiNodeAvailabilityResponse getAvailability(String id, String date, String startTime, String endTime, String startDate, String endDate, String granularity) {
+    public WebApiNodeAvailabilityResponse getAvailability(String id, String item, String date, String startTime, String endTime, String startDate, String endDate, String granularity) {
 
         var tenant = tenantRepository.findById(id);
 
-        return webApiService.retrieveNodeAvailability(tenant.name, date, startTime, endTime, startDate, endDate, granularity);
+        return webApiService.retrieveNodeAvailability(tenant.name, item, date, startTime, endTime, startDate, endDate, granularity);
     }
 
 
@@ -1407,11 +1408,11 @@ public class TenantService {
      * @param history   optional flag to include full status history
      * @return status results for the node's services
      */
-    public WebApiNodeStatusResponse getStatus(String id, String startTime, String endTime, Boolean history) {
+    public WebApiNodeStatusResponse getStatus(String id, String item, String startTime, String endTime, Boolean history) {
 
         var tenant = tenantRepository.findById(id);
 
-        return webApiService.retrieveNodeStatus(tenant.name, startTime, endTime, history);
+        return webApiService.retrieveNodeStatus(tenant.name, item, startTime, endTime, history);
     }
 
     /**
@@ -1483,6 +1484,23 @@ public class TenantService {
         );
 
         return notifyAmsInitConnector(tenantId, alert);
+    }
+
+    /**
+     * Retrieves the summary capability for the specified tenant and service.
+     *
+     * @param tenantId    tenant identifier
+     * @param item service name to examine
+     * @param startDate   start date
+     * @param endDate     end date
+     * @param granularity result granularity
+     * @return node summary response
+     */
+    public WebApiNodeSummaryResponse getSummary(String tenantId, String item, String startDate, String endDate, String granularity) {
+
+        var tenant = tenantRepository.findById(tenantId);
+
+        return webApiService.retrieveNodeSummary(tenant.name, item, startDate, endDate, granularity);
     }
 
 

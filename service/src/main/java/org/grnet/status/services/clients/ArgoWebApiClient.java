@@ -354,10 +354,35 @@ public interface ArgoWebApiClient {
     );
 
     @GET
+    @Path("/api/v4/nodes/{nodeName}/capabilities/availability/{item}")
+    WebApiNodeAvailabilityResponse getNodeAvailabilityCapabilityByService(
+            @HeaderParam("x-api-key") String accessToken,
+            @PathParam("nodeName") String nodeName,
+            @PathParam("item") String item,
+            @QueryParam("date") String date,
+            @QueryParam("start_time") String startTime,
+            @QueryParam("end_time") String endTime,
+            @QueryParam("start_date") String startDate,
+            @QueryParam("end_date") String endDate,
+            @QueryParam("granularity") String granularity
+    );
+
+    @GET
     @Path("/api/v4/nodes/{nodeName}/capabilities/status")
     WebApiNodeStatusResponse getNodeStatus(
             @HeaderParam("x-api-key") String accessToken,
             @PathParam("nodeName") String nodeName,
+            @QueryParam("start_time") String startTime,
+            @QueryParam("end_time") String endTime,
+            @QueryParam("history") Boolean history
+    );
+
+    @GET
+    @Path("/api/v4/nodes/{nodeName}/capabilities/status/{item}")
+    WebApiNodeStatusResponse getNodeStatusByService(
+            @HeaderParam("x-api-key") String accessToken,
+            @PathParam("nodeName") String nodeName,
+            @PathParam("item") String item,
             @QueryParam("start_time") String startTime,
             @QueryParam("end_time") String endTime,
             @QueryParam("history") Boolean history
@@ -377,4 +402,15 @@ public interface ArgoWebApiClient {
             @HeaderParam("x-tenant-id") String tenantId,
             FeedTopologyDto request
     ) throws WebApplicationException, ProcessingException;
+
+    @GET
+    @Path("/api/v4/nodes/{nodeName}/capabilities/summary/{item}")
+    WebApiNodeSummaryResponse getNodeSummaryCapability(
+            @HeaderParam("x-api-key") String apiKey,
+            @PathParam("nodeName") String nodeName,
+            @PathParam("item") String item,
+            @QueryParam("start_date") String startDate,
+            @QueryParam("end_date") String endDate,
+            @QueryParam("granularity") String granularity
+    );
 }

@@ -1278,7 +1278,7 @@ public class TenantEndpoint {
             @Parameter(
                     description = "The ID of the report.",
                     required = true,
-                    example = "13a28cec-2940-4fcf-ad95-57fbdaf5bbad",
+                    example = "cf010255-cda3-49d8-92d1-926c2c6cf9eb",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("report-id") @Valid String reportId) {
 
@@ -2823,6 +2823,11 @@ public class TenantEndpoint {
                     example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id") String id,
+            @Parameter(name = "item", in = QUERY,
+                    description = "Service name to target under the node.",
+                    example = "WIKI")
+            @QueryParam("item")
+            String item,
             @Parameter(name = "date", in = QUERY,
                     description = "Target date (YYYY-MM-DD).")
             @QueryParam("date")
@@ -2855,7 +2860,7 @@ public class TenantEndpoint {
             @QueryParam("granularity")
             String granularity
     ) {
-        var availability = tenantService.getAvailability(id, date, startTime, endTime, startDate, endDate, granularity);
+        var availability = tenantService.getAvailability(id, item, date, startTime, endTime, startDate, endDate, granularity);
 
         return Response.ok().entity(availability).build();
     }
@@ -2895,12 +2900,18 @@ public class TenantEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @CheckEntitlements(roles = {"admin"}, resolvers = {
             @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
-    })public Response getStatus(
+    })
+    public Response getStatus(
             @Parameter(description = "The ID of the tenant.",
                     required = true,
                     example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
                     schema = @Schema(type = SchemaType.STRING))
             @PathParam("id") String id,
+            @Parameter(name = "item", in = QUERY,
+                    description = "Service name to target under the node.",
+                    example = "WIKI")
+            @QueryParam("item")
+            String item,
             @Parameter(name = "start_time", in = QUERY,
                     description = "Start time in W3C format.")
             @QueryParam("start_time")
@@ -2917,8 +2928,86 @@ public class TenantEndpoint {
             @QueryParam("history")
             Boolean history
     ) {
-        var status = tenantService.getStatus(id, startTime, endTime, history);
+        var status = tenantService.getStatus(id, item, startTime, endTime, history);
 
         return Response.ok().entity(status).build();
+    }
+
+    @Tag(name = "Capabilities")
+    @Operation(
+            summary = "Retrieve tenant node summary capability.",
+            description = "Retrieves the daily availability and uptime summary for a specific service under the tenant node."
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "Tenant node summary details.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = WebApiNodeSummaryResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Tenant not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @GET
+    @Path("/{id}/capabilities/summary/{item}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CheckEntitlements(roles = {"admin"}, resolvers = {
+            @Resolver(idResolver = TenantNameResolver.class, pathId = "id")
+    })
+    public Response getSummary(
+            @Parameter(
+                    description = "The ID of the tenant.",
+                    required = true,
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid
+            @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+            @Parameter(
+                    description = "The service name to examine.",
+                    required = true,
+                    example = "WIKI",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("item")
+            String item,
+            @Parameter(name = "start_date", in = QUERY,
+                    description = "Start date (YYYY-MM-DD).")
+            @QueryParam("start_date")
+            @Valid
+            @CheckDateFormat(pattern = "yyyy-MM-dd", message = "Valid date format is yyyy-MM-dd.")
+            String startDate,
+
+            @Parameter(name = "end_date", in = QUERY,
+                    description = "End date (YYYY-MM-DD).")
+            @QueryParam("end_date")
+            @Valid
+            @CheckDateFormat(pattern = "yyyy-MM-dd", message = "Valid date format is yyyy-MM-dd.")
+            String endDate,
+
+            @Parameter(name = "granularity", in = QUERY,
+                    description = "Granularity of results (daily, monthly).",
+                    example = "daily")
+            @QueryParam("granularity")
+            String granularity
+    ) {
+
+        var summary = tenantService.getSummary(id, item, startDate, endDate, granularity);
+
+        return Response.ok().entity(summary).build();
     }
 }

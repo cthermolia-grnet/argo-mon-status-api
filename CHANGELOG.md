@@ -80,6 +80,8 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#118](https://github.com/ARGOeu/argo-mon-status-api/pull/118) ARGO-5491 Status-api generate an INIT_CONNECTOR event
 - [#120](https://github.com/ARGOeu/argo-mon-status-api/pull/120) ARGO-5496 Add option for status page theming configuration
 - [#126](https://github.com/ARGOeu/argo-mon-status-api/pull/126) ARGO-5528 Implement topology feed management for tenant connectors
+- [#128](https://github.com/ARGOeu/argo-mon-status-api/pull/128) ARGO-5538 Add support for ARGO Web API summary capability endpoint in Status ARGO
+
 - [#130](https://github.com/ARGOeu/argo-mon-status-api/pull/130) ARGO-5545 Trigger INIT_POEM AMS notification after INIT_COMPUTE_ENGINE completion
 
 ### Fix

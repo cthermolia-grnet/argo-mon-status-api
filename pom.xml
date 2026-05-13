@@ -51,6 +51,19 @@
 
     </properties>
 
+    <repositories>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/ARGOeu/quarkus-auth</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
     <dependencyManagement>
         <dependencies>
             <!-- Quarkus platform BOM -->
@@ -60,6 +73,12 @@
                 <version>${quarkus.platform.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.grnet</groupId>
+                <artifactId>quarkus-auth</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
             </dependency>
 
             <!-- Internal modules -->

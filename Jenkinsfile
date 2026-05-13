@@ -19,10 +19,28 @@ pipeline {
             }
             steps {
                 echo 'Argo Mon Status Packaging & Testing'
-                sh """
-                cd ${WORKSPACE}/${PROJECT_DIR}
-                mvn clean package -Dquarkus.package.type=uber-jar
-                """
+                withCredentials([usernamePassword(
+                    credentialsId: 'newgrnetci-read-maven-packages',
+                    usernameVariable: 'GHPKG_USERNAME',
+                    passwordVariable: 'GHPKG_TOKEN'
+                )]) {
+                    sh """
+                    mkdir -p ~/.m2
+                    cat > ~/.m2/settings.xml <<EOF
+<settings>
+  <servers>
+    <server>
+      <id>github</id>
+      <username>\${GHPKG_USERNAME}</username>
+      <password>\${GHPKG_TOKEN}</password>
+    </server>
+  </servers>
+</settings>
+EOF
+                    cd ${WORKSPACE}/${PROJECT_DIR}
+                    mvn clean package -Dquarkus.package.type=uber-jar
+                    """
+                }
                 junit '**/target/surefire-reports/*.xml'
                 archiveArtifacts artifacts: '**/api/target/*.jar'
                 step([ $class: 'JacocoPublisher' ])

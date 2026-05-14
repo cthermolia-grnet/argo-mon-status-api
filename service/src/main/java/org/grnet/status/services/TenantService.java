@@ -682,6 +682,8 @@ public class TenantService {
         request.jobs = mergeJobs(existingStatus.jobs, request.jobs);
 
         var updatedStatusJson = TenantMapper.INSTANCE.mergeJobsIntoStatus(tenant.getStatus(), request);
+        var shouldTriggerPoem = isComputeEngineCompleted(request);
+
 
         try {
             // ✅ DB update
@@ -692,6 +694,11 @@ public class TenantService {
             var response = new TenantStatusFullResponse();
             response.name = tenant.name;
             response.status = statusDto;
+
+            if (shouldTriggerPoem) {
+                var alert = buildAlert(EventName.INIT_POEM, tenant, String.valueOf(Instant.now()));
+                notifyAmsInitConnector(id, alert);
+            }
 
             return response;
 
@@ -1588,5 +1595,11 @@ public class TenantService {
         tenantRepository.persist(existingTenant);
 
         Log.infof("Tenant updated locally: %s (%s)", existingTenant.getName(), existingTenant.getId());
+    }
+
+    private boolean isComputeEngineCompleted(TenantStatusDto request) {
+        return request.jobs.stream()
+                .anyMatch(j -> EventName.INIT_COMPUTE_ENGINE.name().equals(j.name) &&
+                        EventStatus.COMPLETED.name().equals(j.getStatus()));
     }
 }

@@ -6,8 +6,9 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ArgoWebApiErrorResponse {
 
+    public String code;
+    public String message;
     public Status status;
-
     public List<Error> errors;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -24,6 +25,10 @@ public class ArgoWebApiErrorResponse {
     }
 
     public String extractMessage() {
+
+        if (message != null && !message.isBlank()) {
+            return message;
+        }
 
         if (errors != null && !errors.isEmpty()
                 && errors.get(0).details != null

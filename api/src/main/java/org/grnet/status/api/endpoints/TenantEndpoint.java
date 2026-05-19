@@ -53,6 +53,8 @@ import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
 import org.grnet.status.dtos.tenant.node.*;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
+import org.grnet.status.dtos.tenant.webapi.TenantWebApiGroupResultsResponse;
+import org.grnet.status.dtos.tenant.webapi.TenantWebApiGroupStatusResponse;
 import org.grnet.status.dtos.topology.*;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiNodeRequest;
 import org.grnet.status.enums.resources.TenantResource;
@@ -3005,6 +3007,7 @@ public class TenantEndpoint {
             description = "Internal Server Error.",
             content = @Content(schema = @Schema(
                     implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
     @GET
     @Path("/{id}/capabilities/availability")
     @Produces(MediaType.APPLICATION_JSON)
@@ -3096,6 +3099,7 @@ public class TenantEndpoint {
             description = "Internal Server Error.",
             content = @Content(schema = @Schema(
                     implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
     @GET
     @Path("/{id}/capabilities/status")
     @Produces(MediaType.APPLICATION_JSON)
@@ -3170,6 +3174,7 @@ public class TenantEndpoint {
             content = @Content(schema = @Schema(
                     type = SchemaType.OBJECT,
                     implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
     @GET
     @Path("/{id}/capabilities/summary/{item}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -3206,14 +3211,12 @@ public class TenantEndpoint {
             @Valid
             @CheckDateFormat(pattern = "yyyy-MM-dd", message = "Valid date format is yyyy-MM-dd.")
             String startDate,
-
             @Parameter(name = "end_date", in = QUERY,
                     description = "End date (YYYY-MM-DD).")
             @QueryParam("end_date")
             @Valid
             @CheckDateFormat(pattern = "yyyy-MM-dd", message = "Valid date format is yyyy-MM-dd.")
             String endDate,
-
             @Parameter(name = "granularity", in = QUERY,
                     description = "Granularity of results (daily, monthly).",
                     example = "daily")
@@ -3224,5 +3227,201 @@ public class TenantEndpoint {
         var summary = tenantService.getSummary(id, item, startDate, endDate, granularity);
 
         return Response.ok().entity(summary).build();
+    }
+
+    @Tag(name = "Reports")
+    @Operation(
+            summary = "Retrieve tenant group results.",
+            description = "Retrieves latest availability and uptime results for all tenant groups."
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "Tenant group results.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = TenantWebApiGroupResultsResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Tenant not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/{id}/results/groups")
+    @Produces(MediaType.APPLICATION_JSON)
+    @SecuredEndpoint(
+            params = {
+                    @ParamRef(
+                            param = "id",
+                            type = ParamType.PATH,
+                            referTo= TenantResource.class
+                    )
+            }
+    )
+    public Response getGroupResults(
+            @Parameter(
+                    description = "The ID of the tenant.",
+                    required = true,
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid
+            @NotFoundEntity(repository = TenantRepository.class,
+                    message = "There is no Tenant with the following id: ")
+            String id,
+            @Parameter(name = "group", in = QUERY,
+                    description = "Optional group name.",
+                    example = "WIKI")
+            @QueryParam("group")
+            String groupName,
+            @Parameter(name = "date", in = QUERY,
+                    description = "UTC date in YYYY-MM-DD format.",
+                    example = "2026-05-21")
+            @QueryParam("date")
+            @CheckDateFormat(pattern = "yyyy-MM-dd",
+                    message = "Valid date format is yyyy-MM-dd.")
+            String date,
+            @Parameter(name = "period", in = QUERY,
+                    description = "Specify the lookback window in days or weeks (e.g. 7d or 2w).",
+                    example = "7d")
+            @QueryParam("period")
+            String period,
+            @Parameter(name = "start_time", in = QUERY,
+                    description = "UTC time in W3C format.",
+                    example = "2026-05-21T12:00:00Z")
+            @QueryParam("start_time")
+            String startTime,
+            @Parameter(name = "end_time", in = QUERY,
+                    description = "UTC time in W3C format.",
+                    example = "2026-05-22T12:00:00Z")
+            @QueryParam("end_time")
+            String endTime,
+            @Parameter(name = "start_date", in = QUERY,
+                    description = "UTC date in YYYY-MM-DD format.",
+                    example = "2026-05-20")
+            @QueryParam("start_date")
+            @CheckDateFormat(pattern = "yyyy-MM-dd",
+                    message = "Valid date format is yyyy-MM-dd.")
+            String startDate,
+            @Parameter(name = "end_date", in = QUERY,
+                    description = "UTC date in YYYY-MM-DD format.",
+                    example = "2026-05-22")
+            @QueryParam("end_date")
+            @CheckDateFormat(pattern = "yyyy-MM-dd",
+                    message = "Valid date format is yyyy-MM-dd.")
+            String endDate,
+            @Parameter(name = "granularity", in = QUERY,
+                    description = "Granularity of time that will be used to present data. Possible values are monthly, daily.",
+                    example = "daily")
+            @QueryParam("granularity")
+            String granularity,
+            @Parameter(name = "report", in = QUERY,
+                    description = "Target report name. Optional when the tenant has only one report. " +
+                            "Required when the tenant has multiple reports.",
+                    example = "BASIC")
+            @QueryParam("report")
+            String report) {
+
+        var response = tenantService.getGroupResults(id, groupName, date, period, startTime, endTime, startDate, endDate, granularity, report);
+
+        return Response.ok().entity(response).build();
+    }
+
+    @Tag(name = "Reports")
+    @Operation(
+            summary = "Retrieve tenant group status.",
+            description = "Retrieves latest status results for a specific tenant group."
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "Tenant group status results.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = TenantWebApiGroupStatusResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Tenant not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @GET
+    @Path("/{id}/status/groups")
+    @Produces(MediaType.APPLICATION_JSON)
+    @SecuredEndpoint(
+            params = {
+                    @ParamRef(
+                            param = "id",
+                            type = ParamType.PATH,
+                            referTo= TenantResource.class
+                    )
+            }
+    )
+    public Response getGroupStatusByGroup(
+            @Parameter(
+                    description = "The ID of the tenant.",
+                    schema = @Schema(type = SchemaType.STRING),
+                    required = true,
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f")
+            @PathParam("id")
+            @Valid
+            @NotFoundEntity(repository = TenantRepository.class,
+                    message = "There is no Tenant with the following id: ")
+            String id,
+            @Parameter(name = "group", in = QUERY,
+                    description = "Optional group name.",
+                    example = "WIKI")
+            @QueryParam("group")
+            String groupName,
+            @Parameter(name = "start_time", in = QUERY,
+                    description = "UTC time in W3C format.",
+                    example = "2026-05-21T12:00:00Z")
+            @QueryParam("start_time")
+            String startTime,
+            @Parameter(name = "end_time", in = QUERY,
+                    description = "UTC time in W3C format.",
+                    example = "2026-05-22T12:00:00Z")
+            @QueryParam("end_time")
+            String endTime,
+            @Parameter(name = "history", in = QUERY,
+                    description = "Show full history of status timelines.",
+                    example = "true")
+            @QueryParam("history")
+            Boolean history,
+            @Parameter(name = "report", in = QUERY,
+                    description = "Target report name. Optional when the tenant has only one report. " +
+                            "Required when the tenant has multiple reports.",
+                    example = "BASIC")
+            @QueryParam("report")
+            String report) {
+
+        var response = tenantService.getGroupStatus(id, groupName, startTime, endTime, history, report);
+
+        return Response.ok().entity(response).build();
     }
 }

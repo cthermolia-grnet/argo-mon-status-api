@@ -35,6 +35,8 @@ import org.grnet.status.dtos.tenant.node.WebApiNodeSummaryResponse;
 import org.grnet.status.dtos.tenant.status.EventStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
+import org.grnet.status.dtos.tenant.webapi.TenantWebApiGroupResultsResponse;
+import org.grnet.status.dtos.tenant.webapi.TenantWebApiGroupStatusResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiNodeRequest;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.dtos.topology.FeedTopologyDto;
@@ -1618,6 +1620,38 @@ public class TenantService {
 
         Log.infof("Tenant updated locally: %s (%s)", existingTenant.getName(), existingTenant.getId());
     }
+
+
+    /**
+     * Retrieves dashboard availability and uptime results for tenant groups.
+     *
+     * @param tenantId tenant identifier
+     * @param groupName optional group name
+     * @param report report name
+     * @return group results response
+     */
+    public TenantWebApiGroupResultsResponse getGroupResults(String tenantId, String groupName, String date, String period, String startTime, String endTime, String startDate, String endDate, String granularity, String report) {
+
+        var tenant = tenantRepository.findById(tenantId);
+
+        return webApiService.retrieveGroupResults(groupName, tenant.id, date, period, startTime, endTime, startDate, endDate, granularity, report);
+    }
+
+    /**
+     * Retrieves dashboard status results for tenant groups.
+     *
+     * @param tenantId tenant identifier
+     * @param groupName optional group name
+     * @param report report name
+     * @return group status response
+     */
+    public TenantWebApiGroupStatusResponse getGroupStatus(String tenantId, String groupName, String startTime, String endTime, Boolean history, String report) {
+
+        var tenant = tenantRepository.findById(tenantId);
+
+        return webApiService.retrieveGroupStatus(groupName, tenant.id, startTime, endTime, history, report);
+    }
+
 
     private boolean isComputeEngineCompleted(TenantStatusDto request) {
         return request.jobs.stream()

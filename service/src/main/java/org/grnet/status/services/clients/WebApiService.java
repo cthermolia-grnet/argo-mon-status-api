@@ -11,10 +11,7 @@ import org.grnet.status.dtos.Status;
 import org.grnet.status.dtos.argo.ArgoWebApiErrorResponse;
 import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
 import org.grnet.status.dtos.tenant.node.*;
-import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
-import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
-import org.grnet.status.dtos.tenant.webapi.TenantWebApiNodeRequest;
-import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
+import org.grnet.status.dtos.tenant.webapi.*;
 import org.grnet.status.dtos.topology.FeedTopologyDto;
 import org.grnet.status.dtos.topology.WebApiFeedsTopologyResponse;
 import org.grnet.status.repositories.TenantRepository;
@@ -481,37 +478,6 @@ public class WebApiService {
         }
     }
 
-    private void logArgoError(WebApplicationException e,
-                              String operation,
-                              String identifier) {
-
-        try {
-
-            var body = e.getResponse().readEntity(String.class);
-
-            var error = new ObjectMapper()
-                    .readValue(body, ArgoWebApiErrorResponse.class);
-
-            LOG.errorf(
-                    "%s failed in Argo Web Api. identifier=%s, status=%s, argoMessage=%s",
-                    operation,
-                    identifier,
-                    e.getResponse().getStatus(),
-                    error.extractMessage()
-            );
-
-        } catch (Exception ex) {
-
-            LOG.errorf(
-                    ex,
-                    "Failed parsing Argo Web Api error response. operation=%s, identifier=%s, status=%s",
-                    operation,
-                    identifier,
-                    e.getResponse().getStatus()
-            );
-        }
-    }
-
     public WebApiNodeSummaryResponse retrieveNodeSummary(String nodeName, String item, String startDate, String endDate, String granularity) {
 
         try {
@@ -547,5 +513,93 @@ public class WebApiService {
         }
     }
 
+    public TenantWebApiGroupResultsResponse retrieveGroupResults(String groupName, String id, String date, String period, String startTime, String endTime, String startDate, String endDate, String granularity, String report) {
 
+        try {
+            if (StringUtils.isBlank(groupName)) {
+                return argoWebApiClient.getGroupResultsSuperAdmin(accessToken, id, date, period, startTime, endTime, startDate, endDate, granularity, report);
+            }
+
+            return argoWebApiClient.getGroupResultsByGroupSuperAdmin(accessToken, id, groupName, date, period, startTime, endTime, startDate, endDate, granularity, report);
+
+        } catch (WebApplicationException e) {
+            int status = e.getResponse().getStatus();
+
+            var errorMessage = logArgoError(e, "Retrieving Group Results", StringUtils.defaultIfBlank(groupName, "all"));
+
+            throw new WebApplicationException(
+                    "Retrieving Group Results... " + errorMessage,
+                    status
+            );
+
+        } catch (RuntimeException e) {
+            LOG.errorf(e, "Retrieving Group Results failed in Argo Web Api. groupName=%s, report=%s", groupName, report);
+
+            throw new WebApplicationException(
+                    "Retrieving Group Results... failed in Argo Web Api",
+                    500
+            );
+        }
+    }
+
+    public TenantWebApiGroupStatusResponse retrieveGroupStatus(String groupName, String id, String startTime, String endTime, Boolean history, String report) {
+
+        try {
+            if (StringUtils.isBlank(groupName)) {
+                return argoWebApiClient.getGroupStatusSuperAdmin(accessToken, id, startTime, endTime, history, report);
+            }
+
+            return argoWebApiClient.getGroupStatusByGroupSuperAdmin(accessToken, id, groupName, startTime, endTime, history, report);
+
+        } catch (WebApplicationException e) {
+            int status = e.getResponse().getStatus();
+
+            var errorMessage = logArgoError(e, "Retrieving Group Status", StringUtils.defaultIfBlank(groupName, "all"));
+
+            throw new WebApplicationException(
+                    "Retrieving Group Status... " + errorMessage,
+                    status
+            );
+
+        } catch (RuntimeException e) {
+            LOG.errorf(e, "Retrieving Group Status failed in Argo Web Api. groupName=%s, report=%s", groupName, report);
+
+            throw new WebApplicationException(
+                    "Retrieving Group Status... failed in Argo Web Api",
+                    500
+            );
+        }
+    }
+
+
+    private String logArgoError(WebApplicationException e, String operation, String identifier) {
+
+        try {
+
+            var body = e.getResponse().readEntity(String.class);
+            var error = new ObjectMapper()
+                    .readValue(body, ArgoWebApiErrorResponse.class);
+
+            LOG.errorf(
+                    "%s failed in Argo Web Api. identifier=%s, status=%s, argoMessage=%s",
+                    operation,
+                    identifier,
+                    e.getResponse().getStatus(),
+                    error.extractMessage()
+            );
+
+            return error.extractMessage();
+
+        } catch (Exception ex) {
+
+            LOG.errorf(
+                    ex,
+                    "Failed parsing Argo Web Api error response. operation=%s, identifier=%s, status=%s",
+                    operation,
+                    identifier,
+                    e.getResponse().getStatus()
+            );
+        }
+        return operation;
+    }
 }

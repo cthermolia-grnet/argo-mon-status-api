@@ -12,9 +12,7 @@ import org.grnet.status.dtos.profile.operation.OperationProfileResponse;
 import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
 import org.grnet.status.dtos.report.WebApiReportResponse;
 import org.grnet.status.dtos.tenant.node.*;
-import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
-import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
-import org.grnet.status.dtos.tenant.webapi.TenantWebApiRequest;
+import org.grnet.status.dtos.tenant.webapi.*;
 import org.grnet.status.dtos.topology.*;
 
 import java.util.List;
@@ -412,5 +410,59 @@ public interface ArgoWebApiClient {
             @QueryParam("start_date") String startDate,
             @QueryParam("end_date") String endDate,
             @QueryParam("granularity") String granularity
+    );
+
+    @GET
+    @Path("/api/v4/results/groups")
+    TenantWebApiGroupResultsResponse getGroupResultsSuperAdmin(
+            @HeaderParam("x-api-key") String accessToken,
+            @HeaderParam("x-tenant-id") String tenantId,
+            @QueryParam("date") String date,
+            @QueryParam("period") String period,
+            @QueryParam("start_time") String startTime,
+            @QueryParam("end_time") String endTime,
+            @QueryParam("start_date") String startDate,
+            @QueryParam("end_date") String endDate,
+            @QueryParam("granularity") String granularity,
+            @QueryParam("report") String report
+    );
+
+    @GET
+    @Path("/api/v4/results/groups/{groupName}")
+    TenantWebApiGroupResultsResponse getGroupResultsByGroupSuperAdmin(
+            @HeaderParam("x-api-key") String accessToken,
+            @HeaderParam("x-tenant-id") String tenantId,
+            @PathParam("groupName") String groupName,
+            @QueryParam("date") String date,
+            @QueryParam("period") String period,
+            @QueryParam("start_time") String startTime,
+            @QueryParam("end_time") String endTime,
+            @QueryParam("start_date") String startDate,
+            @QueryParam("end_date") String endDate,
+            @QueryParam("granularity") String granularity,
+            @QueryParam("report") String report
+    );
+
+    @GET
+    @Path("/api/v4/status/groups")
+    TenantWebApiGroupStatusResponse getGroupStatusSuperAdmin(
+            @HeaderParam("x-api-key") String accessToken,
+            @HeaderParam("x-tenant-id") String tenantId,
+            @QueryParam("start_time") String startTime,
+            @QueryParam("end_time") String endTime,
+            @QueryParam("history") Boolean history,
+            @QueryParam("report") String report
+    );
+
+    @GET
+    @Path("/api/v4/status/groups/{groupName}")
+    TenantWebApiGroupStatusResponse getGroupStatusByGroupSuperAdmin(
+            @HeaderParam("x-api-key") String accessToken,
+            @HeaderParam("x-tenant-id") String tenantId,
+            @PathParam("groupName") String groupName,
+            @QueryParam("start_time") String startTime,
+            @QueryParam("end_time") String endTime,
+            @QueryParam("history") Boolean history,
+            @QueryParam("report") String report
     );
 }

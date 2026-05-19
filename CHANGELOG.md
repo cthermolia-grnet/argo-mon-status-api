@@ -83,6 +83,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#128](https://github.com/ARGOeu/argo-mon-status-api/pull/128) ARGO-5538 Add support for ARGO Web API summary capability endpoint in Status ARGO
 - [#130](https://github.com/ARGOeu/argo-mon-status-api/pull/130) ARGO-5545 Trigger INIT_POEM AMS notification after INIT_COMPUTE_ENGINE completion
 - [#131](https://github.com/ARGOeu/argo-mon-status-api/pull/131) ARGO-5547 argo-status api nodes capabilities should also be accessible using the node name
+- [#132](https://github.com/ARGOeu/argo-mon-status-api/pull/132) ARGO-5549 Proxy group results and status calls from web-api
 
 ### Fix
 

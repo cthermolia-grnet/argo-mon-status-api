@@ -120,15 +120,15 @@ public class GroupManagementService {
     /**
      * Returns members of a tenant group filtered by role.
      *
-     * @param groupName tenant name
-     * @param role role to filter by (admin, viewer, member)
+     * @param resource Resource name
+     * @param tenantId The tenant id
      * @return list of users with the specified role
      */
-    public List<GroupUser> getTenantMembersByRole(String groupName, String role) {
+    public List<GroupUser> getTenantMembersByRole(String resource, String tenantId) {
 
-        var fullPath = normalizePath(parentGroup) + "/tenants/" + groupName;
+        var fullPath = normalizePath(parentGroup) + "/tenant_admin/" + resource+ "/"+tenantId;
 
-        return groupManagement.fetchGroupMembersByRole(fullPath, role);
+        return groupManagement.fetchGroupMembersByRole(fullPath, "member");
     }
 
     /**
@@ -202,48 +202,5 @@ public class GroupManagementService {
         pageable.page = Page.of(page, size);
 
         return new PageResource<>(pageable, uriInfo);
-    }
-
-    /**
-     * Adds a user to a tenant group and sends a notification email.
-     *
-     * @param tenantId tenant identifier
-     * @param username user identifier
-     * @param role role to assign
-     * @param email email address for notification
-     */
-    public void addMemberToGroup(String tenantId, String username, String role, String email){
-
-        var tenant = tenantRepository.findById(tenantId);
-
-        var parentPath = "/" + namespace + "/tenants/"+tenant.name;
-
-        groupManagement.addGroupMember(parentPath, username, role);
-
-        try {
-            mailerService.sendEmailToMemberAddedGroup(
-                    List.of(email),
-                    tenant.name,
-                    role,
-                    uiBaseUrl
-            );
-        } catch (Exception e) {
-            Log.warn("Added to group email failed: " + email, e);
-        }
-    }
-
-    /**
-     * Removes a member from a tenant group.
-     *
-     * @param tenantId tenant identifier
-     * @param memberId provider member identifier
-     */
-    public void deleteMemberFromGroup(String tenantId, String memberId){
-
-        var tenant = tenantRepository.findById(tenantId);
-
-        var parentPath = "/" + namespace + "/tenants/"+tenant.name;
-
-        groupManagement.removeMemberFromGroup(parentPath, memberId);
     }
 }

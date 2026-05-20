@@ -9,12 +9,15 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.context.ManagedExecutor;
+import org.grnet.endpoint.scanner.runtime.endpoints.AssignRoleRequest;
+import org.grnet.endpoint.scanner.runtime.services.ResourceAuthorizationService;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationActionResponse;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationResponse;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationRequest;
 import org.grnet.status.enums.InvitationAction;
 import org.grnet.status.enums.InvitationStatus;
+import org.grnet.status.enums.resources.TenantResource;
 import org.grnet.status.exceptions.BadRequestException;
 import org.grnet.status.mappers.TenantInvitationMapper;
 import org.grnet.status.repositories.TenantInvitationRepository;
@@ -47,6 +50,9 @@ public class TenantInvitationService {
     String uiBaseUrl;
     @Inject
     ManagedExecutor executor;
+
+    @Inject
+    ResourceAuthorizationService resourceAuthorizationService;
 
 
     /**
@@ -192,8 +198,14 @@ public class TenantInvitationService {
 
         if (request.action == InvitationAction.ACCEPT) {
             try {
+                var addRoleRequest = new AssignRoleRequest();
+                addRoleRequest.apiResource = request.apiResource;
+                addRoleRequest.resourceId = request.resourceId;
+                addRoleRequest.username = username;
+                addRoleRequest.role = request.role;
+
                 Log.info("Adding user to tenant group.");
-                groupManagementService.addUserToTenantGroup(invitation.tenant.name, username, invitation.role);
+                resourceAuthorizationService.assignRoleToUser(addRoleRequest);
             } catch (Exception e) {
                 Log.warn("Accepting invitation... Failed to add user to tenant group.", e);
                 // invitation stays PENDING
@@ -318,7 +330,7 @@ public class TenantInvitationService {
         // Admins mail (ACCEPT/REJECT)
         try {
 
-            var admins = groupManagementService.getTenantMembersByRole(response.tenantName, "admin");
+            var admins = groupManagementService.getTenantMembersByRole(TenantResource.TENANT.resourceName(), "admin");
 
             if (admins == null) {
                 Log.warn("AGM returned null admins list");

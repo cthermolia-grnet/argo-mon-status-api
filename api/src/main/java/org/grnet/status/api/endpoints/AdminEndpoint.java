@@ -1196,64 +1196,6 @@ public class AdminEndpoint {
         return Response.ok(response).build();
     }
 
-    @Tag(name = "Admin")
-    @Operation(
-            summary = "Add member to tenant group.",
-            description = "Add member to tenant group.")
-    @APIResponse(
-            responseCode = "200",
-            description = "Member added to tenant group.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @APIResponse(
-            responseCode = "401",
-            description = "User has not been authenticated.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @APIResponse(
-            responseCode = "403",
-            description = "Not permitted.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @APIResponse(
-            responseCode = "404",
-            description = "Entity Not Found.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @APIResponse(
-            responseCode = "500",
-            description = "Internal Server Error.",
-            content = @Content(schema = @Schema(
-                    type = SchemaType.OBJECT,
-                    implementation = InformativeResponse.class)))
-    @SecurityRequirement(name = "Authentication")
-    @POST
-    @Path("/tenants/{id}/members")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Authenticated
-    @SecuredEndpoint
-    public Response addMemberToGroup(
-            @Parameter(description = "The ID of the tenant.",
-                    required = true,
-                    example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
-                    schema = @Schema(type = SchemaType.STRING))
-            @PathParam("id")
-            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
-            @Valid @NotNull(message = "The request body is empty.") MemberRequest request) {
-
-        groupManagementService.addMemberToGroup(id, request.username, request.role, request.email);
-
-        var response = new InformativeResponse();
-        response.code = 200;
-        response.message = "Member added successfully to group";
-
-        return Response.ok().entity(response).build();
-    }
-
     public static class PageableGroupUserResponse extends PageResource<GroupUserResponse> {
 
         private List<GroupUserResponse> content;

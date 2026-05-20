@@ -667,11 +667,11 @@ public class TenantService {
         var tenant = tenantRepository.findById(id);
 
         var existingStatus = TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
+        var shouldTriggerPoem = isComputeEngineCompleted(request);
+
         request.jobs = mergeJobs(existingStatus.jobs, request.jobs);
 
         var updatedStatusJson = TenantMapper.INSTANCE.mergeJobsIntoStatus(tenant.getStatus(), request);
-        var shouldTriggerPoem = isComputeEngineCompleted(request);
-
 
         try {
             // ✅ DB update

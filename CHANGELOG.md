@@ -125,7 +125,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#121](https://github.com/ARGOeu/argo-mon-status-api/pull/121) ARGO-5504 Trigger INIT_TOPOLOGY_CONNECTOR after compute engine completion (fix)
 - [#123](https://github.com/ARGOeu/argo-mon-status-api/pull/123) ARGO-5514 INIT_COMPUTE_ENGINE remains IN_PROGRESS after completion and event trigger
 - [#127](https://github.com/ARGOeu/argo-mon-status-api/pull/127) ARGO-5537 Improve Argo Web API error handling and logging in Status API
-
+- [#133](https://github.com/ARGOeu/argo-mon-status-api/pull/133) ARGO-5551 INIT_POEM cannot be changed to completed
 
 ### Removed
 

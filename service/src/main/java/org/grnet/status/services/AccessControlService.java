@@ -20,8 +20,13 @@ public class AccessControlService {
 
     @Inject
     TokenIntrospection tokenIntrospection;
+
     @ConfigProperty(name = "api.auth.entitlements.namespace")
     String namespace;
+
+    @ConfigProperty(name = "api.auth.entitlements.parent-group")
+    String parentGroup;
+
 
     /**
      * Resolves all accessible subgroup identifiers for the specified group name.
@@ -121,7 +126,7 @@ public class AccessControlService {
                 .map(v -> v.toString().replace("\"", ""))
                 .filter(s -> s.startsWith(namespace))           // filter by namespace
                 .map(s -> s.replace(namespace + ":", ""))
-                .filter(s -> s.startsWith("group:" + role + ":" + resource))
+                .filter(s -> s.startsWith("group:" + parentGroup + ":" +role + ":" + resource))
                 .collect(Collectors.toList());
 
         return EntitlementUtils.parseEntitlements(raws);

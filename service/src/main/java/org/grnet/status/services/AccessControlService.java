@@ -40,7 +40,6 @@ public class AccessControlService {
                 .collect(Collectors.toList());
     }
 
-
     /**
      * Determines whether the user's role satisfies the required role.
      *

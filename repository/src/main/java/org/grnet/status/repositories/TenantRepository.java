@@ -80,13 +80,55 @@ public class TenantRepository implements Repository<Tenant, String> {
      * @param order sort order
      * @return paginated tenants
      */
-    public PageQuery<Tenant> fetchTenantsByIdsAndPageAndSize(List<String> allowedNames, int page, int size, String search, String sort, String order) {
+    public PageQuery<Tenant> fetchTenantsByNamesAndPageAndSize(List<String> allowedNames, int page, int size, String search, String sort, String order) {
 
         var joiner = new StringJoiner(StringUtils.SPACE);
         joiner.add("from Tenant t WHERE t.name in :allowedNames");
 
         var params = new HashMap<String, Object>();
         params.put("allowedNames", allowedNames);
+
+        if (StringUtils.isNotEmpty(search)) {
+            joiner.add("AND (t.name ilike :search OR t.email ilike :search)");
+            params.put("search", "%" + search + "%");
+        }
+
+        if (StringUtils.isNotEmpty(sort)) {
+            joiner.add("order by t." + sort + " " + order);
+        } else {
+            joiner.add("order by t.name ASC, t.createdAt DESC");
+        }
+
+        var panache = find(joiner.toString(), params).page(page, size);
+
+        var pageable = new PageQueryImpl<Tenant>();
+        pageable.list = panache.list();
+        pageable.index = page;
+        pageable.size = size;
+        pageable.count = panache.count();
+        pageable.page = Page.of(page, size);
+
+        return pageable;
+    }
+
+    /**
+     * Retrieves a paginated list of tenants filtered by allowed tenant ids.
+     *
+     * @param allowedIds list of allowed tenant ids
+     * @param page 0-based page index
+     * @param size page size
+     * @param search search filter
+     * @param sort sort field
+     * @param order sort order
+     * @return paginated tenants
+     */
+    public PageQuery<Tenant> fetchTenantsByIdsAndPageAndSize(Set<String> allowedIds, int page, int size, String search, String sort, String order) {
+
+        var joiner = new StringJoiner(StringUtils.SPACE);
+        joiner.add("from Tenant t WHERE t.id in :allowedIds");
+
+        var params = new HashMap<String, Object>();
+        params.put("allowedIds", allowedIds);
 
         if (StringUtils.isNotEmpty(search)) {
             joiner.add("AND (t.name ilike :search OR t.email ilike :search)");

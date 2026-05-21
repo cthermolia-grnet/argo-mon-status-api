@@ -97,7 +97,7 @@ public class UserEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/profile")
-    @SecuredEndpoint(bypass = true)
+    @SecuredEndpoint
     public Response profile() {
 
         var response = userService.getUserProfile(utility.getUserUniqueIdentifier());
@@ -150,8 +150,6 @@ public class UserEndpoint {
     @POST
     @Path("/registration")
     @Produces(MediaType.APPLICATION_JSON)
-
-    @SecuredEndpoint(bypass = true)
     public Response registerMember() {
 
         groupManagementService.addMember("members", utility.getUsername());

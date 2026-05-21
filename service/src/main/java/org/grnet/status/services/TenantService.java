@@ -18,6 +18,7 @@ import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.AuthGroupManag
 import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.GroupManagement;
 import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.GroupUserResponse;
 import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.UserGroupInfoDto;
+import org.grnet.endpoint.scanner.runtime.context.RoleEndpointContext;
 import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
@@ -100,6 +101,9 @@ public class TenantService {
 
     @Inject
     AmsService amsService;
+
+    @Inject
+    RoleEndpointContext roleEndpointContext;
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(2); // Adjust as needed
 
@@ -454,8 +458,15 @@ public class TenantService {
             return getTenantsByPageAndSize(page, size, uriInfo, search, sort, order);
         }
 
-        var allowedTenantIds = accessControlService.resolveAccessibleGroupsByName("tenant_admin", TenantResource.TENANT.resourceName());
-        var tenants = tenantRepository.fetchTenantsByIdsAndPageAndSize(allowedTenantIds, page, size, search, sort, order);
+        var roles = roleEndpointContext.getRoleEndpoints();
+
+        var uniqueIds = roles
+                .stream()
+                .map(role->accessControlService.resolveAccessibleGroupsByName(role.getRoleName(), TenantResource.TENANT.resourceName()))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+
+        var tenants = tenantRepository.fetchTenantsByIdsAndPageAndSize(uniqueIds, page, size, search, sort, order);
 
         var tenantList = new ArrayList<TenantResponseDto>();
 

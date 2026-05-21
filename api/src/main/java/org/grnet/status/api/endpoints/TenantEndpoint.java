@@ -148,7 +148,6 @@ public class TenantEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @SecuredEndpoint
-
     public Response listTenants(
             @Parameter(name = "search", in = QUERY,
                     description = "Search tenants by name.")
@@ -189,6 +188,7 @@ public class TenantEndpoint {
 
         return Response.ok().entity(result).build();
     }
+
     @Operation(
             summary = "Get Tenant By Id .",
             description = "Returns a specific tenant assessment.")

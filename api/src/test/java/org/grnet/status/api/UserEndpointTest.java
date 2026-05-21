@@ -6,6 +6,7 @@ import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
+import org.grnet.endpoint.scanner.runtime.entities.RoleEndpoint;
 import org.grnet.endpoint.scanner.runtime.entities.RoleEndpointRepository;
 import org.grnet.endpoint.scanner.runtime.entitlements.Entitlement;
 import org.grnet.status.api.endpoints.UserEndpoint;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
@@ -83,7 +85,11 @@ public class UserEndpointTest extends KeycloakTest {
 
     @Test
     public void getUserProfile() {
+
         mockTenantViewer();
+
+        ((TestRoleEndpointRepository) roleEndpointRepository).set(List.of( new RoleEndpoint( 1L, "members", "members", "GET_/v1/profile", LocalDateTime.now())));
+
         var response = given()
                 .auth().oauth2(tenantViewer)
                 .contentType(ContentType.JSON)

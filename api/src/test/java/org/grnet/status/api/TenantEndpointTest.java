@@ -1,6 +1,5 @@
 package org.grnet.status.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -15,18 +14,15 @@ import org.grnet.status.dtos.general.ExistResponseDto;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.project.ProjectRequestDto;
 import org.grnet.status.dtos.project.ProjectResponseDto;
-import org.grnet.status.dtos.report.PartialReportResponseDto;
 import org.grnet.status.dtos.tenant.*;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiCreateResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGetResponse;
 import org.grnet.status.dtos.tenantproject.TenantProjectRequestDto;
 import org.grnet.status.services.clients.AmsClientFactory;
 import org.grnet.status.services.clients.ArgoWebApiClient;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.InputStream;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -263,7 +259,7 @@ public class TenantEndpointTest extends KeycloakTest {
     @Test
     public void viewTenants() {
 
-        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";  // dynamically set here
+        currentMockId = "e1ab046c-8544-47e6-bd8f-e8aa8b83acb3";
         mockSuperAdmin();
         mockTenantViewer();
 
@@ -280,7 +276,8 @@ public class TenantEndpointTest extends KeycloakTest {
         var tenant = createTenant("LOCALTENANT");
 
         var list = given()
-                .auth().oauth2(tenantViewer)
+                .auth()
+                .oauth2(tenantViewer)
                 .contentType(ContentType.JSON)
                 .get("/v1/tenants")
                 .then()

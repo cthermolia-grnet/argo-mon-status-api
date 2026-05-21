@@ -38,7 +38,7 @@ pipeline {
 </settings>
 EOF
                     cd ${WORKSPACE}/${PROJECT_DIR}
-                    mvn clean package -Dquarkus.package.type=uber-jar
+                    mvn clean package -Dquarkus.package.type=uber-jar -U
                     """
                 }
                 junit '**/target/surefire-reports/*.xml'

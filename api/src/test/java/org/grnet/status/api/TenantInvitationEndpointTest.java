@@ -135,7 +135,8 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
                         "tenant_admin",
                         "tenant_admin",
                         "POST_/v1/tenants/{id}/invitation",
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        null
                 )
         ));
 
@@ -166,7 +167,8 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
                         "tenant_admin",
                         "tenant_admin",
                         "POST_/v1/tenants/{id}/invitation",
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        null
                 )
         ));
 
@@ -199,7 +201,8 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
                         "tenant_admin",
                         "tenant_admin",
                         "POST_/v1/tenants/{id}/invitation",
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        null
                 )
         ));
 
@@ -214,7 +217,8 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
                                 "tenant_viewer",
                                 "tenant_viewer",
                                 "GET_/v1/users/invitations",
-                                LocalDateTime.now()
+                                LocalDateTime.now(),
+                                null
                         )
                 ));
 
@@ -247,7 +251,8 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
                         "tenant_admin",
                         "tenant_admin",
                         "POST_/v1/tenants/{id}/invitation",
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        null
                 )
         ));
 
@@ -263,7 +268,8 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
                                 "tenant_admin",
                                 "tenant_admin",
                                 "GET_/v1/tenants/{id}/invitations",
-                                LocalDateTime.now()
+                                LocalDateTime.now(),
+                                null
                         )
                 ));
 
@@ -463,7 +469,8 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
                         "tenant_admin",
                         "tenant_admin",
                         "POST_/v1/tenants/{id}/invitation",
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        null
                 )
         ));
 

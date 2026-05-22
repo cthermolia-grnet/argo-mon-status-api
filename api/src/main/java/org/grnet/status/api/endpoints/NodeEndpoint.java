@@ -17,7 +17,6 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.grnet.endpoint.scanner.runtime.SecuredEndpoint;
 import org.grnet.status.api.resolvers.CheckDateFormat;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.tenant.node.*;
@@ -73,7 +72,6 @@ public class NodeEndpoint {
     @GET
     @Path("/{name}/capabilities/availability")
     @Produces(MediaType.APPLICATION_JSON)
-    @SecuredEndpoint(bypass = true)
     public Response getAvailability(
             @Parameter(description = "The name of the Node.",
                     required = true,
@@ -156,7 +154,6 @@ public class NodeEndpoint {
     @GET
     @Path("/{name}/capabilities/status")
     @Produces(MediaType.APPLICATION_JSON)
-    @SecuredEndpoint(bypass = true)
     public Response getStatus(
             @Parameter(description = "The name of the Node.",
                     required = true,
@@ -222,7 +219,6 @@ public class NodeEndpoint {
     @GET
     @Path("/{name}/capabilities/summary/{item}")
     @Produces(MediaType.APPLICATION_JSON)
-    @SecuredEndpoint(bypass = true)
     public Response getSummary(
             @Parameter(
                     description = "The name of the node.",

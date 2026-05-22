@@ -95,7 +95,8 @@ public class TenantInvitationEndpoint {
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @SecuredEndpoint(bypass = true ) //this need to change to create InvitationSource.class
+    //TODO this need to change to create InvitationSource.class. Currently is public
+    //@SecuredEndpoint
     public Response getInvitationById(
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantInvitationRepository.class, message = "There is no Invitation with the following id: ")
@@ -151,16 +152,8 @@ public class TenantInvitationEndpoint {
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @SecuredEndpoint(bypass = true)
-//            params = {
-//
-//                    @ParamRef(
-//                            param = "id",
-//                            type = ParamType.PATH,
-//                            referTo= TenantResource.class
-//                    )
-//            }
-    //need to change to InvitationResource.class
+    //TODO need to change to InvitationResource.class. Currently is public
+    //@SecuredEndpoint
     public Response respond(
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantInvitationRepository.class, message = "There is no Invitation with the following id: ") String id,
@@ -171,6 +164,7 @@ public class TenantInvitationEndpoint {
 
         return Response.ok(response).build();
     }
+
     @Operation(
             summary = "Get all invitations.",
             description = "Returns all invitation for the authenticated user. "
@@ -208,7 +202,6 @@ public class TenantInvitationEndpoint {
     @SecurityRequirement(name = "Authentication")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @SecuredEndpoint(bypass = true)
     public Response getInvite(
             @Parameter(name = "page", in = QUERY,
                     description = "Page number. Must be >= 1.")

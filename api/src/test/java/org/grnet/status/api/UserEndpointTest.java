@@ -82,13 +82,12 @@ public class UserEndpointTest extends KeycloakTest {
         );
     }
 
-
     @Test
     public void getUserProfile() {
 
         mockTenantViewer();
 
-        ((TestRoleEndpointRepository) roleEndpointRepository).set(List.of( new RoleEndpoint( 1L, "members", "members", "GET_/v1/profile", LocalDateTime.now())));
+        ((TestRoleEndpointRepository) roleEndpointRepository).set(List.of( new RoleEndpoint( 1L, "members", "members", "GET_/v1/profile", LocalDateTime.now(), null)));
 
         var response = given()
                 .auth().oauth2(tenantViewer)

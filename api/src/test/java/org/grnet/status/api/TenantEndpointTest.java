@@ -153,7 +153,8 @@ public class TenantEndpointTest extends KeycloakTest {
                         "tenant_admin",
                         "tenant_admin",
                         "GET_/v1/tenants/{id}",
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        null
                 )
         ));
 
@@ -269,7 +270,8 @@ public class TenantEndpointTest extends KeycloakTest {
                         "tenant_viewer",
                         "tenant_viewer",
                         "GET_/v1/tenants",
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        null
                 )
         ));
 
@@ -431,7 +433,8 @@ public class TenantEndpointTest extends KeycloakTest {
                         "tenant_viewer",
                         "tenant_viewer",
                         "GET_/v1/tenants/{id}/pages/check-slug/{slug}",
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        null
                 )
         ));
 

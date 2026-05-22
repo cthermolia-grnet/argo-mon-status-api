@@ -189,7 +189,8 @@ public class AutomationEndpointTest extends KeycloakTest {
                         "automation",
                         "automation",
                         "PATCH_/v1/automation/tenants/{id}/status",
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        null
                 )
         ));
 

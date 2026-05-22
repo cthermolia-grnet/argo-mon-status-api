@@ -7,9 +7,15 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.grnet.endpoint.scanner.runtime.Scope;
+import org.grnet.endpoint.scanner.runtime.context.RoleEndpointContext;
+import org.grnet.endpoint.scanner.runtime.entities.RoleEndpoint;
+import org.grnet.endpoint.scanner.runtime.entitlements.Entitlement;
+import org.grnet.endpoint.scanner.runtime.entitlements.EntitlementProvider;
 import org.grnet.status.dtos.general.ExistResponseDto;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.report.FullReportResponseDto;
@@ -25,11 +31,14 @@ import org.grnet.status.repositories.StatusPageRepository;
 import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.services.utils.ImageUploadUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.Locking;
 
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -63,12 +72,22 @@ public class StatusPageService {
     @Inject
     ObjectMapper objectMapper;
 
+    @Inject
+    RoleEndpointContext roleEndpointContext;
+
 
     @ConfigProperty(name = "api.server.url")
     String apiServerUrl;
 
     @ConfigProperty(name = "base.upload.logo.dir")
     String baseUploadLogoDir;
+
+    @Inject
+    EntitlementProvider entitlementProvider;
+
+    @ConfigProperty(name = "api.auth.entitlements.parent-group")
+    String parentGroup;
+
 
     /**
      * Creates a new status page for the given tenant.
@@ -204,15 +223,41 @@ public class StatusPageService {
      */
     public PageResource<StatusPageResponseDto> getStatusPageByUserAndPage(int page, int size, UriInfo uriInfo, String tenantId, String userId) {
 
-        var tenant = tenantRepository.findById(tenantId);
+        var roleEndpoints = roleEndpointContext.getRoleEndpoints();
 
-        var isViewer = isViewerForTenantFromProfile(tenant.name, userId);
+        var userRoles = getRolesFromEntitlements(entitlementProvider.fetchEntitlements().stream().map(Entitlement::getRaw).collect(Collectors.toList()));
 
-        var statusPages = isViewer
+        var scope = roleEndpoints.stream()
+                .filter(re -> userRoles.contains(re.getRoleName()))
+                .map(RoleEndpoint::getScope)
+                .filter(Objects::nonNull)
+                .max(Comparator.comparing(s -> s.equals("ALL") ? 1 : 0))
+                .orElse(null);
+
+        if(Objects.isNull(scope)){
+
+            throw new ForbiddenException("Scope must be defined for this endpoint!");
+        }
+
+        var statusPages = Scope.valueOf(scope).equals(Scope.MINE)
                 ? statusPageRepository.fetchStatusPageByTenantAndAndUserAndPage(page, size, tenantId, userId)
                 : statusPageRepository.fetchStatusPagesByTenant(page, size, tenantId);
 
         return new PageResource<>(statusPages, StatusPageMapper.INSTANCE.entitiesToDtos(statusPages.list()), uriInfo);
+    }
+
+    private List<String> getRolesFromEntitlements(List<String> rawEntitlements){
+
+        return rawEntitlements.stream()
+                .map(ent -> {
+                    int idx = ent.indexOf(parentGroup);
+                    if (idx != -1) {
+                        return ent.substring(idx + parentGroup.length()).split(":")[0];
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .toList();
     }
 
 

@@ -26,6 +26,7 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.grnet.endpoint.scanner.runtime.ParamRef;
 import org.grnet.endpoint.scanner.runtime.ParamType;
+import org.grnet.endpoint.scanner.runtime.Scope;
 import org.grnet.endpoint.scanner.runtime.SecuredEndpoint;
 import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.GroupUserResponse;
 import org.grnet.status.api.resolvers.CheckDateFormat;
@@ -1559,7 +1560,8 @@ public class TenantEndpoint {
                             type = ParamType.PATH,
                             referTo= TenantResource.class
                     )
-            }
+            },
+            scope = {Scope.ALL, Scope.MINE}
     )
     public Response listStatusPages(
             @Parameter(

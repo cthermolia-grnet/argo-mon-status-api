@@ -7,7 +7,7 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.endpoint.scanner.runtime.entities.RoleEndpoint;
-import org.grnet.endpoint.scanner.runtime.entities.RoleEndpointRepository;
+import org.grnet.endpoint.scanner.runtime.repositories.RoleEndpointRepository;
 import org.grnet.endpoint.scanner.runtime.entitlements.Entitlement;
 import org.grnet.status.api.endpoints.TenantInvitationEndpoint;
 import org.grnet.status.dtos.Status;
@@ -55,7 +55,7 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
 
     @BeforeEach
     void setupRepo() {
-        TestRoleEndpointRepository testRepo = new TestRoleEndpointRepository();
+        org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository testRepo = new org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository();
 
         QuarkusMock.installMockForType(testRepo, RoleEndpointRepository.class);
 
@@ -82,7 +82,7 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
     @BeforeEach
     void reset() {
         entitlementProvider.reset();
-        ((TestRoleEndpointRepository) roleEndpointRepository).reset();    }
+        ((org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository) roleEndpointRepository).reset();    }
     private void mockSuperAdmin() {
         entitlementProvider.setSuperAdmin(true);
         entitlementProvider.setEntitlements(List.of());
@@ -129,7 +129,7 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
         var tenant = createTenant("LOCALTENANT");
 
         mockTenantAdmin();
-        ((TestRoleEndpointRepository) roleEndpointRepository).set(List.of(
+        ((org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository) roleEndpointRepository).set(List.of(
                 new RoleEndpoint(
                         1L,
                         "tenant_admin",
@@ -161,7 +161,7 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
 
         mockTenantAdmin();
 
-        ((TestRoleEndpointRepository) roleEndpointRepository).set(List.of(
+        ((org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository) roleEndpointRepository).set(List.of(
                 new RoleEndpoint(
                         1L,
                         "tenant_admin",
@@ -195,7 +195,7 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
         var tenant = createTenant("LOCALTENANT");
 
         mockTenantAdmin();
-        ((TestRoleEndpointRepository) roleEndpointRepository).set(List.of(
+        ((org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository) roleEndpointRepository).set(List.of(
                 new RoleEndpoint(
                         1L,
                         "tenant_admin",
@@ -210,7 +210,7 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
         createInvitation(tenant.id, "local-viewer@test.dev", "viewer");
 
         // IMPORTANT: mock interceptor role endpoint lookup
-        ((TestRoleEndpointRepository) roleEndpointRepository)
+        ((org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository) roleEndpointRepository)
                 .set(List.of(
                         new RoleEndpoint(
                                 1L,
@@ -245,7 +245,7 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
         var tenant = createTenant("LOCALTENANT");
 
         mockTenantAdmin();
-        ((TestRoleEndpointRepository) roleEndpointRepository).set(List.of(
+        ((org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository) roleEndpointRepository).set(List.of(
                 new RoleEndpoint(
                         1L,
                         "tenant_admin",
@@ -261,7 +261,7 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
         createInvitation(tenant.id, "local-local@test.dev", "viewer");
 
         // IMPORTANT: mock interceptor authorization
-        ((TestRoleEndpointRepository) roleEndpointRepository)
+        ((org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository) roleEndpointRepository)
                 .set(List.of(
                         new RoleEndpoint(
                                 1L,
@@ -463,7 +463,7 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
         var tenant = createTenant("LOCALTENANT");
 
         mockTenantAdmin();
-        ((TestRoleEndpointRepository) roleEndpointRepository).set(List.of(
+        ((org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository) roleEndpointRepository).set(List.of(
                 new RoleEndpoint(
                         1L,
                         "tenant_admin",

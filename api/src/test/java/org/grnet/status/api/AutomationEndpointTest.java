@@ -7,7 +7,7 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.endpoint.scanner.runtime.entities.RoleEndpoint;
-import org.grnet.endpoint.scanner.runtime.entities.RoleEndpointRepository;
+import org.grnet.endpoint.scanner.runtime.repositories.RoleEndpointRepository;
 import org.grnet.endpoint.scanner.runtime.entitlements.Entitlement;
 import org.grnet.status.dtos.Status;
 import org.grnet.status.dtos.ams.PublishRequest;
@@ -89,7 +89,7 @@ public class AutomationEndpointTest extends KeycloakTest {
     // -------------------------------------------------------------------------
     @BeforeEach
     void setupRepo() {
-        TestRoleEndpointRepository testRepo = new TestRoleEndpointRepository();
+        org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository testRepo = new org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository();
         QuarkusMock.installMockForType(testRepo, RoleEndpointRepository.class);
         this.roleEndpointRepository = testRepo;
     }
@@ -100,7 +100,7 @@ public class AutomationEndpointTest extends KeycloakTest {
     @BeforeEach
     void reset() {
         entitlementProvider.reset();
-        ((TestRoleEndpointRepository) roleEndpointRepository).reset();
+        ((org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository) roleEndpointRepository).reset();
     }
 
     // -------------------------------------------------------------------------
@@ -183,7 +183,7 @@ public class AutomationEndpointTest extends KeycloakTest {
 
         mockAutomation();
         // IMPORTANT: allow interceptor access
-        ((TestRoleEndpointRepository) roleEndpointRepository).set(List.of(
+        ((org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository) roleEndpointRepository).set(List.of(
                 new RoleEndpoint(
                         1L,
                         "automation",

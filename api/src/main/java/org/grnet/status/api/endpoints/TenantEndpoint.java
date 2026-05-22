@@ -24,16 +24,14 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.grnet.endpoint.scanner.runtime.ParamRef;
-import org.grnet.endpoint.scanner.runtime.ParamType;
-import org.grnet.endpoint.scanner.runtime.Scope;
-import org.grnet.endpoint.scanner.runtime.SecuredEndpoint;
+import org.grnet.endpoint.scanner.runtime.*;
 import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.GroupUserResponse;
+import org.grnet.endpoint.scanner.runtime.context.RoleEndpointHolder;
 import org.grnet.status.api.resolvers.CheckDateFormat;
 import org.grnet.status.constraints.NotFoundEntity;
 import org.grnet.status.dtos.InformativeResponse;
-import org.grnet.status.dtos.general.ExistResponseDto;
 import org.grnet.status.dtos.Status;
+import org.grnet.status.dtos.general.ExistResponseDto;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.profile.aggregation.AggregationProfileResponse;
 import org.grnet.status.dtos.profile.metric.MetricProfileResponse;
@@ -56,8 +54,12 @@ import org.grnet.status.dtos.tenant.status.TenantStatusDto;
 import org.grnet.status.dtos.tenant.status.TenantStatusFullResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGroupResultsResponse;
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiGroupStatusResponse;
-import org.grnet.status.dtos.topology.*;
+
 import org.grnet.status.dtos.tenant.webapi.TenantWebApiNodeRequest;
+import org.grnet.status.dtos.topology.EndpointTopologyDto;
+import org.grnet.status.dtos.topology.FeedTopologyDto;
+import org.grnet.status.dtos.topology.GroupTopologyDto;
+import org.grnet.status.dtos.topology.ServiceTypeDto;
 import org.grnet.status.enums.resources.TenantResource;
 import org.grnet.status.repositories.StatusPageRepository;
 import org.grnet.status.repositories.TenantInvitationRepository;
@@ -114,6 +116,7 @@ public class TenantEndpoint {
 
     @Inject
     TopologyService topologyService;
+
 
     @Operation(
             summary = "List Tenants Available to the User",
@@ -236,7 +239,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -820,7 +823,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -884,7 +887,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -953,7 +956,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -1017,7 +1020,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -1086,7 +1089,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -1161,7 +1164,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -1232,7 +1235,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -1307,7 +1310,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -1373,7 +1376,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -1446,7 +1449,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -1554,15 +1557,14 @@ public class TenantEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @SecuredEndpoint(
             params = {
-
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
-            },
-            scope = {Scope.ALL, Scope.MINE}
+            }, scope = {Scope.ALL,Scope.MINE}
     )
+    //@SecuredEndpoint
     public Response listStatusPages(
             @Parameter(
                     description = "The ID of the tenant to retrieve pages.",
@@ -1580,7 +1582,9 @@ public class TenantEndpoint {
             @Max(value = 100, message = "Page size must be between 1 and 100.") @QueryParam("size") int size,
             @Context UriInfo uriInfo) {
 
-        var pages = statusPageService.getStatusPageByUserAndPage(page - 1, size, uriInfo, id, utility.getUserUniqueIdentifier());
+
+        var roles = RoleEndpointHolder.get();
+        var pages = statusPageService.getStatusPageByUserAndPage(roles, page - 1, size, uriInfo, id, utility.getUserUniqueIdentifier());
 
         return Response.ok().entity(pages).build();
     }
@@ -1634,7 +1638,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -1701,7 +1705,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -1762,7 +1766,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -1818,7 +1822,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -1872,7 +1876,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -1931,7 +1935,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -1953,27 +1957,27 @@ public class TenantEndpoint {
                                     @ExampleObject(
                                             name = "EOSC service catalog",
                                             value = """
-                                        {
-                                          "type": "eosc-service-catalog",
-                                          "feed_service_groups": "https://somewhere2.foo.bar/service_groups",
-                                          "feed_service_endpoints": "https://somewhere2.foo.bar/service_endpoints",
-                                          "feed_service_endpoints_extensions": "https://somewhere2.foo.bar/service_endpoints_extensions"
-                                        }
-                                        """
+                                                    {
+                                                      "type": "eosc-service-catalog",
+                                                      "feed_service_groups": "https://somewhere2.foo.bar/service_groups",
+                                                      "feed_service_endpoints": "https://somewhere2.foo.bar/service_endpoints",
+                                                      "feed_service_endpoints_extensions": "https://somewhere2.foo.bar/service_endpoints_extensions"
+                                                    }
+                                                    """
                                     ),
                                     @ExampleObject(
                                             name = "CSV",
                                             value = """
-                                        {
-                                          "type": "CSV",
-                                          "feed_url": "https://docs.google.com/spreadsheets/d/1xiptZgYG2bn78hwBCEP7esTDyfMvvEXFLfJY2HblfI8/export?gid=0&format=csv",
-                                          "paginated": "false",
-                                          "fetch_type": [
-                                            "ServiceGroups"
-                                          ],
-                                          "uid_endpoints": ""
-                                        }
-                                        """
+                                                    {
+                                                      "type": "CSV",
+                                                      "feed_url": "https://docs.google.com/spreadsheets/d/1xiptZgYG2bn78hwBCEP7esTDyfMvvEXFLfJY2HblfI8/export?gid=0&format=csv",
+                                                      "paginated": "false",
+                                                      "fetch_type": [
+                                                        "ServiceGroups"
+                                                      ],
+                                                      "uid_endpoints": ""
+                                                    }
+                                                    """
                                     )
                             }
                     )
@@ -1983,7 +1987,7 @@ public class TenantEndpoint {
 
         var feedTopologyResponse = tenantService.updateFeedTopology(id, request);
 
-        var response  = new InformativeResponse();
+        var response = new InformativeResponse();
         response.code = Integer.parseInt(feedTopologyResponse.status.getCode());
         response.message = feedTopologyResponse.status.getMessage();
 
@@ -2028,7 +2032,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -2151,7 +2155,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -2215,7 +2219,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -2283,7 +2287,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -2350,7 +2354,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -2365,7 +2369,7 @@ public class TenantEndpoint {
             @Parameter(name = "date", in = QUERY, description = "Target date to retrieve a group topology ") @QueryParam("date")
             @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date) {
 
-        var topologies = topologyService.fetchGroupTopologies(id,date);
+        var topologies = topologyService.fetchGroupTopologies(id, date);
 
         return Response.ok(topologies).build();
     }
@@ -2426,7 +2430,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -2440,9 +2444,9 @@ public class TenantEndpoint {
             String id,
             @Parameter(name = "date", in = QUERY, description = "Target date to retrieve a endpoint topology ") @QueryParam("date")
             @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date
-            ) {
+    ) {
 
-        var topologies = topologyService.fetchEndpointTopologies(id,date);
+        var topologies = topologyService.fetchEndpointTopologies(id, date);
 
         return Response.ok(topologies).build();
     }
@@ -2503,7 +2507,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -2517,12 +2521,13 @@ public class TenantEndpoint {
             String id,
             @Parameter(name = "date", in = QUERY, description = "Target date to retrieve service types ") @QueryParam("date")
             @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date
-            ) {
+    ) {
 
-        var topologies = topologyService.fetchServiceTypes(id,date);
+        var topologies = topologyService.fetchServiceTypes(id, date);
 
         return Response.ok(topologies).build();
     }
+
     @Tag(name = "Topologies")
     @Operation(summary = "Create ARGO group topologies",
             description = "Retrieves tenant's group topologies to the ARGO Web API.")
@@ -2579,7 +2584,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -2602,7 +2607,7 @@ public class TenantEndpoint {
             Boolean force,
             @Valid @NotNull(message = "The request body is empty.") List<GroupTopologyDto> request) {
 
-        var topologies = topologyService.createGroupTopology(id,date, force, request);
+        var topologies = topologyService.createGroupTopology(id, date, force, request);
 
         return Response.ok().entity(topologies).build();
     }
@@ -2664,7 +2669,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -2680,7 +2685,7 @@ public class TenantEndpoint {
             @QueryParam("date")
             @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.")
             String date,
-            @Parameter(name = "force",  in = QUERY,
+            @Parameter(name = "force", in = QUERY,
                     description = "Overwrite existing topology entries.",
                     example = "true",
                     schema = @Schema(type = SchemaType.BOOLEAN))
@@ -2689,7 +2694,7 @@ public class TenantEndpoint {
             @Valid @NotNull(message = "The request body is empty.")
             List<EndpointTopologyDto> request) {
 
-        var topologies = topologyService.createEndpointTopology(id,date, force, request);
+        var topologies = topologyService.createEndpointTopology(id, date, force, request);
 
         return Response.ok().entity(topologies).build();
     }
@@ -2750,7 +2755,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -2773,7 +2778,7 @@ public class TenantEndpoint {
             Boolean force,
             @Valid @NotNull(message = "The request body is empty.") List<ServiceTypeDto> request) {
 
-        var topologies = topologyService.createServiceTypes(id, date, force , request);
+        var topologies = topologyService.createServiceTypes(id, date, force, request);
 
         return Response.ok().entity(topologies).build();
     }
@@ -2824,7 +2829,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -2841,7 +2846,7 @@ public class TenantEndpoint {
             @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date
     ) {
 
-        var topologies = topologyService.deleteGroupTopology(id,date);
+        var topologies = topologyService.deleteGroupTopology(id, date);
 
         return Response.ok().entity(topologies).build();
     }
@@ -2891,7 +2896,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -2908,10 +2913,11 @@ public class TenantEndpoint {
             @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date
     ) {
 
-        var topologies = topologyService.deleteEndpointTopology(id,date);
+        var topologies = topologyService.deleteEndpointTopology(id, date);
 
         return Response.ok().entity(topologies).build();
     }
+
     @Tag(name = "Topologies")
     @Operation(
             summary = "Delete service types  from a tenant.",
@@ -2957,7 +2963,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -2974,7 +2980,7 @@ public class TenantEndpoint {
             @Valid @CheckDateFormat(pattern = "yyyy-mm-dd", message = "Valid date format is yyyy-mm-dd.") String date
     ) {
 
-        var topologies = topologyService.deleteServiceTypes(id,date);
+        var topologies = topologyService.deleteServiceTypes(id, date);
 
         return Response.ok().entity(topologies).build();
     }
@@ -3019,7 +3025,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -3111,7 +3117,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )
@@ -3186,7 +3192,7 @@ public class TenantEndpoint {
                     @ParamRef(
                             param = "id",
                             type = ParamType.PATH,
-                            referTo= TenantResource.class
+                            referTo = TenantResource.class
                     )
             }
     )

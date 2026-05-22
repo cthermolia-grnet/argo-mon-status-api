@@ -11,7 +11,7 @@ public class EntitlementTestProfile implements QuarkusTestProfile {
     public Set<Class<?>> getEnabledAlternatives() {
         return Set.of(
                 TestEntitlementProvider.class,
-                TestRoleEndpointRepository.class
+                org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository.class
         );
     }
 }

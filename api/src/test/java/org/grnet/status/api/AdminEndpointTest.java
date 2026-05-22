@@ -77,7 +77,7 @@ public class AdminEndpointTest extends KeycloakTest {
 
     @BeforeEach
     void setupRepo() {
-        TestRoleEndpointRepository testRepo = new TestRoleEndpointRepository();
+        org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository testRepo = new org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository();
 
         QuarkusMock.installMockForType(testRepo, RoleEndpointRepository.class);
 
@@ -87,7 +87,7 @@ public class AdminEndpointTest extends KeycloakTest {
     @BeforeEach
     void reset() {
         entitlementProvider.reset();
-        ((TestRoleEndpointRepository) roleEndpointRepository).reset();
+        ((org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository) roleEndpointRepository).reset();
     }
 
     private void mockSuperAdmin() {

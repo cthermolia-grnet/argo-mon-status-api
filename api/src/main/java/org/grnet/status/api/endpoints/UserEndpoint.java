@@ -150,6 +150,7 @@ public class UserEndpoint {
     @POST
     @Path("/registration")
     @Produces(MediaType.APPLICATION_JSON)
+
     public Response registerMember() {
 
         groupManagementService.addMember("members", utility.getUsername());

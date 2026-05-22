@@ -88,6 +88,9 @@ public class StatusPageService {
     @ConfigProperty(name = "api.auth.entitlements.parent-group")
     String parentGroup;
 
+    @Inject
+    AccessControlService accessControlService;
+
 
     /**
      * Creates a new status page for the given tenant.
@@ -222,6 +225,11 @@ public class StatusPageService {
      * @return paginated list of status pages
      */
     public PageResource<StatusPageResponseDto> getStatusPageByUserAndPage(int page, int size, UriInfo uriInfo, String tenantId, String userId) {
+
+        if (accessControlService.isSuperAdmin()) {
+            var statusPages = statusPageRepository.fetchStatusPagesByTenant(page, size, tenantId);
+            return new PageResource<>(statusPages, StatusPageMapper.INSTANCE.entitiesToDtos(statusPages.list()), uriInfo);
+        }
 
         var roleEndpoints = roleEndpointContext.getRoleEndpoints();
 

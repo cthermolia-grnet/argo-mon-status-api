@@ -2,6 +2,7 @@ package org.grnet.status.api;
 
 
 import io.quarkus.test.junit.QuarkusTestProfile;
+import org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository;
 
 import java.util.Set;
 

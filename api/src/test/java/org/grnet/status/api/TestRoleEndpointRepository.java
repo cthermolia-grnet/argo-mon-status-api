@@ -1,4 +1,4 @@
-package org.grnet.status.api;
+package org.grnet.endpoint.scanner.runtime.repositories;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;

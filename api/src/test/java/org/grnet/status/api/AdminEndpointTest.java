@@ -10,6 +10,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.GroupUserResponse;
 import org.grnet.endpoint.scanner.runtime.repositories.RoleEndpointRepository;
 import org.grnet.endpoint.scanner.runtime.entitlements.Entitlement;
+import org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository;
 import org.grnet.status.api.endpoints.AdminEndpoint;
 import org.grnet.status.dtos.InformativeResponse;
 import org.grnet.status.dtos.Status;
@@ -74,16 +75,23 @@ public class AdminEndpointTest extends KeycloakTest {
     @Inject
     RoleEndpointRepository roleEndpointRepository;
 
-    @Inject
-    TestRoleEndpointRepository testRoleEndpointRepository;
-
     // -------------------------------------------------------------------------
     // SETUP ROLE REPOSITORY
     // -------------------------------------------------------------------------
     @BeforeEach
-    public void resetMocks() {
+    void setupRepo() {
+        TestRoleEndpointRepository testRepo = new TestRoleEndpointRepository();
+        QuarkusMock.installMockForType(testRepo, RoleEndpointRepository.class);
+        this.roleEndpointRepository = testRepo;
+    }
+
+    // -------------------------------------------------------------------------
+    // RESET STATE
+    // -------------------------------------------------------------------------
+    @BeforeEach
+    void reset() {
         entitlementProvider.reset();
-        testRoleEndpointRepository.reset();
+        ((TestRoleEndpointRepository) roleEndpointRepository).reset();
     }
 
     private void mockSuperAdmin() {
@@ -142,13 +150,6 @@ public class AdminEndpointTest extends KeycloakTest {
             // Use the currentMockId set by the test
             return loadMockTenantGetResponse(currentMockId);
         });
-
-        var deleteStatus = new Status();
-        deleteStatus.setCode("200");
-        deleteStatus.setMessage("Tenant deleted successfully");
-
-        when(argoWebApiClient.deleteTenant(anyString(), anyString()))
-                .thenReturn(deleteStatus);
     }
 
     @BeforeEach

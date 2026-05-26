@@ -24,18 +24,19 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.grnet.endpoint.scanner.runtime.SecuredEndpoint;
-import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.request.MemberRequest;
 import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.GroupUserResponse;
 import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.PartialGroup;
+import org.grnet.endpoint.scanner.runtime.services.RoleEndpointService;
+
 import org.grnet.status.constraints.NotFoundEntity;
 import org.grnet.status.constraints.ValidRole;
 import org.grnet.status.dtos.InformativeResponse;
-import org.grnet.status.dtos.role.RoleEndpointAssignmentResponse;
+import org.grnet.endpoint.scanner.runtime.dtos.RoleEndpointAssignmentResponse;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.project.ProjectRequestDto;
 import org.grnet.status.dtos.project.ProjectResponseDto;
 import org.grnet.status.dtos.project.ProjectUpdateDto;
-import org.grnet.status.dtos.role.SecuredEndpointPerRoleRequest;
+import org.grnet.endpoint.scanner.runtime.dtos.SecuredEndpointPerRoleRequest;
 import org.grnet.status.dtos.statuspage.StatusPageResponseDto;
 import org.grnet.status.dtos.tenant.ContactFullDto;
 import org.grnet.status.dtos.tenant.TenantRequestDto;
@@ -1340,7 +1341,7 @@ public class AdminEndpoint {
             example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
             schema = @Schema(type = SchemaType.STRING)) @PathParam("id")
                                           @Valid @ValidRole String id,
-                                      SecuredEndpointPerRoleRequest request) {
+                                      SecuredEndpointPerRoleRequest request) throws io.undertow.util.BadRequestException {
 
         roleEndpointService.assignRolesToEndpointsPerRole(id,request);
         var informativeResponse = new InformativeResponse();

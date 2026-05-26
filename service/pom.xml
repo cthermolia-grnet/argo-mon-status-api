@@ -117,6 +117,12 @@
             <version>${quarkus-auth.version}</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>org.grnet</groupId>
+            <artifactId>status-data-transfer-objects</artifactId>
+            <version>1.0.0</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>

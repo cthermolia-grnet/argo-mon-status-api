@@ -177,6 +177,17 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
         // IMPORTANT: switch identity for GET (viewer side)
         mockTenantViewer();
 
+
+        ((org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository) roleEndpointRepository).set(List.of(
+                new RoleEndpoint(
+                        1L,
+                        "tenant_viewer",
+                        "tenant_viewer",
+                        "GET/v1/users/{id}/invitation",
+                        LocalDateTime.now(),
+                        null
+                )
+        ));
         var fetched = getInvitationByIdAsInvitedUser(created.id);
 
         assertEquals("PENDING", String.valueOf(fetched.status));
@@ -620,7 +631,7 @@ public class TenantInvitationEndpointTest extends KeycloakTest {
         data.setId(id);
         var info = new TenantWebApiGetResponse.Info();
         info.setCreated("2025-01-01 00:00:00");
-        info.setName("TENANT TEST");
+        info.setName("TENANT_TEST");
         info.setEmail("test@gmail.com");
         info.setDescription("this is test tenant description");
         info.setImage("https://example/image.png");

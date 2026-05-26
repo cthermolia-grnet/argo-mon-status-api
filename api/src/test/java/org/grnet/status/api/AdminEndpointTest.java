@@ -8,7 +8,7 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.GroupUserResponse;
-import org.grnet.endpoint.scanner.runtime.entities.RoleEndpointRepository;
+import org.grnet.endpoint.scanner.runtime.repositories.RoleEndpointRepository;
 import org.grnet.endpoint.scanner.runtime.entitlements.Entitlement;
 import org.grnet.status.api.endpoints.AdminEndpoint;
 import org.grnet.status.dtos.InformativeResponse;
@@ -74,19 +74,23 @@ public class AdminEndpointTest extends KeycloakTest {
     @Inject
     RoleEndpointRepository roleEndpointRepository;
 
+    // -------------------------------------------------------------------------
+    // SETUP ROLE REPOSITORY
+    // -------------------------------------------------------------------------
     @BeforeEach
     void setupRepo() {
-        TestRoleEndpointRepository testRepo = new TestRoleEndpointRepository();
-
+        org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository testRepo = new org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository();
         QuarkusMock.installMockForType(testRepo, RoleEndpointRepository.class);
-
         this.roleEndpointRepository = testRepo;
     }
 
+    // -------------------------------------------------------------------------
+    // RESET STATE
+    // -------------------------------------------------------------------------
     @BeforeEach
     void reset() {
         entitlementProvider.reset();
-        ((TestRoleEndpointRepository) roleEndpointRepository).reset();
+        ((org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository) roleEndpointRepository).reset();
     }
 
     private void mockSuperAdmin() {

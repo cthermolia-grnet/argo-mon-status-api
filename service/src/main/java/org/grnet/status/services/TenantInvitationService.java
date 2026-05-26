@@ -9,7 +9,7 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.context.ManagedExecutor;
-import org.grnet.endpoint.scanner.runtime.endpoints.AssignRoleRequest;
+import org.grnet.endpoint.scanner.runtime.dtos.AssignRoleRequest;
 import org.grnet.endpoint.scanner.runtime.services.ResourceAuthorizationService;
 import org.grnet.status.dtos.pagination.PageResource;
 import org.grnet.status.dtos.tenant.invitations.TenantInvitationActionResponse;

@@ -7,7 +7,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import org.grnet.endpoint.scanner.runtime.entities.RoleEndpoint;
-import org.grnet.endpoint.scanner.runtime.entities.RoleEndpointRepository;
+import org.grnet.endpoint.scanner.runtime.repositories.RoleEndpointRepository;
 import org.grnet.endpoint.scanner.runtime.entitlements.Entitlement;
 import org.grnet.status.api.endpoints.UserEndpoint;
 import org.grnet.status.dtos.InformativeResponse;
@@ -40,7 +40,7 @@ public class UserEndpointTest extends KeycloakTest {
     // -------------------------------------------------------------------------
     @BeforeEach
     void setupRepo() {
-        TestRoleEndpointRepository testRepo = new TestRoleEndpointRepository();
+        org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository testRepo = new org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository();
         QuarkusMock.installMockForType(testRepo, RoleEndpointRepository.class);
         this.roleEndpointRepository = testRepo;
     }
@@ -51,7 +51,7 @@ public class UserEndpointTest extends KeycloakTest {
     @BeforeEach
     void reset() {
         entitlementProvider.reset();
-        ((TestRoleEndpointRepository) roleEndpointRepository).reset();
+        ((org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository) roleEndpointRepository).reset();
     }
 
     // -------------------------------------------------------------------------
@@ -87,7 +87,8 @@ public class UserEndpointTest extends KeycloakTest {
 
         mockTenantViewer();
 
-        ((TestRoleEndpointRepository) roleEndpointRepository).set(List.of( new RoleEndpoint( 1L, "members", "members", "GET_/v1/profile", LocalDateTime.now(), null)));
+        ((org.grnet.endpoint.scanner.runtime.repositories.TestRoleEndpointRepository) roleEndpointRepository).set(List.of( new RoleEndpoint( 1L, "members", "members", "GET_/v1/profile", LocalDateTime.now(), null)));
+
 
         var response = given()
                 .auth().oauth2(tenantViewer)

@@ -1,6 +1,7 @@
 package org.grnet.status.entities;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class PageQueryImpl<Entity> implements PageQuery<Entity> {
@@ -45,10 +46,16 @@ public class PageQueryImpl<Entity> implements PageQuery<Entity> {
     @Override
     public <T extends Entity> List<T> list() {
 
-        List<T> entities = new ArrayList<>();
+        if (list == null) {
+            return Collections.emptyList();
+        }
 
-        list.stream().forEach(entity -> entities.add((T) entity));
+        List<T> entities = new ArrayList<>(list.size());
+        for (Entity entity : list) {
+            entities.add((T) entity);
+        }
 
         return entities;
     }
+
 }

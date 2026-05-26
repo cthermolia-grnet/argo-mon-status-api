@@ -56,15 +56,6 @@ public class AutomationEndpointTest extends KeycloakTest {
     @Inject
     RoleEndpointRepository roleEndpointRepository;
 
-    @Inject
-    TestRoleEndpointRepository testRoleEndpointRepository;
-
-    @BeforeEach
-    public void resetMocks() {
-        entitlementProvider.reset();
-        testRoleEndpointRepository.reset();
-    }
-
     @BeforeEach
     public void mockArgoClient() throws Exception {
 
@@ -91,6 +82,25 @@ public class AutomationEndpointTest extends KeycloakTest {
 
         when(mockClient.publish(anyString(), anyString(), anyString(), any(PublishRequest.class)))
                 .thenReturn(resp);
+    }
+
+    // -------------------------------------------------------------------------
+    // SETUP ROLE REPOSITORY
+    // -------------------------------------------------------------------------
+    @BeforeEach
+    void setupRepo() {
+        TestRoleEndpointRepository testRepo = new TestRoleEndpointRepository();
+        QuarkusMock.installMockForType(testRepo, RoleEndpointRepository.class);
+        this.roleEndpointRepository = testRepo;
+    }
+
+    // -------------------------------------------------------------------------
+    // RESET STATE
+    // -------------------------------------------------------------------------
+    @BeforeEach
+    void reset() {
+        entitlementProvider.reset();
+        ((TestRoleEndpointRepository) roleEndpointRepository).reset();
     }
 
     // -------------------------------------------------------------------------
@@ -173,7 +183,7 @@ public class AutomationEndpointTest extends KeycloakTest {
 
         mockAutomation();
         // IMPORTANT: allow interceptor access
-        testRoleEndpointRepository.set(List.of(
+        ((TestRoleEndpointRepository) roleEndpointRepository).set(List.of(
                 new RoleEndpoint(
                         1L,
                         "automation",

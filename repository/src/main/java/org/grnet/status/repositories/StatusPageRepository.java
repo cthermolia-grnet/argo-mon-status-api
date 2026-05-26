@@ -16,6 +16,28 @@ import java.util.List;
 @ApplicationScoped
 public class StatusPageRepository implements Repository<StatusPage, String> {
 
+    public PageQuery<StatusPage> fetchStatusPagesByTenantAndUserAndPage(
+            int page,
+            int size,
+            String tenantId,
+            String userId) {
+
+        var panache = find(
+                "from StatusPage sp where sp.tenant.id = ?1 and sp.userId = ?2",
+                Sort.by("createdAt", Sort.Direction.Descending),
+                tenantId,
+                userId
+        ).page(page, size);
+
+        var pageable = new PageQueryImpl<StatusPage>();
+        pageable.list = panache.list();
+        pageable.index = page;
+        pageable.size = size;
+        pageable.count = panache.count();
+        pageable.page = Page.of(page, size);
+
+        return pageable;
+    }
     /**
      * Retrieves a paginated list of status pages for a specific tenant and user.
      *
@@ -51,10 +73,14 @@ public class StatusPageRepository implements Repository<StatusPage, String> {
     public PageQuery<StatusPage> fetchStatusPagesByTenant(int page, int size, String tenantId) {
 
         var panache = find(
-                "from StatusPage sp where sp.tenant.id = ?1", Sort.by("createdAt", Sort.Direction.Descending), tenantId).page(page, size);
+                "from StatusPage sp where sp.tenant.id = ?1",
+                Sort.by("createdAt", Sort.Direction.Descending),
+                tenantId
+        ).page(page, size);
 
         var pageable = new PageQueryImpl<StatusPage>();
-        pageable.list = panache.list();
+
+        pageable.list = panache.list() != null ? panache.list() : List.of();
         pageable.index = page;
         pageable.size = size;
         pageable.count = panache.count();
@@ -62,7 +88,6 @@ public class StatusPageRepository implements Repository<StatusPage, String> {
 
         return pageable;
     }
-
     /**
      * Retrieves a paginated list of all status pages.
      *

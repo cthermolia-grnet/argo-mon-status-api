@@ -22,6 +22,7 @@ import org.grnet.status.dtos.report.FullReportResponseDto;
 import org.grnet.status.dtos.statuspage.*;
 import org.grnet.status.dtos.user.UserProfileDto;
 import org.grnet.status.entities.Page;
+import org.grnet.status.entities.PageQuery;
 import org.grnet.status.entities.PageQueryImpl;
 import org.grnet.status.entities.StatusPage;
 import org.grnet.status.enums.ArgoItemStatusEnum;
@@ -32,15 +33,13 @@ import org.grnet.status.repositories.StatusPageRepository;
 import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.services.utils.ImageUploadUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.Locking;
-
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static io.netty.util.AsciiString.contains;
@@ -97,8 +96,8 @@ public class StatusPageService {
      * Creates a new status page for the given tenant.
      *
      * @param tenantId tenant identifier
-     * @param request status page creation request
-     * @param userId user identifier
+     * @param request  status page creation request
+     * @param userId   user identifier
      * @return created status page
      */
     @Transactional
@@ -112,8 +111,8 @@ public class StatusPageService {
             report = reportService.fetchReportById(tenantId, request.reportId);
         } catch (WebApplicationException e) {
 
-            Log.error(e.getMessage(),e);
-            throw new WebApplicationException("Creating Status Page... " + " Failed to create status page for report with id: " + request.reportId );
+            Log.error(e.getMessage(), e);
+            throw new WebApplicationException("Creating Status Page... " + " Failed to create status page for report with id: " + request.reportId);
 
         }
         var entity = StatusPageMapper.INSTANCE.dtoToEntity(request);
@@ -150,9 +149,9 @@ public class StatusPageService {
     /**
      * Updates an existing status page for the given tenant.
      *
-     * @param tenantId tenant identifier
+     * @param tenantId     tenant identifier
      * @param statusPageId status page identifier
-     * @param request status page update request
+     * @param request      status page update request
      * @return updated status page
      */
     @Transactional
@@ -212,63 +211,110 @@ public class StatusPageService {
     /**
      * Retrieves a paginated list of status pages for a tenant based on the user role.
      *
-     * @param page 0-based page index
-     * @param size page size
-     * @param uriInfo request context for pagination links
+     * @param page     0-based page index
+     * @param size     page size
+     * @param uriInfo  request context for pagination links
      * @param tenantId tenant identifier
-     * @param userId user identifier
+     * @param userId   user identifier
      * @return paginated list of status pages
      */
-    public PageResource<StatusPageResponseDto> getStatusPageByUserAndPage(int page, int size, UriInfo uriInfo, String tenantId, String userId) {
+//    public PageResource<StatusPageResponseDto> getStatusPageByUserAndPage(int page, int size, UriInfo uriInfo, String tenantId, String userId) {
+//
+//        var tenant = tenantRepository.findById(tenantId);
+//
+//        var isViewer = isViewerForTenantFromProfile(tenant.name, userId);
+//
+//        var statusPages = isViewer
+//                ? statusPageRepository.fetchStatusPageByTenantAndAndUserAndPage(page, size, tenantId, userId)
+//                : statusPageRepository.fetchStatusPagesByTenant(page, size, tenantId);
+//
+//        return new PageResource<>(statusPages, StatusPageMapper.INSTANCE.entitiesToDtos(statusPages.list()), uriInfo);
+//    }
+    public PageResource<StatusPageResponseDto> getStatusPageByUserAndPage(List<RoleEndpoint> roles,
+                                                                          int page,
+                                                                          int size,
+                                                                          UriInfo uriInfo,
+                                                                          String tenantId,
+                                                                          String userId) {
 
         if (accessControlService.isSuperAdmin()) {
             var statusPages = statusPageRepository.fetchStatusPagesByTenant(page, size, tenantId);
             return new PageResource<>(statusPages, StatusPageMapper.INSTANCE.entitiesToDtos(statusPages.list()), uriInfo);
         }
 
-        var roleEndpoints = roleEndpointContext.getRoleEndpoints();
 
         var userRoles = getRolesFromEntitlements(entitlementProvider.fetchEntitlements().stream().map(Entitlement::getRaw).collect(Collectors.toList()));
 
-        var scope = roleEndpoints.stream()
+        var scope = roles.stream()
                 .filter(re -> userRoles.contains(re.getRoleName()))
                 .map(RoleEndpoint::getScope)
                 .filter(Objects::nonNull)
-                .max(Comparator.comparing(s -> s.equals("ALL") ? 1 : 0))
+                .max(Comparator.comparing(s -> s.equalsIgnoreCase("ALL") ? 1 : 0))
                 .orElse(null);
 
-        if(Objects.isNull(scope)){
+        if (Objects.isNull(scope)) {
 
             throw new ForbiddenException("Scope must be defined for this endpoint!");
         }
 
-        var statusPages = Scope.valueOf(scope).equals(Scope.MINE)
-                ? statusPageRepository.fetchStatusPageByTenantAndAndUserAndPage(page, size, tenantId, userId)
-                : statusPageRepository.fetchStatusPagesByTenant(page, size, tenantId);
+        var resolvedScope = Scope.valueOf(scope.toUpperCase());
 
-        return new PageResource<>(statusPages, StatusPageMapper.INSTANCE.entitiesToDtos(statusPages.list()), uriInfo);
+        var statusPages = resolvedScope.equals(Scope.MINE)
+                ? statusPageRepository.fetchStatusPageByTenantAndAndUserAndPage(
+                page, size, tenantId, userId
+        )
+                : statusPageRepository.fetchStatusPagesByTenant(
+                page, size, tenantId
+        );
+        return new PageResource<>(
+                statusPages,
+                StatusPageMapper.INSTANCE.entitiesToDtos(
+                        statusPages != null ? statusPages.list()
+                                : Collections.emptyList()
+                ),
+                uriInfo
+        );
     }
+//
+//    private List<String> getRolesFromEntitlements(List<String> rawEntitlements){
+//
+//        return rawEntitlements.stream()
+//                .map(ent -> {
+//                    int idx = ent.indexOf(parentGroup);
+//                    if (idx != -1) {
+//                        return ent.substring(idx + parentGroup.length()).split(":")[0];
+//                    }
+//                    return null;
+//                })
+//                .filter(Objects::nonNull)
+//                .toList();
+//    }
+//
 
-    private List<String> getRolesFromEntitlements(List<String> rawEntitlements){
+    private List<String> getRolesFromEntitlements(List<String> rawEntitlements) {
 
         return rawEntitlements.stream()
                 .map(ent -> {
+
                     int idx = ent.indexOf(parentGroup);
-                    if (idx != -1) {
-                        return ent.substring(idx + parentGroup.length()).split(":")[0];
+
+                    if (idx == -1) {
+                        return null;
                     }
-                    return null;
+
+                    String remaining =
+                            ent.substring(idx + parentGroup.length() + 1);
+
+                    return remaining.split(":")[0];
                 })
                 .filter(Objects::nonNull)
                 .toList();
     }
-
-
     /**
      * Retrieves a paginated list of status pages.
      *
-     * @param page 0-based page index
-     * @param size page size
+     * @param page    0-based page index
+     * @param size    page size
      * @param uriInfo request context for pagination links
      * @return paginated list of status pages
      */
@@ -322,10 +368,10 @@ public class StatusPageService {
     /**
      * Retrieves a paginated list of status pages accessible to the given user.
      *
-     * @param userId user identifier
-     * @param search search filter
-     * @param page 0-based page index
-     * @param size page size
+     * @param userId  user identifier
+     * @param search  search filter
+     * @param page    0-based page index
+     * @param size    page size
      * @param uriInfo request context for pagination links
      * @return paginated list of status pages
      */
@@ -464,10 +510,11 @@ public class StatusPageService {
     //----------------------------------------------------------------------------------------------------
     //  HELPER METHODS
     //----------------------------------------------------------------------------------------------------
+
     /**
      * Validates that the provided slug is not already used by another status page.
      *
-     * @param slug status page slug
+     * @param slug      status page slug
      * @param currentId current status page identifier
      */
     public void checkIfExistSlug(String slug, String currentId) {
@@ -492,7 +539,7 @@ public class StatusPageService {
      *
      * @param tenantId tenant identifier
      * @param reportId report identifier
-     * @param groups status page group configuration
+     * @param groups   status page group configuration
      */
     public void validateGroupsExist(String tenantId, String reportId, List<StatusPageGroupDto> groups) {
 
@@ -594,7 +641,7 @@ public class StatusPageService {
     /**
      * Updates the logo value inside the status page config JSON.
      *
-     * @param configJson config JSON
+     * @param configJson  config JSON
      * @param newLogoPath new logo path
      * @return updated config JSON
      */
@@ -635,7 +682,7 @@ public class StatusPageService {
      * Determines whether the user has viewer access for the specified tenant.
      *
      * @param tenantName tenant name
-     * @param userId user identifier
+     * @param userId     user identifier
      * @return true if user is viewer for the tenant
      */
     private boolean isViewerForTenantFromProfile(String tenantName, String userId) {
@@ -684,5 +731,19 @@ public class StatusPageService {
                         && g.role != null
                         && "super_admin".equalsIgnoreCase(g.role.trim())
         );
+    }
+
+
+    private PageQuery<StatusPage> emptyPage(int page, int size) {
+
+        PageQueryImpl<StatusPage> empty = new PageQueryImpl<>();
+
+        empty.list = Collections.emptyList();
+        empty.index = page;
+        empty.size = size;
+        empty.count = 0L;
+        empty.page = Page.of(page, size);   // ✅ THIS fixes your crash
+
+        return empty;
     }
 }

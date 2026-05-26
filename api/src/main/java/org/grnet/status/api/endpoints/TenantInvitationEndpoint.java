@@ -96,7 +96,7 @@ public class TenantInvitationEndpoint {
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     //TODO this need to change to create InvitationSource.class. Currently is public
-    //@SecuredEndpoint
+    @SecuredEndpoint //this need to change to create InvitationSource.class
     public Response getInvitationById(
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantInvitationRepository.class, message = "There is no Invitation with the following id: ")
@@ -152,8 +152,7 @@ public class TenantInvitationEndpoint {
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    //TODO need to change to InvitationResource.class. Currently is public
-    //@SecuredEndpoint
+    @SecuredEndpoint
     public Response respond(
             @PathParam("id")
             @Valid @NotFoundEntity(repository = TenantInvitationRepository.class, message = "There is no Invitation with the following id: ") String id,

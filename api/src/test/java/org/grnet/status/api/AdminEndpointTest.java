@@ -74,16 +74,23 @@ public class AdminEndpointTest extends KeycloakTest {
     @Inject
     RoleEndpointRepository roleEndpointRepository;
 
-    @Inject
-    TestRoleEndpointRepository testRoleEndpointRepository;
-
     // -------------------------------------------------------------------------
     // SETUP ROLE REPOSITORY
     // -------------------------------------------------------------------------
     @BeforeEach
-    public void resetMocks() {
+    void setupRepo() {
+        TestRoleEndpointRepository testRepo = new TestRoleEndpointRepository();
+        QuarkusMock.installMockForType(testRepo, RoleEndpointRepository.class);
+        this.roleEndpointRepository = testRepo;
+    }
+
+    // -------------------------------------------------------------------------
+    // RESET STATE
+    // -------------------------------------------------------------------------
+    @BeforeEach
+    void reset() {
         entitlementProvider.reset();
-        testRoleEndpointRepository.reset();
+        ((TestRoleEndpointRepository) roleEndpointRepository).reset();
     }
 
     private void mockSuperAdmin() {
@@ -142,13 +149,6 @@ public class AdminEndpointTest extends KeycloakTest {
             // Use the currentMockId set by the test
             return loadMockTenantGetResponse(currentMockId);
         });
-
-        var deleteStatus = new Status();
-        deleteStatus.setCode("200");
-        deleteStatus.setMessage("Tenant deleted successfully");
-
-        when(argoWebApiClient.deleteTenant(anyString(), anyString()))
-                .thenReturn(deleteStatus);
     }
 
     @BeforeEach

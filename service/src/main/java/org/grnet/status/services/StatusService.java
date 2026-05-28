@@ -95,26 +95,50 @@ public class StatusService {
      */
     @Transactional
     public StatusPageConfigDto getConfigBySlug(String slug) {
+
         var statusPage = statusPageRepository.find("slug", slug)
                 .firstResultOptional()
-                .orElseThrow(() -> new IllegalArgumentException("Status page not found for slug: " + slug));
+                .orElseThrow(() -> new NotFoundException("Status page not found for slug: " + slug));
 
-        // Convert entity → DTO (config already deserialized)
         var statusPageDto = StatusPageMapper.INSTANCE.entityToDto(statusPage);
         var config = statusPageDto.config;
 
-        // Fetch live groups
         webApiService.validateTenantInitialized(statusPage.getTenant().id, "Status Groups");
-        var argoGroups = argoWebApiClient.fetchStatusGroupsSuperAdmin(accessToken, statusPage.getTenant().id,statusPage.getReport());
 
-        // Update config group statuses in memory
+        ArgoStatusGroupsResponse argoGroups = null;
+        try {
+             argoGroups = argoWebApiClient.fetchStatusGroupsSuperAdmin(
+                    accessToken,
+                    statusPage.getTenant().id,
+                    statusPage.getReport()
+            );
+        } catch (WebApplicationException e) {
+            Log.errorf(e, "Argo Web API returned HTTP error while fetching status groups. Status: %s", e.getResponse().getStatus());
+            throw new NotFoundException(
+                    "Fetching Status Groups... No status groups retrieved from Argo Web API for report: " + statusPage.getReport()
+            );
+        } catch (ProcessingException e) {
+            Log.error("Argo Web API is unreachable", e);
+            throw new RuntimeException("Fetching Status Groups... Argo Web API is unreachable", e);
+        }
+
+        var liveGroups = requireGroups(argoGroups, statusPage.getReport());
+
+        if (config.groups == null) {
+            return config;
+        }
+
         for (var group : config.groups) {
-            if (group == null || group.list == null) continue;
+            if (group == null || group.list == null) {
+                continue;
+            }
 
             for (var item : group.list) {
-                if (item == null || item.name == null) continue;
+                if (item == null || item.name == null) {
+                    continue;
+                }
 
-                argoGroups.groups.stream()
+                liveGroups.stream()
                         .filter(live -> live != null && item.name.equals(live.name))
                         .findFirst()
                         .ifPresent(live -> {
@@ -130,4 +154,17 @@ public class StatusService {
 
         return config;
     }
+
+
+    private List<ArgoStatusGroupsResponse.Group> requireGroups(ArgoStatusGroupsResponse argoGroups, String report) {
+
+        if (argoGroups == null || argoGroups.groups == null || argoGroups.groups.isEmpty()) {
+            throw new NotFoundException(
+                    "Fetching Status Groups... No status groups found in Argo Web API for report: " + report
+            );
+        }
+
+        return argoGroups.groups;
+    }
+
 }

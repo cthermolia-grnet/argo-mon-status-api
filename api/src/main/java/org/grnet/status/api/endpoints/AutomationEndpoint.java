@@ -75,9 +75,15 @@ public class AutomationEndpoint {
     @Path("/tenants/{id}/status")
     @Produces(MediaType.APPLICATION_JSON)
     @SecuredEndpoint
-    public Response updateStatus(@PathParam("id")
-                                 @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id,
-                                 TenantStatusDto request) {
+    public Response updateStatus(
+            @Parameter(
+                    description = "The ID of the tenant to retrieve status.",
+                    required = true,
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id, TenantStatusDto request) {
 
         var status = tenantService.updateTenantAutoJobs(id, request);
         return Response.ok().entity(status).build();
@@ -122,12 +128,15 @@ public class AutomationEndpoint {
     @Path("/tenants/{id}/status")
     @Produces(MediaType.APPLICATION_JSON)
     @SecuredEndpoint
-    public Response getTenantStatus(@Parameter(
-            description = "The ID of the tenant to retrieve status.",
-            required = true,
-            example = "c242e43f-9869-4fb0-b881-631bc5746ec0",
-            schema = @Schema(type = SchemaType.STRING)) @PathParam("id")
-                                    @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ") String id) {
+    public Response getTenantStatus(
+            @Parameter(
+                    description = "The ID of the tenant to update status.",
+                    required = true,
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f",
+                    schema = @Schema(type = SchemaType.STRING))
+            @PathParam("id")
+            @Valid @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id) {
 
         var status = tenantService.getTenantStatus(id);
 

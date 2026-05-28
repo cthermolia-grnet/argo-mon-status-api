@@ -85,6 +85,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#131](https://github.com/ARGOeu/argo-mon-status-api/pull/131) ARGO-5547 argo-status api nodes capabilities should also be accessible using the node name
 - [#132](https://github.com/ARGOeu/argo-mon-status-api/pull/132) ARGO-5549 Proxy group results and status calls from web-api
 - [#139](https://github.com/ARGOeu/argo-mon-status-api/pull/139) ARGO-5552 Extend theming option field values for status page creation
+- [#148](https://github.com/ARGOeu/argo-mon-status-api/pull/148) ARGO-5589 Make INIT_MONITORING_BOX event automatic
 
 ### Fix
 
@@ -130,6 +131,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#133](https://github.com/ARGOeu/argo-mon-status-api/pull/133) ARGO-5551 INIT_POEM cannot be changed to completed
 - [#142](https://github.com/ARGOeu/argo-mon-status-api/pull/142) ARGO-5582 Implement entitlement-based tenant member resolution
 - [#143](https://github.com/ARGOeu/argo-mon-status-api/pull/143) ARGO-5583 Update user profile entitlement mapping to support resource-based tenant roles
+- [#146](https://github.com/ARGOeu/argo-mon-status-api/pull/146) ARGO-5585 Status-api: when a tenant has no data send an appropriate message
 - [#147](https://github.com/ARGOeu/argo-mon-status-api/pull/147) ARGO-5602 Refactor status-api tests and adapt imports after quarkus-auth package changes
 
 ### Removed

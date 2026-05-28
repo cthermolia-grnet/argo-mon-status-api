@@ -4,8 +4,6 @@ package org.grnet.status.services;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.NotFoundException;
-import org.grnet.endpoint.scanner.runtime.dtos.RoleResponse;
 import org.grnet.endpoint.scanner.runtime.entities.RoleEndpoint;
 import org.grnet.endpoint.scanner.runtime.repositories.RoleEndpointRepository;
 ;
@@ -27,69 +25,55 @@ public class RoleEndpointService {
 
     public RoleEndpointAssignmentResponse getAssignedEndpoints() {
 
-        List<RoleEndpoint> roleEndpoints = roleEndpointRepository.findAll();
+        var roleEndpoints = roleEndpointRepository.findAll();
 
-        Map<String, List<RoleEndpoint>> grouped =
-                roleEndpoints.stream()
-                        .collect(Collectors.groupingBy(RoleEndpoint::getRoleId));
+        var grouped = roleEndpoints.stream()
+                .collect(Collectors.groupingBy(RoleEndpoint::getRoleId));
 
-        List<RoleEndpointAssignmentResponse.RoleAssignment> assignments =
-                grouped.entrySet().stream()
-                        .map(entry -> {
-                            List<RoleEndpoint> group = entry.getValue();
-                            RoleEndpoint first = group.get(0);
+        var assignments = grouped.entrySet().stream()
+                .map(entry -> {
+                    var group = entry.getValue();
+                    var first = group.get(0);
 
-                            RoleEndpointAssignmentResponse.RoleAssignment ra =
-                                    new RoleEndpointAssignmentResponse.RoleAssignment();
+                    var ra = new RoleEndpointAssignmentResponse.RoleAssignment();
 
-                            ra.setRoleId(entry.getKey()); // ✅ safer than first.getRoleId()
-                            ra.setRoleName(first.getRoleName());
+                    ra.setRoleId(entry.getKey()); // ✅ safer than first.getRoleId()
+                    ra.setRoleName(first.getRoleName());
 
-                            ra.setSecuredEndpointIds(
-                                    group.stream()
-                                            .map(RoleEndpoint::getSecuredEndpointId)
-                                            .distinct()
-                                            .collect(Collectors.toList())
-                            );
+                    ra.setSecuredEndpointIds(
+                            group.stream()
+                                    .map(RoleEndpoint::getSecuredEndpointId)
+                                    .distinct()
+                                    .collect(Collectors.toList())
+                    );
 
-                            return ra;
-                        })
-                        .collect(Collectors.toList());
+                    return ra;
+                })
+                .collect(Collectors.toList());
 
-        RoleEndpointAssignmentResponse response = new RoleEndpointAssignmentResponse();
+        var response = new RoleEndpointAssignmentResponse();
         response.setAssignments(assignments);
 
         return response;
     }
 
     public RoleEndpointAssignmentResponse getAssignedEndpointsByRoleId(String roleId) {
-//        var roleResponse=resourceAuthorizationService.getAllRoles();
-//        RoleResponse role = roleResponse.stream()
-//                .filter(r -> r.id.equals(roleId))
-//                .findFirst()
-//                .orElse(null);
-//        if (role == null) {
-//            throw new NotFoundException(
-//                    String.format("Role with id %s not found", roleId)
-//            );
-//        }
 
-        List<RoleEndpoint> roleEndpoints = roleEndpointRepository.findAll()
+        var roleEndpoints = roleEndpointRepository.findAll()
                 .stream()
                 .filter(re -> re.getRoleId().equals(roleId))
                 .toList();
 
-        RoleEndpointAssignmentResponse response = new RoleEndpointAssignmentResponse();
+        var response = new RoleEndpointAssignmentResponse();
 
         if (roleEndpoints.isEmpty()) {
             response.setAssignments(Collections.emptyList());
             return response;
         }
 
-        RoleEndpoint first = roleEndpoints.get(0);
+        var first = roleEndpoints.get(0);
 
-        RoleEndpointAssignmentResponse.RoleAssignment assignment =
-                new RoleEndpointAssignmentResponse.RoleAssignment();
+        var assignment = new RoleEndpointAssignmentResponse.RoleAssignment();
 
         assignment.setRoleId(roleId);
         assignment.setRoleName(first.getRoleName());
@@ -109,19 +93,19 @@ public class RoleEndpointService {
     @Transactional
     public void assignRolesToEndpoints(RoleEndpointAssignmentRequest request) {
 
-        List<RoleEndpoint> existing = roleEndpointRepository.findAll();
+        var existing = roleEndpointRepository.findAll();
 
-        Set<String> requestedRoleIds = request.getAssignments()
+        var requestedRoleIds = request.getAssignments()
                 .stream()
                 .map(RoleEndpointAssignmentRequest.RoleAssignment::getRoleId)
                 .collect(Collectors.toSet());
 
-        Set<String> dbRoleIds = existing.stream()
+        var dbRoleIds = existing.stream()
                 .map(RoleEndpoint::getRoleId)
                 .collect(Collectors.toSet());
 
         // DELETE roles not in request
-        Set<String> rolesToDelete = new HashSet<>(dbRoleIds);
+        var rolesToDelete = new HashSet<>(dbRoleIds);
         rolesToDelete.removeAll(requestedRoleIds);
 
         for (String roleId : rolesToDelete) {
@@ -131,20 +115,19 @@ public class RoleEndpointService {
         //  SYNC remaining roles
         for (var assignment : request.getAssignments()) {
 
-            String roleId = assignment.getRoleId();
-            String roleName = assignment.getRoleName();
+            var roleId = assignment.getRoleId();
+            var roleName = assignment.getRoleName();
 
-            Set<String> incoming = new HashSet<>(assignment.getSecuredEndpointIds());
+            var incoming = new HashSet<>(assignment.getSecuredEndpointIds());
 
-            List<RoleEndpoint> roleEntries =
-                    roleEndpointRepository.list("role_id", roleId);
+            var roleEntries = roleEndpointRepository.list("role_id", roleId);
 
-            Set<String> existingEndpoints = roleEntries.stream()
+            var existingEndpoints = roleEntries.stream()
                     .map(RoleEndpoint::getSecuredEndpointId)
                     .collect(Collectors.toSet());
 
             // delete removed endpoints
-            Set<String> toDelete = new HashSet<>(existingEndpoints);
+            var toDelete = new HashSet<>(existingEndpoints);
             toDelete.removeAll(incoming);
 
             if (!toDelete.isEmpty()) {
@@ -152,11 +135,11 @@ public class RoleEndpointService {
             }
 
             // insert new endpoints
-            Set<String> toInsert = new HashSet<>(incoming);
+            var toInsert = new HashSet<>(incoming);
             toInsert.removeAll(existingEndpoints);
 
             for (String endpointId : toInsert) {
-                RoleEndpoint re = new RoleEndpoint();
+                var re = new RoleEndpoint();
                 re.setRoleId(roleId);
                 re.setRoleName(roleName);
                 re.setSecuredEndpointId(endpointId);
@@ -170,36 +153,34 @@ public class RoleEndpointService {
     public void assignRolesToEndpointsPerRole(String roleId, SecuredEndpointPerRoleRequest request) {
 
         var roleResponse=resourceAuthorizationService.getAllRoles();
-        RoleResponse role = roleResponse.stream()
+        var role = roleResponse.stream()
                 .filter(r -> r.id.equals(roleId))
                 .findFirst()
                 .orElse(null);
 
-        List<RoleEndpoint> roleEntries = roleEndpointRepository.list("role_id",roleId);
-        Set<String> existingEndpoints = roleEntries.stream()
+        var roleEntries = roleEndpointRepository.list("role_id",roleId);
+        var existingEndpoints = roleEntries.stream()
                 .map(RoleEndpoint::getSecuredEndpointId)
                 .collect(Collectors.toSet());
 
-
             // delete removed endpoints
-            Set<String> toDelete = new HashSet<>(existingEndpoints);
-            toDelete.removeAll(request.getSecuredEndpointIds());
+        var toDelete = new HashSet<>(existingEndpoints);
+        toDelete.removeAll(request.getSecuredEndpointIds());
 
-            if (!toDelete.isEmpty()) {
-                roleEndpointRepository.deleteByRoleIdAndEndpointIds(roleId, new ArrayList<>(toDelete));
-            }
-
-            // insert new endpoints
-            Set<String> toInsert = new HashSet<>(request.getSecuredEndpointIds());
-            toInsert.removeAll(existingEndpoints);
-
-            for (String endpointId : toInsert) {
-                RoleEndpoint re = new RoleEndpoint();
-                re.setRoleId(roleId);
-                re.setRoleName(role.name);
-                re.setSecuredEndpointId(endpointId);
-                roleEndpointRepository.create(re);
-            }
+        if (!toDelete.isEmpty()) {
+            roleEndpointRepository.deleteByRoleIdAndEndpointIds(roleId, new ArrayList<>(toDelete));
         }
 
+        // insert new endpoints
+        var toInsert = new HashSet<>(request.getSecuredEndpointIds());
+        toInsert.removeAll(existingEndpoints);
+
+        for (String endpointId : toInsert) {
+            var re = new RoleEndpoint();
+            re.setRoleId(roleId);
+            re.setRoleName(role.name);
+            re.setSecuredEndpointId(endpointId);
+            roleEndpointRepository.create(re);
+        }
+    }
 }

@@ -6,7 +6,6 @@ import jakarta.enterprise.inject.Alternative;
 import org.grnet.endpoint.scanner.runtime.entities.RoleEndpoint;
 import org.grnet.endpoint.scanner.runtime.repositories.RoleEndpointRepository;
 
-
 import java.util.ArrayList;
 import java.util.List;
 @Alternative

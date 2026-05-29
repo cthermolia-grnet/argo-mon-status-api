@@ -6,5 +6,6 @@ public enum EventName {
         INIT_COMPUTE_ENGINE,
         CHECK_READINESS,
         INIT_TOPOLOGY_CONNECTOR,
-        INIT_POEM
+        INIT_POEM,
+        INIT_MONITORING_BOX
 }

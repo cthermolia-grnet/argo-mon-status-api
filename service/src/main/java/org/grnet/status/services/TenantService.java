@@ -321,7 +321,7 @@ public class TenantService {
             try {
 
                 var id = t.id;// 1. Delete from DB first (inside transaction)
-                Set<Contact> oldContacts = new HashSet<>(t.getContacts());
+                var oldContacts = new HashSet<>(t.getContacts());
 
                 tenantRepository.delete(t);
                 oldContacts.stream().forEach(c -> {
@@ -335,7 +335,7 @@ public class TenantService {
 
                 // If DB delete fails -> API delete is NOT executed, as desired
 
-                int status = 500;
+                var status = 500;
                 if (e instanceof WebApplicationException) {
                     status = ((WebApplicationException) e).getResponse().getStatus();
                 }
@@ -684,9 +684,23 @@ public class TenantService {
         var tenant = tenantRepository.findById(id);
 
         var existingStatus = TenantMapper.INSTANCE.mapStatusObject(tenant.getStatus());
+
         var shouldTriggerPoem = isComputeEngineCompleted(request);
+        var shouldTriggerMonBox = isPoemCompleted(request);
+
+        var shouldResetAfterComputeEngine = isComputeEngineReset(request);
+        var shouldResetAfterPoem = isPoemReset(request);
 
         request.jobs = mergeJobs(existingStatus.jobs, request.jobs);
+
+        if (shouldResetAfterComputeEngine) {
+            resetJob(request.jobs, TenantJobEvent.INIT_POEM);
+            resetJob(request.jobs, TenantJobEvent.INIT_MONITORING_BOX);
+        }
+
+        if (shouldResetAfterPoem) {
+            resetJob(request.jobs, TenantJobEvent.INIT_MONITORING_BOX);
+        }
 
         var updatedStatusJson = TenantMapper.INSTANCE.mergeJobsIntoStatus(tenant.getStatus(), request);
 
@@ -702,6 +716,11 @@ public class TenantService {
 
             if (shouldTriggerPoem) {
                 var alert = buildAlert(EventName.INIT_POEM, tenant, String.valueOf(Instant.now()));
+                notifyAmsInitConnector(id, alert);
+            }
+
+            if (shouldTriggerMonBox) {
+                var alert = buildAlert(EventName.INIT_MONITORING_BOX, tenant, String.valueOf(Instant.now()));
                 notifyAmsInitConnector(id, alert);
             }
 
@@ -1059,10 +1078,9 @@ public class TenantService {
      * @return alert definition request
      */
     private AlertDefinitionRequest buildAlert(EventName eventName, Tenant tenant, String createdAt) {
-        AlertDefinitionRequest alert = new AlertDefinitionRequest();
+        var alert = new AlertDefinitionRequest();
         alert.name = eventName.name();
         alert.setCreatedAt(createdAt);
-
 
         alert.setProperties(new HashMap<>(Map.of(
                 "tenant_id", tenant.id,
@@ -1080,49 +1098,44 @@ public class TenantService {
      */
     private void send(String id, AlertDefinitionRequest alert, String eventMsg) {
 
-        final boolean hasCustomMsg =
-                eventMsg != null && !eventMsg.isEmpty();
+        final var hasCustomMsg = eventMsg != null && !eventMsg.isEmpty();
 
 
         // INITIALISING message
-        final String publishingMsg =
-                hasCustomMsg
-                        ? eventMsg
-                        : "Event notification: " + alert.name +
-                          " is sent to Messaging Service for publishing";
+        final var publishingMsg = hasCustomMsg
+                ? eventMsg
+                : "Event notification: " + alert.name + " is sent to Messaging Service for publishing";
 
 
         // Your special INITIALISED message (only when eventMsg exists)
-        final String customInitialisedMsg =
+        final var customInitialisedMsg =
                 "A request is initialised to the Messaging Service " +
                         "to validate that the necessary data and configuration " +
                         "are in place prior to starting the monitoring process";
 
 
         // FINAL INITIALISED message
-        final String initialisedMsg =
-                hasCustomMsg
-                        ? customInitialisedMsg
-                        : "Event notification: " + alert.name +
-                          " is initialised to Messaging Service for publishing";
+        final var initialisedMsg = hasCustomMsg
+                ? customInitialisedMsg
+                : "Event notification: " + alert.name + " is initialised to Messaging Service for publishing";
 
 // ✅ CUSTOM FAILED
-        final String customFailedMsg =
+        final var customFailedMsg =
                 "A request to validate that the necessary data and configuration " +
                         "are in place prior to starting the monitoring process, failed to be published the Messaging Service.";
 
 
 // FAILED
-        final String failedMsg =
+        final var failedMsg =
                 hasCustomMsg
                         ? customFailedMsg
                         : "Event notification: " + alert.name +
                           " failed to be initialised to Messaging Service";
         try {
-            final Instant now = Instant.now();
+            final var now = Instant.now();
 
-            final ObjectMapper objectMapper = new ObjectMapper();
-            final String json = objectMapper.writeValueAsString(alert);
+            final var objectMapper = new ObjectMapper();
+            final var json = objectMapper.writeValueAsString(alert);
 
             Log.infof(
                     "Sending to Messaging Service | project=%s | topic=%s | tenantId=%s | event=%s",
@@ -1133,15 +1146,13 @@ public class TenantService {
             );
 
 
-            final String encodedData =
-                    Base64.getEncoder().encodeToString(json.getBytes());
+            final var encodedData = Base64.getEncoder().encodeToString(json.getBytes());
 
-            final PublishRequest.Message message =
-                    new PublishRequest.Message();
+            final var message = new PublishRequest.Message();
 
             message.setData(encodedData);
 
-            final PublishRequest publishData = new PublishRequest();
+            final var publishData = new PublishRequest();
             publishData.setMessages(List.of(message));
 
 
@@ -1307,13 +1318,13 @@ public class TenantService {
         var resultOpt = tenantRepository.fetchTenantNameAndStatus(id);
 
         if (resultOpt.isPresent()) {
-            Object[] result = resultOpt.get();
-            String name = (String) result[0];
-            String statusString = (String) result[1];
+            var result = resultOpt.get();
+            var name = (String) result[0];
+            var statusString = (String) result[1];
 
-            TenantStatusDto statusDto = TenantMapper.INSTANCE.mapStatusObject(statusString);
+            var statusDto = TenantMapper.INSTANCE.mapStatusObject(statusString);
 
-            TenantStatusFullResponse response = new TenantStatusFullResponse();
+            var response = new TenantStatusFullResponse();
             response.name = name;
             response.status = statusDto;
 
@@ -1706,5 +1717,41 @@ public class TenantService {
         return request.jobs.stream()
                 .anyMatch(j -> EventName.INIT_COMPUTE_ENGINE.name().equals(j.name) &&
                         EventStatus.COMPLETED.name().equals(j.getStatus()));
+    }
+
+    private boolean isPoemCompleted(TenantStatusDto request) {
+        return request.jobs.stream()
+                .anyMatch(j -> EventName.INIT_POEM.name().equals(j.name) &&
+                        EventStatus.COMPLETED.name().equals(j.getStatus()));
+    }
+
+    private boolean isComputeEngineReset(TenantStatusDto request) {
+        return request.jobs != null && request.jobs.stream()
+                .anyMatch(j -> EventName.INIT_COMPUTE_ENGINE.name().equals(j.name)
+                        && !EventStatus.COMPLETED.name().equalsIgnoreCase(j.getStatus()));
+    }
+
+    private boolean isPoemReset(TenantStatusDto request) {
+        return request.jobs != null && request.jobs.stream()
+                .anyMatch(j -> EventName.INIT_POEM.name().equals(j.name)
+                        && !EventStatus.COMPLETED.name().equalsIgnoreCase(j.getStatus()));
+    }
+
+    private void resetJob(List<EventStatusDto> jobs, TenantJobEvent event) {
+        if (jobs == null) {
+            return;
+        }
+
+        jobs.stream()
+                .filter(j -> event.key().equalsIgnoreCase(j.name))
+                .findFirst()
+                .ifPresent(j -> {
+                    j.setStatus(EventStatus.UNKNOWN.name());
+                    j.setStart(null);
+                    j.setEnd(null);
+                    j.setMessage(null);
+                    j.properties = null;
+                    j.setMode(event.modeValue());
+                });
     }
 }

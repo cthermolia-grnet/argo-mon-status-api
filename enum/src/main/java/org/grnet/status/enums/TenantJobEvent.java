@@ -22,7 +22,7 @@ public enum TenantJobEvent {
 
     CREATE_DOMAIN_NAMES("create_domain_names", EventMode.MANUAL, Set.of()), // no properties for now
 
-    INIT_MONITORING_BOX("init_monitoring_box", EventMode.MANUAL, Set.of()), // no properties for now
+    INIT_MONITORING_BOX("init_monitoring_box", EventMode.AUTO, Set.of(TenantJobProperty.TENANT_ID, TenantJobProperty.TENANT_NAME)), // no properties for now
 
     INIT_POEM("init_poem", EventMode.AUTO, Set.of(TenantJobProperty.TENANT_ID, TenantJobProperty.TENANT_NAME));
 

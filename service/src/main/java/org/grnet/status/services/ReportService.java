@@ -2,6 +2,7 @@ package org.grnet.status.services;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import org.apache.commons.lang3.StringUtils;
@@ -14,6 +15,7 @@ import org.grnet.status.dtos.report.FullReportResponseDto;
 import org.grnet.status.dtos.tenant.node.WebApiNodeReportResponse;
 import org.grnet.status.mappers.GeneralMapper;
 import org.grnet.status.mappers.ReportMapper;
+import org.grnet.status.repositories.TenantRepository;
 import org.grnet.status.services.clients.ArgoWebApiClient;
 import org.grnet.status.services.clients.WebApiService;
 import org.grnet.status.services.utils.EncryptUtil;
@@ -47,6 +49,9 @@ public class ReportService {
     @RestClient
     ArgoWebApiClient argoWebApiClient;
 
+    @Inject
+    TenantRepository tenantRepository;
+
 
     /**
      * Retrieves a list of reports for the given tenant with optional search filtering.
@@ -55,12 +60,17 @@ public class ReportService {
      * @param search search filter
      * @return list of reports
      */
-    public List<PartialReportResponseDto> fetchReports(String tenantId, String search) {
+    public List<PartialReportResponseDto> fetchReports(String tenantId, String search, Boolean publicReports) {
 
         webApiService.validateTenantInitialized(tenantId, "Reports");
 
         LOG.info("Fetching reports from ARGO Web API...");
-        var reports = argoWebApiClient.fetchReportsSuperAdmin(accessToken, tenantId);
+        var reports = argoWebApiClient.fetchReportsSuperAdmin(
+                accessToken,
+                tenantId,
+                Boolean.TRUE.equals(publicReports) ? "" : null,
+                Boolean.FALSE.equals(publicReports) ? "" : null        
+        );
 
         var partialReports = reports.data.stream()
                 .filter(r -> r != null && r.info != null)
@@ -111,7 +121,7 @@ public class ReportService {
 
         webApiService.validateTenantInitialized(id, "Reports");
 
-        var reports = argoWebApiClient.fetchReportsSuperAdmin(accessToken, id);
+        var reports = argoWebApiClient.fetchReportsSuperAdmin(accessToken, id, null, null);
         var found = reports.data.stream()
                 .anyMatch(r -> reportId.equals(r.id));
 
@@ -136,7 +146,7 @@ public class ReportService {
     public WebApiNodeReportResponse setNodeReport(String tenantId, String reportId) {
 
         webApiService.validateTenantInitialized(tenantId, "Reports");
-        var reports = argoWebApiClient.fetchReportsSuperAdmin(accessToken, tenantId);
+        var reports = argoWebApiClient.fetchReportsSuperAdmin(accessToken, tenantId, null, null);
         var found = reports.data.stream()
                 .anyMatch(r -> reportId.equals(r.id));
 
@@ -154,5 +164,36 @@ public class ReportService {
                     502
             );
         }
+    }
+
+
+    /**
+     * Sets the specified report as public for the given tenant.
+     *
+     * @param tenantId tenant identifier
+     * @param reportId report identifier
+     * @return status response
+     */
+    @Transactional
+    public WebApiNodeReportResponse setReportPublic(String tenantId, String reportId) {
+
+        var tenant = tenantRepository.findById(tenantId);
+
+        return webApiService.setReportPublicWebApi(reportId, tenant.id);
+    }
+
+    /**
+     * Sets the specified report as private for the given tenant.
+     *
+     * @param tenantId tenant identifier
+     * @param reportId report identifier
+     * @return status response
+     */
+    @Transactional
+    public WebApiNodeReportResponse setReportPrivate(String tenantId, String reportId) {
+
+        var tenant = tenantRepository.findById(tenantId);
+
+        return webApiService.setReportPrivateWebApi(reportId, tenant.id);
     }
 }

@@ -32,7 +32,9 @@ public interface ArgoWebApiClient {
     @Path("/api/v2/reports")
     WebApiReportResponse fetchReportsSuperAdmin(
             @HeaderParam("x-api-key") String apiKey,
-            @HeaderParam("x-tenant-id") String tenantId
+            @HeaderParam("x-tenant-id") String tenantId,
+            @QueryParam("public") String publicReports,
+            @QueryParam("private") String privateReports
     ) throws WebApplicationException, ProcessingException;
 
     @GET
@@ -46,6 +48,22 @@ public interface ArgoWebApiClient {
     @Path("/api/v2/reports/{id}")
     WebApiReportResponse fetchReportByIdSuperAdmin(
             @PathParam("id") String id,
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId
+    ) throws WebApplicationException, ProcessingException;
+
+    @POST
+    @Path("/api/v2/reports/{id}/set-public")
+    WebApiNodeReportResponse setReportPublicSuperAdmin(
+            @PathParam("id") String reportId,
+            @HeaderParam("x-api-key") String apiKey,
+            @HeaderParam("x-tenant-id") String tenantId
+    ) throws WebApplicationException, ProcessingException;
+
+    @POST
+    @Path("/api/v2/reports/{id}/set-private")
+    WebApiNodeReportResponse setReportPrivateSuperAdmin(
+            @PathParam("id") String reportId,
             @HeaderParam("x-api-key") String apiKey,
             @HeaderParam("x-tenant-id") String tenantId
     ) throws WebApplicationException, ProcessingException;

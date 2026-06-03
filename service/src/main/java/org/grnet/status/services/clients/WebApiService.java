@@ -10,6 +10,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.grnet.status.dtos.Status;
 import org.grnet.status.dtos.argo.ArgoWebApiErrorResponse;
 import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
+import org.grnet.status.dtos.report.WebApiReportResponse;
 import org.grnet.status.dtos.tenant.node.*;
 import org.grnet.status.dtos.tenant.webapi.*;
 import org.grnet.status.dtos.topology.FeedTopologyDto;
@@ -566,6 +567,105 @@ public class WebApiService {
 
             throw new WebApplicationException(
                     "Retrieving Group Status... failed in Argo Web Api",
+                    500
+            );
+        }
+    }
+
+    public WebApiNodeReportResponse setReportPublicWebApi(String reportId, String tenantId) {
+
+        try {
+            return argoWebApiClient.setReportPublicSuperAdmin(reportId, accessToken, tenantId);
+
+        } catch (WebApplicationException e) {
+
+            int status = e.getResponse().getStatus();
+
+            logArgoError(e, "Updating Report Visibility", reportId);
+
+            throw new WebApplicationException(
+                    "Updating Report Visibility... failed to set report with id: "
+                            + reportId + " as public in Argo Web Api",
+                    status
+            );
+
+        } catch (RuntimeException e) {
+
+            LOG.errorf(e,
+                    "Updating Report Visibility failed in Argo Web Api. reportId=%s",
+                    reportId
+            );
+
+            throw new WebApplicationException(
+                    "Updating Report Visibility... failed to set report with id: "
+                            + reportId + " as public in Argo Web Api",
+                    500
+            );
+        }
+    }
+
+    public WebApiNodeReportResponse setReportPrivateWebApi(String reportId, String tenantId) {
+
+        try {
+            return argoWebApiClient.setReportPrivateSuperAdmin(reportId, accessToken, tenantId);
+
+        } catch (WebApplicationException e) {
+
+            int status = e.getResponse().getStatus();
+
+            logArgoError(e, "Updating Report Visibility", reportId);
+
+            throw new WebApplicationException(
+                    "Updating Report Visibility... failed to set report with id: "
+                            + reportId + " as private in Argo Web Api",
+                    status
+            );
+
+        } catch (RuntimeException e) {
+
+            LOG.errorf(e,
+                    "Updating Report Visibility failed in Argo Web Api. reportId=%s",
+                    reportId
+            );
+
+            throw new WebApplicationException(
+                    "Updating Report Visibility... failed to set report with id: "
+                            + reportId + " as private in Argo Web Api",
+                    500
+            );
+        }
+    }
+
+    public WebApiReportResponse retrieveReportsWebApi(String tenantId, Boolean publicReports, Boolean privateReports) {
+
+        try {
+
+            return argoWebApiClient.fetchReportsSuperAdmin(accessToken, tenantId, Boolean.TRUE.equals(publicReports) ? "" : null, Boolean.TRUE.equals(privateReports) ? "" : null
+
+            );
+
+        } catch (WebApplicationException e) {
+
+            int status = e.getResponse().getStatus();
+
+            logArgoError(e, "Retrieving Reports", tenantId);
+
+            throw new WebApplicationException(
+                    "Retrieving Reports... failed to retrieve reports for tenant with id: "
+                            + tenantId + " from Argo Web Api",
+                    status
+            );
+
+        } catch (RuntimeException e) {
+
+            LOG.errorf(e,
+                    "Retrieving Reports failed in Argo Web Api. tenantId=%s",
+                    tenantId
+            );
+
+            throw new WebApplicationException(
+                    "Retrieving Reports... failed to retrieve reports for tenant with id: "
+                            + tenantId + " from Argo Web Api",
                     500
             );
         }

@@ -40,6 +40,7 @@ import org.grnet.status.dtos.project.ProjectResponseDto;
 import org.grnet.status.dtos.readiness.WebApiTenantReadiness;
 import org.grnet.status.dtos.report.FullReportResponseDto;
 import org.grnet.status.dtos.report.PartialReportResponseDto;
+import org.grnet.status.dtos.report.WebApiReportResponse;
 import org.grnet.status.dtos.status.StatusGroupResponseDto;
 import org.grnet.status.dtos.statuspage.StatusPageRequestDto;
 import org.grnet.status.dtos.statuspage.StatusPageResponseDto;
@@ -68,6 +69,8 @@ import org.grnet.status.services.*;
 import org.grnet.status.util.Utility;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
 import java.util.List;
 
 import static org.eclipse.microprofile.openapi.annotations.enums.ParameterIn.QUERY;
@@ -1178,9 +1181,14 @@ public class TenantEndpoint {
             String id,
             @Parameter(name = "search", in = QUERY,
                     description = "Search report by name.")
-            @QueryParam("search") String search) {
+            @QueryParam("search") String search,
+            @Parameter(name = "public", in = QUERY,
+                    description = "Retrieve only public reports.",
+                    example = "true")
+            @QueryParam("public")
+            Boolean publicReports) {
 
-        var reports = reportService.fetchReports(id, search);
+        var reports = reportService.fetchReports(id, search, publicReports);
 
         return Response.ok(reports).build();
     }
@@ -3429,6 +3437,136 @@ public class TenantEndpoint {
             String report) {
 
         var response = tenantService.getGroupStatus(id, groupName, startTime, endTime, history, report);
+
+        return Response.ok().entity(response).build();
+    }
+
+    @Tag(name = "Reports")
+    @Operation(
+            summary = "Set tenant report public.",
+            description = "Sets a specific tenant report as public."
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "Report is set as public.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = WebApiNodeReportResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Tenant or report not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @POST
+    @Path("/{id}/reports/{report-id}/set-public")
+    @Produces(MediaType.APPLICATION_JSON)
+    @SecuredEndpoint(
+            params = {
+                    @ParamRef(
+                            param = "id",
+                            type = ParamType.PATH,
+                            referTo = TenantResource.class
+                    )
+            }
+    )
+    public Response setReportPublic(
+            @Parameter(
+                    description = "The ID of the tenant.",
+                    schema = @Schema(type = SchemaType.STRING),
+                    required = true,
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f")
+            @PathParam("id")
+            @Valid
+            @NotFoundEntity(repository = TenantRepository.class,
+                    message = "There is no Tenant with the following id: ")
+            String id,
+            @Parameter(
+                    description = "The ID of the report.",
+                    schema = @Schema(type = SchemaType.STRING),
+                    required = true,
+                    example = "cf010255-cda3-49d8-92d1-926c2c6cf9eb")
+            @PathParam("report-id")
+            String reportId) {
+
+        var response = reportService.setReportPublic(id, reportId);
+
+        return Response.ok().entity(response).build();
+    }
+
+    @Tag(name = "Reports")
+    @Operation(
+            summary = "Set tenant report private.",
+            description = "Sets a specific tenant report as private."
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "Report is set as private.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = WebApiNodeReportResponse.class)))
+    @APIResponse(
+            responseCode = "401",
+            description = "User has not been authenticated.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "403",
+            description = "Not permitted.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @APIResponse(
+            responseCode = "404",
+            description = "Tenant or report not found.",
+            content = @Content(schema = @Schema(
+                    type = SchemaType.OBJECT,
+                    implementation = InformativeResponse.class)))
+    @SecurityRequirement(name = "Authentication")
+    @POST
+    @Path("/{id}/reports/{report-id}/set-private")
+    @Produces(MediaType.APPLICATION_JSON)
+    @SecuredEndpoint(
+            params = {
+                    @ParamRef(
+                            param = "id",
+                            type = ParamType.PATH,
+                            referTo = TenantResource.class
+                    )
+            }
+    )
+    public Response setReportPrivate(
+            @Parameter(
+                    description = "The ID of the tenant.",
+                    schema = @Schema(type = SchemaType.STRING),
+                    required = true,
+                    example = "42c1152d-e23c-4a19-b51a-b27f1eb7f37f")
+            @PathParam("id")
+            @Valid
+            @NotFoundEntity(repository = TenantRepository.class, message = "There is no Tenant with the following id: ")
+            String id,
+            @Parameter(
+                    description = "The ID of the report.",
+                    schema = @Schema(type = SchemaType.STRING),
+                    required = true,
+                    example = "cf010255-cda3-49d8-92d1-926c2c6cf9eb")
+            @PathParam("report-id")
+            String reportId) {
+        var response = reportService.setReportPrivate(id, reportId);
 
         return Response.ok().entity(response).build();
     }

@@ -86,6 +86,7 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#132](https://github.com/ARGOeu/argo-mon-status-api/pull/132) ARGO-5549 Proxy group results and status calls from web-api
 - [#139](https://github.com/ARGOeu/argo-mon-status-api/pull/139) ARGO-5552 Extend theming option field values for status page creation
 - [#148](https://github.com/ARGOeu/argo-mon-status-api/pull/148) ARGO-5589 Make INIT_MONITORING_BOX event automatic
+- [#149](https://github.com/ARGOeu/argo-mon-status-api/pull/149) ARGO-5593: Status api: support setting reports as public (and back to private)
 
 ### Fix
 

@@ -2759,7 +2759,7 @@
           "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenants:TENANT-TEST:role=admin",
           "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenants:TENANTB:role=admin",
           "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:members:role=member",
-          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenant_admin:TENANT:6b36d6d3-56a3-48a5-93af-aecf3e16a7c6:role=member"
+          "urn:mace:grnet.gr:einfra:login-devel:group:status-pages:tenant_admin:Tenant:6b36d6d3-56a3-48a5-93af-aecf3e16a7c6:role=member"
 
 
         ]

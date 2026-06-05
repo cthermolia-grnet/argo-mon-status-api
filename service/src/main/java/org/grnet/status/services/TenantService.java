@@ -17,7 +17,7 @@ import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.AuthGroupManag
 import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.GroupUser;
 import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.GroupUserResponse;
 import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.UserGroupInfoDto;
-import org.grnet.endpoint.scanner.runtime.context.RoleEndpointContext;
+import org.grnet.endpoint.scanner.runtime.context.RoleEndpointHolder;
 import org.grnet.endpoint.scanner.runtime.entitlements.EntitlementUtils;
 import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.dtos.pagination.PageResource;
@@ -107,9 +107,6 @@ public class TenantService {
 
     @Inject
     AmsService amsService;
-
-    @Inject
-    RoleEndpointContext roleEndpointContext;
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(2); // Adjust as needed
 
@@ -464,8 +461,9 @@ public class TenantService {
             return getTenantsByPageAndSize(page, size, uriInfo, search, sort, order);
         }
 
-        var roles = roleEndpointContext.getRoleEndpoints();
+        //  var roles = roleEndpointContext.getRoleEndpoints();
 
+        var roles = RoleEndpointHolder.get();
         var uniqueIds = roles
                 .stream()
                 .map(role->accessControlService.resolveAccessibleGroupsByName(role.getRoleName(), TenantResource.TENANT.resourceName()))
@@ -489,6 +487,8 @@ public class TenantService {
         });
         return new PageResource<>(tenants, tenantList, uriInfo);
     }
+
+
 
     /**
      * Validates and stores the tenant logo image and updates the request with the resolved URL.

@@ -87,6 +87,10 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#139](https://github.com/ARGOeu/argo-mon-status-api/pull/139) ARGO-5552 Extend theming option field values for status page creation
 - [#148](https://github.com/ARGOeu/argo-mon-status-api/pull/148) ARGO-5589 Make INIT_MONITORING_BOX event automatic
 - [#149](https://github.com/ARGOeu/argo-mon-status-api/pull/149) ARGO-5593: Status api: support setting reports as public (and back to private)
+- [#145](https://github.com/ARGOeu/argo-mon-status-api/pull/145) ARGO-5573 Add all/mine Scope Support to Secured Endpoints and Role Assignments
+- [#134](https://github.com/ARGOeu/argo-mon-status-api/pull/134) ARGO-5525 Assign Secured Endpoints to Roles
+
+#145
 
 ### Fix
 
@@ -134,6 +138,8 @@ According to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) , the `Unr
 - [#143](https://github.com/ARGOeu/argo-mon-status-api/pull/143) ARGO-5583 Update user profile entitlement mapping to support resource-based tenant roles
 - [#146](https://github.com/ARGOeu/argo-mon-status-api/pull/146) ARGO-5585 Status-api: when a tenant has no data send an appropriate message
 - [#147](https://github.com/ARGOeu/argo-mon-status-api/pull/147) ARGO-5602 Refactor status-api tests and adapt imports after quarkus-auth package changes
+- [#151](https://github.com/ARGOeu/argo-mon-status-api/pull/151) ARGO-5618 Tenants not retrieved for other roles than admin
+
 
 ### Removed
 

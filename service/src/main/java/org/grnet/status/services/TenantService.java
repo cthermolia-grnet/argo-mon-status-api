@@ -18,6 +18,7 @@ import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.Group
 import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.GroupUserResponse;
 import org.grnet.endpoint.scanner.runtime.clients.groupmanagement.response.UserGroupInfoDto;
 import org.grnet.endpoint.scanner.runtime.context.RoleEndpointContext;
+import org.grnet.endpoint.scanner.runtime.context.RoleEndpointHolder;
 import org.grnet.endpoint.scanner.runtime.entitlements.EntitlementUtils;
 import org.grnet.status.dtos.ams.PublishRequest;
 import org.grnet.status.dtos.pagination.PageResource;
@@ -464,8 +465,9 @@ public class TenantService {
             return getTenantsByPageAndSize(page, size, uriInfo, search, sort, order);
         }
 
-        var roles = roleEndpointContext.getRoleEndpoints();
+      //  var roles = roleEndpointContext.getRoleEndpoints();
 
+        var roles = RoleEndpointHolder.get();
         var uniqueIds = roles
                 .stream()
                 .map(role->accessControlService.resolveAccessibleGroupsByName(role.getRoleName(), TenantResource.TENANT.resourceName()))
